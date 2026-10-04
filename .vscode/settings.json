@@ -1,0 +1,8 @@
+{
+  // Flutter SDK location (user-level install; keeps the project portable)
+  "dart.flutterSdkPath": "~/sdk/flutter",
+  "[dart]": {
+    "editor.formatOnSave": true,
+    "editor.rulers": [80]
+  }
+}
