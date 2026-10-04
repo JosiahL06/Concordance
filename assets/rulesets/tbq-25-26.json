@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "tbq-25-26",
+  "displayName": "Teen Bible Quiz",
+  "season": "2025-26",
+  "challengeKind": "contest",
+  "match": {
+    "regulationQuestions": 20,
+    "pointValues": [10, 20, 10, 20, 30, 10, 20, 10, 20, 20, 30, 20, 10, 20, 10, 20, 30, 10, 20, 10],
+    "minActivePerTeam": 1,
+    "maxActivePerTeam": 3,
+    "teamsPerMatch": 2
+  },
+  "scoring": {
+    "correctMultiplier": 1.0,
+    "incorrectMultiplier": 0.5,
+    "quizOut": { "correctNeeded": 5, "bonus": 20, "leavesMatch": false },
+    "strikeOut": { "incorrectNeeded": 3 },
+    "foul": { "deduction": 5, "foulsToFoulOut": 3, "teamDeduction": 5, "teamFoulLimit": null }
+  },
+  "limits": {
+    "timeOutsPerTeam": 3,
+    "notifyTimeOutRequest": 4,
+    "overtimeTimeOutsCarry": false,
+    "overtimeExtraTimeOuts": 0,
+    "challengeLimit": { "mode": "unsuccessful", "count": 3 },
+    "challengesPerQuestionPerTeam": 2,
+    "challengeAllotmentPerTeam": null
+  },
+  "overtime": {
+    "mode": "suddenDeath10",
+    "declaresReopenTimeout": true,
+    "foulPartOfQuestion": true
+  },
+  "scorekeeper": {
+    "circleInterrupted": true,
+    "announceOrder": ["second", "first", "others", "final"]
+  }
+}

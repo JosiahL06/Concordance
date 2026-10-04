@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "jbq-2026",
+  "displayName": "Junior Bible Quiz",
+  "season": "2026",
+  "challengeKind": "appeal",
+  "match": {
+    "regulationQuestions": 20,
+    "pointValues": [10, 10, 20, 10, 20, 30, 10, 20, 10, 10, 20, 10, 30, 20, 10, 10, 20, 30, 10, 20],
+    "minActivePerTeam": 1,
+    "maxActivePerTeam": 4,
+    "teamsPerMatch": 2
+  },
+  "scoring": {
+    "correctMultiplier": 1.0,
+    "incorrectMultiplier": 0.5,
+    "quizOut": { "correctNeeded": 6, "bonus": 10, "leavesMatch": true },
+    "strikeOut": { "incorrectNeeded": 3 },
+    "foul": { "deduction": 5, "foulsToFoulOut": 3, "teamDeduction": 5, "teamFoulLimit": null }
+  },
+  "limits": {
+    "timeOutsPerTeam": 3,
+    "notifyTimeOutRequest": 4,
+    "overtimeTimeOutsCarry": true,
+    "overtimeExtraTimeOuts": 1,
+    "challengeLimit": { "mode": "used", "count": 2 },
+    "challengesPerQuestionPerTeam": null,
+    "challengeAllotmentPerTeam": 2
+  },
+  "overtime": {
+    "mode": "threePlusSuddenDeath20",
+    "declaresReopenTimeout": true,
+    "foulPartOfQuestion": true
+  },
+  "scorekeeper": {
+    "circleInterrupted": true,
+    "announceOrder": ["second", "first", "others", "final"]
+  }
+}

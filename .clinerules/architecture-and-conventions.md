@@ -27,6 +27,18 @@ Flutter (stable channel) → Dart. Material 3. Local persistence via SQLite (pac
 - Usable in seconds by a trained-up volunteer: **large touch targets (≥48dp)**, one-tap scoring actions, **prominent undo**, no hidden gestures, no long-press-only affordances.
 - Landscape tablet first (Fire HD 10: 1280×800 logical dp); Material 3 with automatic dark/light; haptic feedback on scoring taps; alerts auto-fire when a quizzer hits quiz-out/strike-out/foul-out.
 - The paper score sheet's marks (circled interruptions, contest slashes, F fouls) have digital equivalents in the question navigator.
+- **Readability beats aesthetic flair** (user directive): this is a data-display tool — no fancy animations or decorative motion, Material defaults only; bold, legible typography for scores.
+- **Red team vs. green team** is decided by the physical quiz box: quizzers are Red 1, Red 2, Green 1, Green 2, … Use *light* color coding (tints + accents, not garish fills) so officials can tell the sides at a glance.
+- **Scoresheet-mimicry is a fallback, not the starting point:** design clean/modern first; if veterans find it unintuitive versus the traditional paper page, reintroduce scoresheet structure in a later pass.
+- **Dual live-scoring views ("Modern" + "Classic"):** the live scoring
+  screen ships in two variants — Modern (Direction A: split-field,
+  spatial) and Classic (Direction B: scoresheet ledger). Both are thin
+  layouts over the SAME engine view-model (`RoundView`); no scoring logic
+  may live in either view. Shared widgets (score type, console, undo,
+  alerts, time-out controls, mark glyphs) live in `common/`; per-view
+  layout files compose them. A `ScoreboardView` setting (persisted
+  per-device, overridable per session) selects the variant. Setup and
+  Summary screens are mode-agnostic (single implementation).
 
 ## Definition of done (every task)
 1. `flutter analyze` clean, 2. `flutter test` passing, 3. long steps backgrounded & verified, 4. visual check on `fire_hd_10` emulator (screenshot) when UI changed, 5. `TODO.md` updated, 6. notable changes recorded in `CHANGELOG.md` under
