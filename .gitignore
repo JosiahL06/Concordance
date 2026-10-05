@@ -105,6 +105,8 @@ gradlew.bat
 local.properties
 GeneratedPluginRegistrant.java
 .cxx/
+# Kotlin incremental-compile session dir (Gradle plugin)
+android/.kotlin/
 
 # ── Windows (mirrors windows/.gitignore from the template) ────
 **/flutter/ephemeral/

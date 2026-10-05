@@ -23,10 +23,21 @@ tags: ["toolchain", "commands", "environment"]
 flutter pub get
 flutter analyze          # MUST be clean before any "done" claim
 flutter test             # MUST pass before any "done" claim
-flutter build apk --debug
-flutter build linux --debug
-flutter build windows    # only builds on Windows CI, not this machine
+flutter build apk --debug        # PRIMARY target (Fire HD 10) — works here
+flutter build linux --debug      # desktop dev loop; needs clang (installed)
+flutter build windows            # only builds on Windows CI, not this machine
 ```
+
+### Linux desktop build needs clang
+Flutter's `build_linux.dart` **unconditionally** sets `CC=clang, CXX=clang++`
+for its cmake configure step, so `flutter build linux` REQUIRES `clang`/`clang++`
+(Arch package `clang`) alongside cmake, ninja, pkgconf and gtk3 — all present on
+this machine. Do NOT try to override with your own `CC`/`CXX`; the tool
+overwrites them.
+
+If a stale `build/linux/.../CMakeCache.txt` was generated under a different
+toolchain you may see `The CMAKE_CXX_COMPILER: /usr/bin/clang++ is not a full
+path to an existing compiler tool.` — delete `build/linux` and rebuild.
 
 ## Timing gotchas
 - Tool calls have a **~30s timeout**. Long work (builds, SDK installs, emulator boots) MUST be backgrounded:

@@ -35,14 +35,23 @@
       per-question marks, Classic ledger cells/deltas, undo availability)
 
 ## Phase 3 — UI implementation
-- [ ] New Round setup (ruleset tab, teams, quizzers, seats)
-- [ ] Shared widgets first (`common/`: score type, console, undo, alerts, time-outs, marks)
-- [ ] `ScoreboardView` setting (persisted per-device, overridable per session)
-- [ ] Wire prototype screens to the real engine (replace `FakeRound`)
-- [ ] Live scoring screen in both modes (running scores, auto quiz-out/strike-out alerts)
-      over the shared `RoundView`
-- [ ] Round summary + PDF/CSV export (mode-agnostic, single implementation)
-- [ ] SQLite autosave & round resume
+- [x] New Round setup (ruleset tab, teams, quizzers, seats)
+- [x] Shared widgets first (`common/`: console, undo, alerts, time-outs, marks,
+      live chrome) — both live views compose them
+- [x] `ScoreboardView` setting (persisted per-device via `shared_preferences`,
+      overridable per session on the setup screen)
+- [x] Wire prototype screens to the real engine (`RoundController` over
+      `RoundView`; `FakeRound` no longer used by the production app)
+- [x] Live scoring screen in both modes (running scores, auto quiz-out/strike-out
+      alerts) over the shared `RoundView`
+- [x] Round summary + PDF/CSV export (mode-agnostic, single implementation;
+      share sheet via `share_plus`)
+- [x] SQLite autosave & round resume (`sqlite3` direct, journal-as-rows;
+      save-on-event, resume re-folds)
+- [x] Void / substitute-question / substitute-quizzer UI entry points
+      (documented gap in `docs/design/interaction.md` §7)
+- [x] Tests: engine goldens + `RoundController` adapter + store round-trip +
+      widget flows (setup, Classic scoring/undo, Modern scoring) — 38 passing
 
 ## Phase 4 — Packaging & polish
 - [ ] Polish pass: UI design, usability, intuitiveness, UI logic (button prominence,
