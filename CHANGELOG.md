@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **CI workflows** (`.github/workflows/`): `ci.yml` runs `flutter analyze` +
+  `flutter test` on pushes to `main` and pull requests; `build.yml` builds all
+  four targets (Android APK, Linux bundle, Windows zip, macOS `.app` zip) on
+  `v*` tags and manual dispatch, attaching the artifacts to a GitHub Release.
+  Every job is gated on `github.server_url == 'https://github.com'` so a mirror
+  to Gitea Actions skips them instead of failing.
 - **macOS desktop target** — `macos/` runner scaffolded and configured for the
   secondary desktop story: bundle id `org.concordance.app`, app name
   "Concordance", AGPL-3.0-only copyright string, and a landscape-tablet default

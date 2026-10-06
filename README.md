@@ -52,8 +52,35 @@ and is sourced from `~/.bashrc`.
 - The official rulebook PDFs are **not** committed — they are copyrighted by
   My Healthy Church and licensed for local church use only (`docs/*.pdf` is
   gitignored). Scoring rules are encoded as app configuration instead.
-- CI workflows live under `.github/workflows/` (compatible with GitHub Actions
-  *and* Gitea Actions).
+- CI workflows live under `.github/workflows/` (GitHub Actions; the layout is
+  also valid for Gitea Actions).
+
+## Continuous integration
+
+Workflows live under `.github/workflows/`:
+
+- **`ci.yml`** — `flutter analyze` + `flutter test` on every push to `main` and
+  on pull requests. Fast gate, no build.
+- **`build.yml`** — full four-platform release build on `v*` tags and via manual
+  dispatch (*Actions → Build → Run workflow*): Android APK, Linux bundle,
+  Windows zip, and macOS `.app` zip. Tag builds attach the artifacts to a GitHub
+  Release.
+
+Both workflows gate their jobs to GitHub (`github.server_url ==
+'https://github.com'`), so if the repo is mirrored to your Gitea `origin`, those
+jobs are **skipped** rather than failing — Gitea Actions cannot provide
+macOS/Windows runners or the GitHub API that `subosito/flutter-action` relies on.
+
+To cut a release build:
+
+```sh
+git tag v1.0.0
+git push origin-github v1.0.0   # 'origin-github' is the GitHub remote
+```
+
+All artifacts are **unsigned** — the Android APK is signed with the debug key
+and the desktop builds are unnotarized — which is fine for sideloading/testing
+but not for app-store distribution.
 
 ## License
 

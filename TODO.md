@@ -162,7 +162,10 @@
             top two individual scorers across the whole match
 - [ ] Touch verification pass (emulator now, real tablet later)
 - [ ] Accessibility (Semantics) + haptics pass
-- [ ] CI workflow: build APK + Windows installer + Linux on tag (`.github/workflows/`)
+- [x] CI workflows (`.github/workflows/`): `ci.yml` (analyze + test on
+      push/PR) and `build.yml` (Android APK + Linux + Windows + macOS on `v*`
+      tags and manual dispatch, artifacts attached to a GitHub Release;
+      unsigned — Android debug-signed)
 - [x] macOS desktop scaffolding (`macos/` Xcode runner): bundle id
       `org.concordance.app`, app name "Concordance", landscape-tablet default
       window (1280×800, min 1024×700), sandboxed no-network entitlements,

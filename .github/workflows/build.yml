@@ -1,0 +1,150 @@
+name: Build
+
+# Full 4-platform build on version tags and on demand. Deliberately NOT on every
+# push: macOS runners bill at 10x minutes on a private repo (Linux 1x, Windows
+# 2x), so keep the expensive matrix off the commit path and use ci.yml as the
+# fast analyze/test gate instead.
+#
+# Every job is gated on `github.server_url == 'https://github.com'` so a mirror
+# to Gitea Actions skips (rather than fails) these GitHub-only jobs.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write # needed to attach build artifacts to a release
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android APK
+    if: github.server_url == 'https://github.com'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      # The runner image ships the Android SDK; this just pre-accepts licences.
+      - run: yes | flutter doctor --android-licenses || true
+      - run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: concordance-android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+  linux:
+    name: Linux bundle
+    if: github.server_url == 'https://github.com'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # flutter build linux unconditionally uses clang/clang++ and links GTK.
+      - run: >
+          sudo apt-get update && sudo apt-get install -y
+          clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter build linux --release
+
+      - run: tar -czf concordance-linux-x64.tar.gz -C build/linux/x64/release bundle
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: concordance-linux
+          path: concordance-linux-x64.tar.gz
+          if-no-files-found: error
+
+  windows:
+    name: Windows bundle
+    if: github.server_url == 'https://github.com'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter build windows --release
+
+      - run: >
+          Compress-Archive
+          -Path build/windows/x64/runner/Release
+          -DestinationPath concordance-windows-x64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: concordance-windows
+          path: concordance-windows-x64.zip
+          if-no-files-found: error
+
+  macos:
+    name: macOS app
+    if: github.server_url == 'https://github.com'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter build macos --release
+
+      # ditto preserves the .app's symlinks + permissions (zip does not).
+      - run: >
+          ditto -c -k --keepParent
+          "build/macos/Build/Products/Release/Concordance.app"
+          concordance-macos.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: concordance-macos
+          path: concordance-macos.zip
+          if-no-files-found: error
+
+  release:
+    name: Attach artifacts to release
+    if: github.server_url == 'https://github.com' && startsWith(github.ref, 'refs/tags/v')
+    needs: [android, linux, windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
