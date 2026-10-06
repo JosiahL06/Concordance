@@ -82,16 +82,46 @@ Color expectedAccent(Side side, Brightness brightness) => sideAccent(
 );
 
 void main() {
-  test('tints are light and the tint ink is dark (palette contract)', () {
+  test('light tints are pale with dark ink (palette contract)', () {
+    final light = ColorScheme.fromSeed(seedColor: kSeed);
     for (final side in Side.values) {
       expect(
         sideTint(side).computeLuminance(),
         greaterThan(0.5),
-        reason: '${side.name} tint is expected to be a light surface',
+        reason: '${side.name} light tint is expected to be a light surface',
       );
+      // Light mode is untouched: the theme-aware tint equals the pale tint.
+      expect(sideTintFor(side, light).toARGB32(), sideTint(side).toARGB32());
     }
     expect(sideInk.computeLuminance(), lessThan(0.2));
     expect(sideInkMuted.computeLuminance(), lessThan(0.4));
+    expect(sideInkFor(light), sideInk);
+    expect(sideInkMutedFor(light), sideInkMuted);
+  });
+
+  test('dark tints are deep with light ink (dark-mode palette)', () {
+    final dark = ColorScheme.fromSeed(
+      seedColor: kSeed,
+      brightness: Brightness.dark,
+    );
+    for (final side in Side.values) {
+      final tint = sideTintFor(side, dark);
+      expect(
+        tint.computeLuminance(),
+        lessThan(0.15),
+        reason: '${side.name} dark tint should be a deep surface',
+      );
+      expect(
+        contrastRatio(sideInkFor(dark), tint),
+        greaterThan(4.5),
+        reason: '${side.name} dark-tint ink must clear 4.5:1',
+      );
+      expect(
+        contrastRatio(sideInkMutedFor(dark), tint),
+        greaterThan(3.0),
+        reason: '${side.name} dark-tint muted ink must clear 3:1',
+      );
+    }
   });
 
   test('side accent is deep in light mode and lightened in dark mode', () {
@@ -134,12 +164,12 @@ void main() {
     );
     final fouls = tester.widget<Text>(find.textContaining('Fouls').first);
 
-    expect(timeOuts.style?.color, sideInkMuted);
-    expect(fouls.style?.color, sideInkMuted);
+    expect(timeOuts.style?.color, sideInkMutedFor(_darkScheme));
+    expect(fouls.style?.color, sideInkMutedFor(_darkScheme));
 
-    // And genuinely dark against the light tint it sits on.
-    expect(timeOuts.style!.color!.computeLuminance(), lessThan(0.4));
-    expect(fouls.style!.color!.computeLuminance(), lessThan(0.4));
+    // And genuinely light against the deep dark tint it sits on.
+    expect(timeOuts.style!.color!.computeLuminance(), greaterThan(0.4));
+    expect(fouls.style!.color!.computeLuminance(), greaterThan(0.4));
   });
 
   group('Modern live view', () {
@@ -188,7 +218,7 @@ void main() {
   });
 
   group('Classic live view', () {
-    testWidgets('ledger ink on tints stays dark in dark mode', (
+    testWidgets('ledger ink on tints stays legible in dark mode', (
       WidgetTester tester,
     ) async {
       await pumpBrightness(
@@ -197,22 +227,18 @@ void main() {
         Brightness.dark,
       );
 
-      // SCORE, RUNNING and the team totals sit inside fixed light team tints.
-      expect(textColor(tester, find.textContaining('SCORE').first), sideInk);
-      expect(textColor(tester, find.text('RUNNING').first), sideInkMuted);
-
-      // The running-total row's last cell per team is the team score; those
-      // carry the fixed dark ink. (The first bare "0" is a quizzer's per-row
-      // score, which intentionally inherits the theme's onSurface.)
-      final totals = find
-          .text('0')
-          .evaluate()
-          .map((e) => (e.widget as Text).style?.color)
-          .where((c) => c != null)
-          .toList();
-      expect(totals, isNotEmpty);
-      for (final c in totals) {
-        expect(c, sideInk);
+      // SCORE sits on the deep dark team tint, so it must be light ink and
+      // must clear contrast against that tint.
+      expect(
+        textColor(tester, find.textContaining('SCORE').first),
+        sideInkDark,
+      );
+      expect(sideInkDark.computeLuminance(), greaterThan(0.4));
+      for (final side in Side.values) {
+        expect(
+          contrastRatio(sideInkDark, sideTintFor(side, _darkScheme)),
+          greaterThan(4.5),
+        );
       }
     });
 
@@ -233,8 +259,9 @@ void main() {
       expect(railLabel.style!.color!.computeLuminance(), greaterThan(0.4));
     });
 
-    testWidgets('Modern header time-out uses the lightened dark-mode accent',
-        (WidgetTester tester) async {
+    testWidgets('Modern header time-out uses the lightened dark-mode accent', (
+      WidgetTester tester,
+    ) async {
       await pumpBrightness(
         tester,
         ModernScreen(controller: freshRound()),

@@ -82,6 +82,58 @@ void main() {
     expect(view.questionValues.length, 21); // 20 regulation + overtime
   });
 
+  test('bench roster and a substitute round-trip through SQLite', () {
+    final store = RoundStore.inMemory();
+    final id = store.createRound(
+      rulesetId: 'tbq-25-26',
+      redName: 'Red',
+      greenName: 'Green',
+      redSeats: const ['Red 1', 'Red 2'],
+      greenSeats: const ['Green 1', 'Green 2'],
+      redBench: const ['Red 3'],
+      greenBench: const ['Green 3'],
+    );
+    final row = store.loadRound(id)!;
+    expect(row['red_bench'], '["Red 3"]');
+    expect(row['green_bench'], '["Green 3"]');
+
+    // Red 1 answers three wrong, then is swapped to the bench for Red 3
+    // (roster index 2). Red 1's points must still count.
+    for (var n = 1; n <= 3; n++) {
+      store.appendEvent(
+        id,
+        AnswerEvent(
+          questionNumber: n,
+          side: Side.red,
+          quizzerIndex: 0,
+          correct: false,
+        ),
+      );
+    }
+    store.appendEvent(
+      id,
+      const SubstituteQuizzerEvent(side: Side.red, outIndex: 0, benchIndex: 2),
+    );
+
+    final view = RoundView(
+      ruleset: loadTbq(),
+      redLabels: const ['Red 1', 'Red 2'],
+      greenLabels: const ['Green 1', 'Green 2'],
+      redBench: const ['Red 3'],
+      greenBench: const ['Green 3'],
+    );
+    for (final e in store.loadJournal(id)) {
+      expect(view.apply(e), isNull, reason: 'replay rejected $e');
+    }
+    // Red 3 takes Red 1's vacated seat (seat order preserved).
+    expect(view.teamOf(Side.red).seated.map((q) => q.label), [
+      'Red 3',
+      'Red 2',
+    ]);
+    expect(view.teamOf(Side.red).bench.map((q) => q.label), ['Red 1']);
+    expect(view.scoreOf(Side.red), -20); // Red 1's misses survive the swap
+  });
+
   test('truncateTo drops trailing events (undo persistence)', () {
     final store = RoundStore.inMemory();
     final id = store.createRound(

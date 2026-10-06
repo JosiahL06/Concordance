@@ -14,6 +14,7 @@ import 'state.dart';
 /// Per-quizzer read snapshot.
 class QuizzerView {
   const QuizzerView({
+    required this.index,
     required this.label,
     required this.score,
     required this.correct,
@@ -21,8 +22,13 @@ class QuizzerView {
     required this.fouls,
     required this.status,
     required this.active,
+    required this.seat,
   });
 
+  /// Stable roster index (seated first, then bench). Views pass this to
+  /// `select` / `cellOutcome` so attributes are matched to the right quizzer
+  /// across substitutions.
+  final int index;
   final String label;
   final int score;
   final int correct;
@@ -32,6 +38,12 @@ class QuizzerView {
   /// '' when active, else QUIZ-OUT / STRIKE-OUT / FOUL-OUT.
   final String status;
   final bool active;
+
+  /// Seat number (1-based) while seated, or 0 while on the bench.
+  final int seat;
+
+  /// True while seated behind the table (the bench).
+  bool get onBench => seat == 0;
 }
 
 /// Per-team read snapshot.
@@ -43,7 +55,7 @@ class TeamView {
     required this.teamFouls,
     required this.challengesUsed,
     required this.unsuccessfulChallenges,
-    required this.quizzers,
+    required this.roster,
   });
 
   final Side side;
@@ -58,7 +70,24 @@ class TeamView {
   final int challengesUsed;
   final int unsuccessfulChallenges;
 
-  final List<QuizzerView> quizzers;
+  /// The whole roster (seated first, then bench), stable order.
+  final List<QuizzerView> roster;
+
+  /// Quizzers currently at the table, in seat order.
+  List<QuizzerView> get seated {
+    final list = [
+      for (final q in roster)
+        if (!q.onBench) q,
+    ];
+    list.sort((a, b) => a.seat.compareTo(b.seat));
+    return list;
+  }
+
+  /// Quizzers currently behind the table (the bench).
+  List<QuizzerView> get bench => [
+    for (final q in roster)
+      if (q.onBench) q,
+  ];
 }
 
 /// Per-question mark snapshot (paper: circle / slash / F language).
@@ -84,15 +113,27 @@ class RoundView {
     required this.ruleset,
     required List<String> redLabels,
     required List<String> greenLabels,
+    List<String> redBench = const <String>[],
+    List<String> greenBench = const <String>[],
     List<int>? questionValues,
   }) : _redLabels = List<String>.unmodifiable(redLabels),
        _greenLabels = List<String>.unmodifiable(greenLabels),
+       _redBench = List<String>.unmodifiable(redBench),
+       _greenBench = List<String>.unmodifiable(greenBench),
        _baseValues = List<int>.of(questionValues ?? ruleset.match.pointValues),
        state = RoundState(
          values: List<int>.of(questionValues ?? ruleset.match.pointValues),
        ) {
-    state.teams[Side.red] = TeamState(Side.red, _redLabels);
-    state.teams[Side.green] = TeamState(Side.green, _greenLabels);
+    state.teams[Side.red] = TeamState(
+      Side.red,
+      _redLabels,
+      benchLabels: _redBench,
+    );
+    state.teams[Side.green] = TeamState(
+      Side.green,
+      _greenLabels,
+      benchLabels: _greenBench,
+    );
   }
 
   final Ruleset ruleset;
@@ -104,6 +145,8 @@ class RoundView {
   /// overtime questions) replay exactly as they originally applied.
   final List<String> _redLabels;
   final List<String> _greenLabels;
+  final List<String> _redBench;
+  final List<String> _greenBench;
   final List<int> _baseValues;
 
   /// Applies [event], journaling it on success. Returns the violation when
@@ -138,6 +181,13 @@ class RoundView {
     }
   }
 
+  // ── roster seeds (persistence) ──
+
+  /// Original bench roster labels captured at construction, so a resumed round
+  /// re-seeds the same bench before replaying substitutions.
+  List<String> get redBenchSeed => List.unmodifiable(_redBench);
+  List<String> get greenBenchSeed => List.unmodifiable(_greenBench);
+
   // ── shared reads ──
 
   List<int> get questionValues => List.unmodifiable(state.values);
@@ -153,22 +203,24 @@ class RoundView {
       teamFouls: team.teamFouls,
       challengesUsed: team.challengesUsed,
       unsuccessfulChallenges: team.unsuccessfulChallenges,
-      quizzers: [
-        for (final q in team.quizzers)
+      roster: [
+        for (var i = 0; i < team.quizzers.length; i++)
           QuizzerView(
-            label: q.label,
-            score: q.score,
-            correct: q.correct,
-            incorrect: q.incorrect,
-            fouls: q.fouls,
-            status: q.quizzedOut
+            index: i,
+            label: team.quizzers[i].label,
+            score: team.quizzers[i].score,
+            correct: team.quizzers[i].correct,
+            incorrect: team.quizzers[i].incorrect,
+            fouls: team.quizzers[i].fouls,
+            status: team.quizzers[i].quizzedOut
                 ? 'QUIZ-OUT'
-                : q.struckOut
+                : team.quizzers[i].struckOut
                 ? 'STRIKE-OUT'
-                : q.fouledOut
+                : team.quizzers[i].fouledOut
                 ? 'FOUL-OUT'
                 : '',
-            active: q.active,
+            active: team.quizzers[i].active,
+            seat: team.quizzers[i].seat,
           ),
       ],
     );

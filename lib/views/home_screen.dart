@@ -176,24 +176,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              SegmentedButton<ScoreboardView>(
-                segments: const [
-                  ButtonSegment(
-                    value: ScoreboardView.modern,
-                    label: Text('Modern'),
-                  ),
-                  ButtonSegment(
-                    value: ScoreboardView.classic,
-                    label: Text('Classic'),
-                  ),
-                ],
-                selected: {_view},
-                onSelectionChanged: (s) async {
-                  setState(() => _view = s.first);
-                  await widget.prefs.setView(s.first);
-                },
-              ),
-              const SizedBox(height: 16),
               Text(
                 'Resume round',
                 style: Theme.of(context).textTheme.titleMedium,
@@ -258,10 +240,12 @@ class _HomeScreenState extends State<HomeScreen> {
       rulesetId: controller.ruleset.id,
       redName: controller.redName,
       greenName: controller.greenName,
-      redSeats: [for (final q in controller.teamOf(Side.red).quizzers) q.label],
+      redSeats: [for (final q in controller.teamOf(Side.red).seated) q.label],
       greenSeats: [
-        for (final q in controller.teamOf(Side.green).quizzers) q.label,
+        for (final q in controller.teamOf(Side.green).seated) q.label,
       ],
+      redBench: controller.view.redBenchSeed,
+      greenBench: controller.view.greenBenchSeed,
     );
     controller.roundId = id;
     controller.autosave = (c) {
@@ -291,12 +275,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     final redSeats = _decodeSeats(row['red_seats'] as String);
     final greenSeats = _decodeSeats(row['green_seats'] as String);
+    final redBench = _decodeSeats('${row['red_bench'] ?? '[]'}');
+    final greenBench = _decodeSeats('${row['green_bench'] ?? '[]'}');
     final controller = RoundController(
       ruleset: ruleset,
       redName: row['red_name'] as String,
       greenName: row['green_name'] as String,
       redSeats: redSeats,
       greenSeats: greenSeats,
+      redBench: redBench,
+      greenBench: greenBench,
     );
     for (final e in store.loadJournal(id)) {
       controller.view.apply(e);
@@ -348,9 +336,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _store!.deleteRound(id);
     setState(() => _rounds = _store!.listRounds());
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Round deleted.')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Round deleted.')));
   }
 
   List<String> _decodeSeats(String raw) {

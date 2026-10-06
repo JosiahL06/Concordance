@@ -83,11 +83,11 @@ void main() {
         );
       }
       final team = view.teamOf(Side.red);
-      expect(team.quizzers[0].correct, 5);
+      expect(team.roster[0].correct, 5);
       // 5×20 + 20 bonus.
-      expect(team.quizzers[0].score, 120);
-      expect(team.quizzers[0].status, 'QUIZ-OUT');
-      expect(team.quizzers[0].active, isFalse);
+      expect(team.roster[0].score, 120);
+      expect(team.roster[0].status, 'QUIZ-OUT');
+      expect(team.roster[0].active, isFalse);
       // TBQ: stays at the table (leavesMatch false).
       expect(view.state.teams[Side.red]!.quizzers[0].leftMatch, isFalse);
       // Sixth answer rejected: quizzer cannot answer.
@@ -116,9 +116,9 @@ void main() {
         );
       }
       final team = view.teamOf(Side.green);
-      expect(team.quizzers[2].incorrect, 3);
-      expect(team.quizzers[2].status, 'STRIKE-OUT');
-      expect(team.quizzers[2].score, -30);
+      expect(team.roster[2].incorrect, 3);
+      expect(team.roster[2].status, 'STRIKE-OUT');
+      expect(team.roster[2].score, -30);
     });
 
     test('quizzer foul −5; third foul fouls out; team foul −5', () {
@@ -126,14 +126,14 @@ void main() {
       view.apply(
         const FoulEvent(questionNumber: 1, side: Side.red, quizzerIndex: 0),
       );
-      expect(view.teamOf(Side.red).quizzers[0].score, -5);
+      expect(view.teamOf(Side.red).roster[0].score, -5);
       view.apply(
         const FoulEvent(questionNumber: 2, side: Side.red, quizzerIndex: 0),
       );
       view.apply(
         const FoulEvent(questionNumber: 3, side: Side.red, quizzerIndex: 0),
       );
-      expect(view.teamOf(Side.red).quizzers[0].status, 'FOUL-OUT');
+      expect(view.teamOf(Side.red).roster[0].status, 'FOUL-OUT');
       view.apply(const FoulEvent(side: Side.green));
       expect(view.scoreOf(Side.green), -5);
     });

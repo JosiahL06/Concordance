@@ -110,7 +110,8 @@ FoldResult applyEvent(Ruleset ruleset, RoundState state, RoundEvent event) {
           quizzer.score -= scoring.quizOutBonus;
           if (scoring.quizOutLeavesMatch) quizzer.leftMatch = false;
         }
-        if (quizzer.struckOut && quizzer.incorrect < scoring.strikeOutIncorrect) {
+        if (quizzer.struckOut &&
+            quizzer.incorrect < scoring.strikeOutIncorrect) {
           quizzer.struckOut = false;
           if (scoring.quizOutLeavesMatch) quizzer.leftMatch = false;
         }
@@ -124,7 +125,7 @@ FoldResult applyEvent(Ruleset ruleset, RoundState state, RoundEvent event) {
         state,
         event.side,
         event.outIndex,
-        event.label,
+        event.benchIndex,
       );
     case OvertimeQuestionEvent():
       state.values.add(event.value);
@@ -214,7 +215,7 @@ FoldResult answerFold(
     );
   }
   final quizzer = team.quizzers[quizzerIndex];
-  if (!quizzer.active || quizzer.inactive) {
+  if (!quizzer.active) {
     return const FoldResult.rejected(
       RuleViolation('quizzer-inactive', 'quizzer cannot answer'),
     );
@@ -276,13 +277,16 @@ FoldResult foulFold(
     team.teamFouls += 1;
     team.teamFoulPoints -= scoring.teamFoulDeduction;
     if (n != null) {
-      state.question(n).fouls.add(
-        SlotFoul(
-          side: side,
-          quizzerIndex: null,
-          deduction: scoring.teamFoulDeduction,
-        ),
-      );
+      state
+          .question(n)
+          .fouls
+          .add(
+            SlotFoul(
+              side: side,
+              quizzerIndex: null,
+              deduction: scoring.teamFoulDeduction,
+            ),
+          );
     }
     return FoldResult.ok(state);
   }
@@ -297,13 +301,16 @@ FoldResult foulFold(
   // Fouls survive voiding (D3), so the slot keeps them even if answers are
   // later retracted.
   if (n != null) {
-    state.question(n).fouls.add(
-      SlotFoul(
-        side: side,
-        quizzerIndex: quizzerIndex,
-        deduction: scoring.foulDeduction,
-      ),
-    );
+    state
+        .question(n)
+        .fouls
+        .add(
+          SlotFoul(
+            side: side,
+            quizzerIndex: quizzerIndex,
+            deduction: scoring.foulDeduction,
+          ),
+        );
   }
   if (quizzer.fouls >= scoring.foulsToFoulOut && !quizzer.fouledOut) {
     quizzer.fouledOut = true;
@@ -380,11 +387,16 @@ FoldResult substituteQuestionFold(RoundState state, int n, int value) {
   return FoldResult.ok(state);
 }
 
+/// Swaps a seated quizzer with a bench quizzer (a substitution during or after
+/// a time-out). Either may be healthy: a substitution does NOT require anyone
+/// to have quizzed out. Both keep their points — the outgoing quizzer sits
+/// behind the table (bench) and the incoming one takes the table; stable
+/// indices keep every recorded answer attributed to its quizzer.
 FoldResult substituteQuizzerFold(
   RoundState state,
   Side side,
   int outIndex,
-  String label,
+  int benchIndex,
 ) {
   final team = state.teams[side]!;
   if (outIndex < 0 || outIndex >= team.quizzers.length) {
@@ -392,25 +404,40 @@ FoldResult substituteQuizzerFold(
       RuleViolation('quizzer-range', 'quizzer index out of range'),
     );
   }
+  if (benchIndex < 0 || benchIndex >= team.quizzers.length) {
+    return const FoldResult.rejected(
+      RuleViolation('bench-range', 'no bench quizzer to substitute in'),
+    );
+  }
+  if (outIndex == benchIndex) {
+    return const FoldResult.rejected(
+      RuleViolation('quizzer-self', 'cannot substitute a quizzer for themself'),
+    );
+  }
   final out = team.quizzers[outIndex];
-  if (out.active) {
+  final entrant = team.quizzers[benchIndex];
+  if (out.onBench) {
     return const FoldResult.rejected(
       RuleViolation(
-        'quizzer-still-active',
-        'only an out quizzer can be replaced',
+        'quizzer-not-seated',
+        'only a seated quizzer can be substituted out',
       ),
     );
   }
-  if (out.inactive) {
-    // Already substituted once: don't let one slot spawn two entrants.
+  if (!entrant.onBench) {
     return const FoldResult.rejected(
-      RuleViolation(
-        'quizzer-already-replaced',
-        'this out quizzer was already replaced',
-      ),
+      RuleViolation('quizzer-not-benched', 'that quizzer is not on the bench'),
     );
   }
-  out.inactive = true;
-  team.quizzers.add(QuizzerState(label));
+  if (entrant.out) {
+    return const FoldResult.rejected(
+      RuleViolation('quizzer-out', 'that quizzer is out for the match'),
+    );
+  }
+  // Hand the entrant the outgoing quizzer's seat (so the seated order is
+  // unchanged) and put the outgoing quizzer on the bench. Points and history
+  // travel with each quizzer (stable roster indices).
+  entrant.seat = out.seat;
+  out.seat = 0;
   return FoldResult.ok(state);
 }

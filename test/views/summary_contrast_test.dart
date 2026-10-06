@@ -1,6 +1,6 @@
-// Contrast regression: the team tints are fixed LIGHT colors, so text sitting
-// directly on them must be dark regardless of theme brightness. This bug is
-// invisible in light mode, so it is asserted explicitly in dark mode.
+// Contrast regression: team tints are theme-aware — pale in light mode with
+// dark ink, deep in dark mode with light ink. Text sitting directly on a tint
+// must switch ink with the theme; this is asserted explicitly in dark mode.
 import 'dart:convert';
 import 'dart:io';
 
@@ -79,12 +79,12 @@ void main() {
     );
     final fouls = tester.widget<Text>(find.textContaining('Fouls').first);
 
-    expect(timeOuts.style?.color, sideInkMuted);
-    expect(fouls.style?.color, sideInkMuted);
+    expect(timeOuts.style?.color, sideInkDarkMuted);
+    expect(fouls.style?.color, sideInkDarkMuted);
 
-    // And genuinely dark against the light tint it sits on.
-    expect(timeOuts.style!.color!.computeLuminance(), lessThan(0.4));
-    expect(fouls.style!.color!.computeLuminance(), lessThan(0.4));
+    // And genuinely light against the deep dark tint it sits on.
+    expect(timeOuts.style!.color!.computeLuminance(), greaterThan(0.4));
+    expect(fouls.style!.color!.computeLuminance(), greaterThan(0.4));
   });
 
   testWidgets('theme toggle cycles modes and persists the choice', (

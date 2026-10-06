@@ -4,15 +4,32 @@ import '../../app/round_controller.dart';
 import '../../engine/events.dart';
 import '../../engine/ruleset.dart';
 import '../summary_screen.dart';
+import 'common_bits.dart';
 
 /// Fixed red/green identity: sides come from the physical quiz box.
 const redColor = Color(0xFFC62828);
-const redTint = Color(0xFFFCE8E6);
 const greenColor = Color(0xFF2E7D32);
+
+/// Light-mode team tints (pale pastels).
+const redTint = Color(0xFFFCE8E6);
 const greenTint = Color(0xFFE6F4EA);
 
+/// Dark-mode team tints. The pale pastels above glare as large blocks against
+/// a dark surface, so dark mode uses these deep, desaturated tints instead.
+const redTintDark = Color(0xFF3A1E1E);
+const greenTintDark = Color(0xFF17301C);
+
 Color sideColor(Side side) => side == Side.red ? redColor : greenColor;
+
+/// The light team tint. Prefer [sideTintFor] on any surface whose surrounding
+/// theme can vary.
 Color sideTint(Side side) => side == Side.red ? redTint : greenTint;
+
+/// Team tint for the *current* theme: pale in light mode, deep in dark mode.
+Color sideTintFor(Side side, ColorScheme scheme) {
+  if (scheme.brightness == Brightness.light) return sideTint(side);
+  return side == Side.red ? redTintDark : greenTintDark;
+}
 
 /// Dark-mode variants of the team accents. [sideColor] is a deep red/green
 /// that disappears against dark theme surfaces (score cards, the bottom bar,
@@ -24,25 +41,32 @@ const greenAccentDark = Color(0xFF81C784);
 
 /// Side accent that stays legible on the *current* theme surface: the fixed
 /// [sideColor] in light mode, a lightened accent in dark mode. Use this for
-/// side labels/borders drawn on `scheme.surface*`; content sitting on a fixed
-/// light [sideTint] must use [sideInk]/[sideInkMuted] instead.
+/// side labels/borders drawn on `scheme.surface*` or on a [sideTintFor]
+/// surface; content sitting on a tint must use [sideInkFor]/[sideInkMutedFor]
+/// for its body text.
 Color sideAccent(Side side, ColorScheme scheme) {
   if (scheme.brightness == Brightness.light) return sideColor(side);
   return side == Side.red ? redAccentDark : greenAccentDark;
 }
 
-/// Ink for content sitting directly on a [sideTint] surface. The tints are
-/// fixed *light* colors, so this text MUST be fixed dark — using
-/// `ColorScheme.onSurface` would render near-white text on a pale tint in
-/// dark mode.
+/// Ink for content sitting directly on a team tint: near-black on the pale
+/// light tints, near-white on the deep dark tints, so it clears contrast in
+/// either theme. Use the `…For` variants with the active [ColorScheme].
 const sideInk = Color(0xFF1F2426);
 const sideInkMuted = Color(0xFF495156);
+const sideInkDark = Color(0xFFF2F4F5);
+const sideInkDarkMuted = Color(0xFFC6CDD0);
 
-/// Theme-aware ink: dark on a tinted surface, normal on-surface otherwise.
+Color sideInkFor(ColorScheme scheme) =>
+    scheme.brightness == Brightness.light ? sideInk : sideInkDark;
+Color sideInkMutedFor(ColorScheme scheme) =>
+    scheme.brightness == Brightness.light ? sideInkMuted : sideInkDarkMuted;
+
+/// Theme-aware ink: legible on a tinted surface, normal on-surface otherwise.
 Color inkOnTint(ColorScheme scheme, bool onTint) =>
-    onTint ? sideInk : scheme.onSurface;
+    onTint ? sideInkFor(scheme) : scheme.onSurface;
 Color mutedInkOnTint(ColorScheme scheme, bool onTint) =>
-    onTint ? sideInkMuted : scheme.outline;
+    onTint ? sideInkMutedFor(scheme) : scheme.outline;
 
 /// Ruling colors for the scoring console: green = correct, red = incorrect.
 /// Deliberately the same Material shades as the team colors so the palette
@@ -102,7 +126,7 @@ class ScoringConsole extends StatelessWidget {
                 : blocked != null
                 ? 'BLOCKED — $blocked'
                 : '${sideName(round, sel.$1).toUpperCase()} '
-                      '${round.view.teamOf(sel.$1).quizzers[sel.$2].label.split(' ').last} '
+                      '${round.view.teamOf(sel.$1).roster[sel.$2].label.split(' ').last} '
                       'ON Q${round.questionNumber} — RECORD THE RULING',
             style: TextStyle(
               fontSize: 14,
@@ -349,24 +373,36 @@ class LiveBottomBar extends StatelessWidget {
   }
 
   Future<void> _substituteQuizzer(BuildContext context) async {
-    // Only an out quizzer can be replaced (engine enforces too).
+    // Any seated quizzer may be substituted — during or after a time-out — and
+    // a substitution does NOT require anyone to have quizzed out. The outgoing
+    // quizzer sits behind the table and the chosen bench quizzer takes it.
     final slots = <(Side, int)>[];
     final labels = <String>[];
     for (final side in Side.values) {
-      final team = round.teamOf(side);
-      for (var i = 0; i < team.quizzers.length; i++) {
-        final q = team.quizzers[i];
-        if (!q.active && q.status.isNotEmpty) {
-          slots.add((side, i));
-          labels.add('${sideName(round, side)} — ${q.label} (${q.status})');
-        }
+      for (final q in round.teamOf(side).seated) {
+        slots.add((side, q.index));
+        labels.add(
+          q.status.isEmpty
+              ? '${sideName(round, side)} — ${q.label}'
+              : '${sideName(round, side)} — ${q.label} (${q.status})',
+        );
       }
     }
-    if (slots.isEmpty) return;
+    if (slots.isEmpty) {
+      round.showAlert('No seated quizzer to substitute.');
+      return;
+    }
+    final anyBench = Side.values.any(
+      (s) => round.teamOf(s).bench.any((q) => q.status.isEmpty),
+    );
+    if (!anyBench) {
+      round.showAlert('No bench quizzer is available to substitute in.');
+      return;
+    }
     final pick = await showDialog<int>(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('Replace which quizzer?'),
+        title: const Text('Substitute out which quizzer?'),
         children: [
           for (var i = 0; i < slots.length; i++)
             SimpleDialogOption(
@@ -383,32 +419,43 @@ class LiveBottomBar extends StatelessWidget {
       ),
     );
     if (pick == null || !context.mounted) return;
-    final controller = TextEditingController();
-    final label = await showDialog<String>(
+    final slot = slots[pick];
+    // Only bench quizzers who are still eligible (not out) can come in.
+    final bench = [
+      for (final q in round.teamOf(slot.$1).bench)
+        if (q.status.isEmpty) q,
+    ];
+    if (bench.isEmpty) {
+      round.showAlert(
+        'No eligible bench quizzer for ${sideName(round, slot.$1)}.',
+      );
+      return;
+    }
+    final benchPick = await showDialog<int>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('New quizzer label'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'e.g. Red 4'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Substitute'),
-          ),
+      builder: (context) => SimpleDialog(
+        title: Text('Substitute in — ${sideName(round, slot.$1)} bench'),
+        children: [
+          for (var i = 0; i < bench.length; i++)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, i),
+              child: SizedBox(
+                height: 48,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('${bench[i].label}  (${bench[i].score} pts)'),
+                ),
+              ),
+            ),
         ],
       ),
     );
-    controller.dispose();
-    if (label == null || label.trim().isEmpty) return;
-    final slot = slots[pick];
-    round.substituteQuizzer(side: slot.$1, outIndex: slot.$2, label: label);
+    if (benchPick == null) return;
+    round.substituteQuizzer(
+      side: slot.$1,
+      outIndex: slot.$2,
+      benchIndex: bench[benchPick].index,
+    );
   }
 }
 
@@ -448,7 +495,9 @@ class TeamHeaderButtons extends StatelessWidget {
           height: 48,
           child: OutlinedButton(
             style: style,
-            onPressed: round.matchComplete ? null : () => round.addTeamFoul(side),
+            onPressed: round.matchComplete
+                ? null
+                : () => round.addTeamFoul(side),
             child: Text('TEAM FOUL ${team.teamFouls}'),
           ),
         ),
@@ -471,7 +520,9 @@ class TeamHeaderButtons extends StatelessWidget {
     final successful = await showDialog<bool>(
       context: context,
       builder: (context) => SimpleDialog(
-        title: Text('Record ${round.challengeLabel} — ${sideName(round, side)}'),
+        title: Text(
+          'Record ${round.challengeLabel} — ${sideName(round, side)}',
+        ),
         children: [
           for (final s in const <bool>[true, false])
             SimpleDialogOption(
@@ -493,7 +544,6 @@ class TeamHeaderButtons extends StatelessWidget {
     round.recordChallenge(side, successful: successful);
   }
 }
-
 
 class EndOfRoundBar extends StatelessWidget {
   const EndOfRoundBar({super.key, required this.round});
@@ -541,6 +591,29 @@ class EndOfRoundBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Single, unified home for every notice a keeper must not miss: the
+/// end-of-round strip (persistent) and the transient [AlertBanner]. Both live
+/// views place this in the same slot directly above the scoring console, so a
+/// notice always appears in one prominent, predictable place instead of
+/// bouncing between the header and the console area.
+class NoticeSlot extends StatelessWidget {
+  const NoticeSlot({super.key, required this.round});
+
+  final RoundController round;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (round.matchComplete || round.inOvertime)
+          EndOfRoundBar(round: round),
+        AlertBanner(round: round),
+      ],
     );
   }
 }

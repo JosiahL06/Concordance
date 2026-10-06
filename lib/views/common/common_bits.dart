@@ -13,75 +13,81 @@ class QuestionNavigator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return SizedBox(
       height: height,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        itemCount: round.questionCount,
-        separatorBuilder: (_, _) => const SizedBox(width: 6),
-        itemBuilder: (context, i) {
-          final n = i + 1;
-          final current = i == round.questionIndex;
-          final past = i < round.questionIndex;
-          final marks = round.view.questionMarks;
-          final mark = n <= marks.length ? marks[n - 1] : null;
-          final textColor = current
-              ? scheme.onPrimary
-              : past
-              ? scheme.onSurface
-              : scheme.outline;
-          final bg = current ? scheme.primary : scheme.surfaceContainerHigh;
-
-          Widget cell = Container(
-            width: height - 8,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text.rich(
-              TextSpan(
-                text: '$n',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: current ? FontWeight.w900 : FontWeight.w600,
-                  color: textColor,
-                  decoration: mark?.voided == true
-                      ? TextDecoration.lineThrough
-                      : null,
-                ),
-                children: [
-                  if (mark?.contested == true)
-                    TextSpan(
-                      text: 'C',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        color: current ? scheme.onPrimary : scheme.tertiary,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-
-          if (mark?.interrupted == true) {
-            // Paper sheet circles the interrupted question number.
-            cell = Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFEF6C00), width: 2),
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: cell,
-            );
-          }
-          return cell;
-        },
+        // Equal-width cells: the whole 20-question strip (plus any overtime
+        // slots) always fits the width, so the navigator never scrolls.
+        child: Row(
+          children: [
+            for (var i = 0; i < round.questionCount; i++) ...[
+              if (i > 0) const SizedBox(width: 6),
+              Expanded(child: _cell(context, i + 1)),
+            ],
+          ],
+        ),
       ),
     );
+  }
+
+  Widget _cell(BuildContext context, int n) {
+    final scheme = Theme.of(context).colorScheme;
+    final current = n - 1 == round.questionIndex;
+    final past = n - 1 < round.questionIndex;
+    final marks = round.view.questionMarks;
+    final mark = n <= marks.length ? marks[n - 1] : null;
+    final textColor = current
+        ? scheme.onPrimary
+        : past
+        ? scheme.onSurface
+        : scheme.outline;
+    final bg = current ? scheme.primary : scheme.surfaceContainerHigh;
+
+    Widget cell = Container(
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text.rich(
+        TextSpan(
+          text: '$n',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: current ? FontWeight.w900 : FontWeight.w600,
+            color: textColor,
+            decoration: mark?.voided == true
+                ? TextDecoration.lineThrough
+                : null,
+          ),
+          children: [
+            if (mark?.contested == true)
+              TextSpan(
+                text: 'C',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  color: current ? scheme.onPrimary : scheme.tertiary,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (mark?.interrupted == true) {
+      // Paper sheet circles the interrupted question number.
+      cell = Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFEF6C00), width: 2),
+          borderRadius: BorderRadius.circular(11),
+        ),
+        child: cell,
+      );
+    }
+    return cell;
   }
 }
 

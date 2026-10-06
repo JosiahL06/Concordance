@@ -37,10 +37,16 @@ red/green light tints (`#FCE8E6` / `#E6F4EA`); tabular figures for scores.
   the details card: N questions + value sequence, quiz/strike/foul-out
   chips, time-out + contest/appeal limits. Load failure shows an error
   state with Retry (Start disabled until presets load).
-- Team name fields (default Red/Green; blank falls back to the default).
-- Roster steppers clamp to the preset's `maxActivePerTeam`
-  (min `min(1, 3)`); seat chips read "<Team> 1..N" with add/remove
-  (remove hidden at count 1).
+- Ruleset pick is an ordinary in-body settings row (segmented control),
+  not an AppBar tab bar.
+- Team name fields (default Red/Green; blank falls back to the default),
+  plus a per-quizzer name field for every seated AND bench quizzer. A blank
+  field falls back to "<Team> N"; quizzers are named independently of the
+  team name.
+- Roster steppers: "Seated" clamps to the preset's `maxActivePerTeam`
+  (min `minActivePerTeam`); "Bench" clamps to `maxRosterPerTeam - seated`
+  (uncapped when the book sets no roster max). Bench quizzers are named the
+  same way and start behind the table.
 - View pick cards: Modern ("Split-field team halves") vs Classic
   ("Paper-style scoresheet ledger"). Start button label is dynamic:
   "START ROUND" fresh, "START DEMO ROUND" demo (demo shows a banner:
@@ -93,21 +99,35 @@ and contest/appeal header buttons with tallies (unsuccessful/used challenges
 showing `+value` / `−half` (personal fouls add an `F` badge beside the mark,
 never replacing it; foul-only cells show a bare `F`) with contest/interruption rings;
 interrupted questions also ring the column header; selected quizzer × current
-question intersect highlights. RUNNING
-row = signed per-question team delta (empty cells "·"). Vertical TIME OUT
-1/2/3 rail per team. Same console + bottom bar as Modern (Summary gated until
-the match completes; More menu guards void/substitute state).
+question intersect highlights. A one-line **BENCH** strip lists a team's
+bench quizzers below its rows, each with their running total. Vertical TIME
+OUT 1/2/3 rail per team. The
+ledger sizes its rows to the screen (no scrolling mid-game). Same console +
+bottom bar as Modern (Summary gated until the match completes; More menu
+guards void/substitute state).
 
 ## 7. Alerts, limits, overtime
 
 - `AlertBanner` shows `lastAlert` until dismissed (dismiss is view state,
   not journaled). Fired by: quiz/strike/foul-out, 4th time-out request,
   3rd unsuccessful contest (TBQ), appeals exhausted (JBQ), tie after Q20.
-- After Q20: leader → match complete; tie → needs-overtime alert.
-  "Add overtime question" appends the engine-defined value (TBQ: 10-pt
-  sudden death; JBQ: 10/20/30 then 20s) and re-opens scoring.
-- PROTOTYPE GAPS (engine already supports; Phase 3 adds UI): void /
-  substitute question and quizzer substitution have no entry points yet.
+- After Q20: leader → match complete; tie → overtime question is appended
+  automatically (TBQ: 10-pt sudden death; JBQ: 10/20/30 then 20s) with a
+  notice and scoring re-opens.
+- All notices (the transient `AlertBanner` and the persistent end-of-round
+  strip) render in one slot directly above the scoring console, so a notice
+  always appears in the same prominent place.
+- Substitution is fully wired: the More menu's "Substitute quizzer" picks any
+  SEATED quizzer, then a bench quizzer, and the engine swaps them (during or
+  after a time-out; no one needs to have quizzed out). The entrant takes the
+  outgoing quizzer's **seat**, so the seated order is unchanged apart from the
+  swap (Red 1, Red 2, Red 3, Red 4 subbing Red 2 → Red 5 reads Red 1, Red 5,
+  Red 3, Red 4). The rotated-out quizzer sits on the bench — their running
+  total stays shown beside their name — and the entrant takes the table
+  (`SubstituteQuizzerEvent` carries `outIndex` + `benchIndex`, both stable
+  roster indices). The PDF/CSV export lists every roster quizzer with a
+  Position column (`seat N` / `bench`), so a rotated-out quizzer's points stay
+  on the sheet.
 
 ## 8. Summary (`summary_screen.dart`)
 

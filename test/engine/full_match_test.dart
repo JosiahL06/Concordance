@@ -17,6 +17,8 @@ RoundView freshView(String id, List<int> values) => RoundView(
   ruleset: loadPreset(id),
   redLabels: const ['Red 1', 'Red 2'],
   greenLabels: const ['Green 1', 'Green 2'],
+  redBench: const ['Red 3', 'Red 4'],
+  greenBench: const ['Green 3', 'Green 4'],
   questionValues: values,
 );
 
@@ -107,8 +109,8 @@ void main() {
       expect(view.cellOutcome(Side.red, 0, 1), 'correct');
       expect(view.teamDelta(Side.red, 8), 10 + 20); // value + bonus crossing
       expect(view.teamDelta(Side.green, 5), -15);
-      expect(view.teamOf(Side.red).quizzers[0].status, 'QUIZ-OUT');
-      expect(view.teamOf(Side.green).quizzers[0].status, 'STRIKE-OUT');
+      expect(view.teamOf(Side.red).roster[0].status, 'QUIZ-OUT');
+      expect(view.teamOf(Side.green).roster[0].status, 'STRIKE-OUT');
     });
 
     test('JBQ: quiz-out at six with +10 and leave', () {
@@ -123,13 +125,14 @@ void main() {
           ),
         );
       }
-      expect(view.teamOf(Side.red).quizzers[0].score, 70);
-      // Replacement answers Q7 correctly → team keeps scoring.
+      expect(view.teamOf(Side.red).roster[0].score, 70);
+      // A bench quizzer comes in and answers Q7 correctly → team keeps
+      // scoring. (Red 3 is roster index 2 and was on the bench.)
       view.apply(
         const SubstituteQuizzerEvent(
           side: Side.red,
           outIndex: 0,
-          label: 'Red 3',
+          benchIndex: 2,
         ),
       );
       view.apply(

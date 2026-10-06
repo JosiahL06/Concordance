@@ -83,6 +83,7 @@ class MatchConfig {
     required this.minActivePerTeam,
     required this.maxActivePerTeam,
     required this.teamsPerMatch,
+    this.maxRosterPerTeam,
   });
 
   final int regulationQuestions;
@@ -90,6 +91,16 @@ class MatchConfig {
   final int minActivePerTeam;
   final int maxActivePerTeam;
   final int teamsPerMatch;
+
+  /// Maximum quizzers a team may register (seated + bench), or null when the
+  /// rulebook sets no cap. JBQ caps a team at 8; TBQ's match guidelines only
+  /// fix the seated count (1–3 active), so its roster is uncapped here.
+  final int? maxRosterPerTeam;
+
+  /// Bench capacity for a team with [seated] quizzers: the roster cap beyond
+  /// the table, or null when the roster is uncapped.
+  int? benchCapacity(int seated) =>
+      maxRosterPerTeam == null ? null : maxRosterPerTeam! - seated;
 
   factory MatchConfig.fromJson(Map<String, Object?> json) {
     final values = (json['pointValues'] as List).cast<num>();
@@ -104,6 +115,7 @@ class MatchConfig {
       minActivePerTeam: json['minActivePerTeam'] as int,
       maxActivePerTeam: json['maxActivePerTeam'] as int,
       teamsPerMatch: json['teamsPerMatch'] as int,
+      maxRosterPerTeam: json['maxRosterPerTeam'] as int?,
     );
   }
 }

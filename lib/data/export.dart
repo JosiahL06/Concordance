@@ -40,11 +40,22 @@ Future<void> exportPdf(RoundController c, BuildContext context) async {
                   style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                 ),
                 pw.TableHelper.fromTextArray(
-                  headers: const ['Quizzer', 'Score', 'C', 'I', 'F', 'Status'],
+                  // Every roster quizzer is listed (seated and benched) so a
+                  // rotated-out quizzer's points are not lost from the sheet.
+                  headers: const [
+                    'Quizzer',
+                    'Position',
+                    'Score',
+                    'C',
+                    'I',
+                    'F',
+                    'Status',
+                  ],
                   data: [
-                    for (final q in c.teamOf(side).quizzers)
+                    for (final q in c.teamOf(side).roster)
                       [
                         q.label,
+                        q.onBench ? 'bench' : 'seat ${q.seat}',
                         '${q.score}',
                         '${q.correct}',
                         '${q.incorrect}',
@@ -80,6 +91,7 @@ Future<void> exportCsv(RoundController c, BuildContext context) async {
   final rows = <List<Object>>[
     const [
       'quizzer',
+      'position',
       'team',
       'score',
       'correct',
@@ -88,9 +100,10 @@ Future<void> exportCsv(RoundController c, BuildContext context) async {
       'status',
     ],
     for (final side in Side.values)
-      for (final q in c.teamOf(side).quizzers)
+      for (final q in c.teamOf(side).roster)
         [
           q.label,
+          q.onBench ? 'bench' : 'seat ${q.seat}',
           side.name,
           q.score,
           q.correct,
@@ -115,13 +128,13 @@ String _notes(RoundController c, int n) {
   final parts = <String>[];
   for (final side in Side.values) {
     final team = c.teamOf(side);
-    for (var i = 0; i < team.quizzers.length; i++) {
-      final mark = c.cellOutcome(side, i, n);
+    for (final q in team.roster) {
+      final mark = c.cellOutcome(side, q.index, n);
       if (mark != null) {
-        parts.add('${team.quizzers[i].label}: $mark');
+        parts.add('${q.label}: $mark');
       }
-      if (c.cellHasFoul(side, i, n)) {
-        parts.add('${team.quizzers[i].label}: foul');
+      if (c.cellHasFoul(side, q.index, n)) {
+        parts.add('${q.label}: foul');
       }
     }
   }

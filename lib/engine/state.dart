@@ -10,7 +10,7 @@ import 'events.dart';
 
 /// Per-quizzer standing within a team.
 class QuizzerState {
-  QuizzerState(this.label);
+  QuizzerState(this.label, {this.seat = 0});
 
   final String label;
   int score = 0;
@@ -21,21 +21,64 @@ class QuizzerState {
   bool struckOut = false;
   bool fouledOut = false;
   bool leftMatch = false;
-  bool inactive = false;
 
-  bool get active => !quizzedOut && !struckOut && !fouledOut && !leftMatch;
+  /// Seat number (1-based) while seated at the table, or 0 while on the bench.
+  /// A substitution hands the entrant the vacated seat, so the seated order
+  /// (Red 1, Red 2, …) is preserved with the replacement in the outgoing
+  /// quizzer's place.
+  int seat;
+
+  /// The out flags are permanent for the match (a quizzer who quizzed out,
+  /// struck out, fouled out or left cannot answer again).
+  bool get out => quizzedOut || struckOut || fouledOut || leftMatch;
+
+  /// True while seated behind the table (the bench).
+  bool get onBench => seat == 0;
+
+  /// Eligible to answer: seated and not out.
+  bool get active => !out && seat != 0;
 }
 
 /// Per-team standing.
 class TeamState {
-  TeamState(this.side, List<String> labels) {
-    for (final label in labels) {
+  TeamState(
+    this.side,
+    List<String> labels, {
+    List<String> benchLabels = const [],
+  }) {
+    for (var i = 0; i < labels.length; i++) {
+      quizzers.add(QuizzerState(labels[i], seat: i + 1));
+    }
+    for (final label in benchLabels) {
       quizzers.add(QuizzerState(label));
     }
   }
 
   final Side side;
+
+  /// The whole roster in a stable order (seated first, then bench). Indices
+  /// never change, so an answer recorded against a quizzer stays attributed to
+  /// them even after they are substituted to or from the bench.
   final List<QuizzerState> quizzers = <QuizzerState>[];
+
+  /// Quizzers at the table, in seat order (a replacement keeps the seat it
+  /// took over, so the order only changes when the keeper re-seats someone).
+  List<QuizzerState> get seated {
+    final list = [
+      for (final q in quizzers)
+        if (!q.onBench) q,
+    ];
+    list.sort((a, b) => a.seat.compareTo(b.seat));
+    return list;
+  }
+
+  /// Quizzers not currently at the table (the bench, including anyone the
+  /// keeper rotated out during a time-out), in roster order.
+  List<QuizzerState> get bench => [
+    for (final q in quizzers)
+      if (q.onBench) q,
+  ];
+
   int timeOuts = 0;
   int teamFouls = 0;
 

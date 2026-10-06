@@ -39,6 +39,8 @@ class RoundStore {
         green_name TEXT NOT NULL,
         red_seats TEXT NOT NULL,
         green_seats TEXT NOT NULL,
+        red_bench TEXT NOT NULL DEFAULT '[]',
+        green_bench TEXT NOT NULL DEFAULT '[]',
         created_at TEXT NOT NULL
       );
     ''');
@@ -51,6 +53,26 @@ class RoundStore {
         PRIMARY KEY (round_id, seq)
       );
     ''');
+    _ensureBenchColumns(db);
+  }
+
+  /// Adds the bench columns to a database created before benches existed, so a
+  /// saved round from an older build still opens.
+  static void _ensureBenchColumns(Database db) {
+    final cols = <String>{
+      for (final r in db.select('PRAGMA table_info(rounds)'))
+        r['name'] as String,
+    };
+    if (!cols.contains('red_bench')) {
+      db.execute(
+        "ALTER TABLE rounds ADD COLUMN red_bench TEXT NOT NULL DEFAULT '[]'",
+      );
+    }
+    if (!cols.contains('green_bench')) {
+      db.execute(
+        "ALTER TABLE rounds ADD COLUMN green_bench TEXT NOT NULL DEFAULT '[]'",
+      );
+    }
   }
 
   int createRound({
@@ -59,15 +81,19 @@ class RoundStore {
     required String greenName,
     required List<String> redSeats,
     required List<String> greenSeats,
+    List<String> redBench = const <String>[],
+    List<String> greenBench = const <String>[],
   }) {
     _db.execute(
-      'INSERT INTO rounds (ruleset_id, red_name, green_name, red_seats, green_seats, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO rounds (ruleset_id, red_name, green_name, red_seats, green_seats, red_bench, green_bench, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [
         rulesetId,
         redName,
         greenName,
         json.encode(redSeats),
         json.encode(greenSeats),
+        json.encode(redBench),
+        json.encode(greenBench),
         DateTime.now().toIso8601String(),
       ],
     );
@@ -150,10 +176,10 @@ class RoundStore {
       'q': q,
       'value': v,
     },
-    SubstituteQuizzerEvent(side: var s, outIndex: var o, label: var l) => {
+    SubstituteQuizzerEvent(side: var s, outIndex: var o, benchIndex: var b) => {
       'side': s.name,
       'out': o,
-      'label': l,
+      'bench': b,
     },
     OvertimeQuestionEvent(value: var v) => {'value': v},
   };
@@ -187,7 +213,7 @@ class RoundStore {
       'SubstituteQuizzerEvent' => SubstituteQuizzerEvent(
         side: side(m['side']),
         outIndex: m['out'] as int,
-        label: m['label'] as String,
+        benchIndex: m['bench'] as int,
       ),
       'OvertimeQuestionEvent' => OvertimeQuestionEvent(
         value: m['value'] as int,

@@ -25,7 +25,7 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
   });
 
-  testWidgets('home offers new round entry point and view toggle', (
+  testWidgets('home offers new round entry point (view picked in setup)', (
     WidgetTester tester,
   ) async {
     final prefs = await ViewPreference.load();
@@ -39,8 +39,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('START A NEW ROUND'), findsOneWidget);
-    expect(find.text('Modern'), findsOneWidget);
-    expect(find.text('Classic'), findsOneWidget);
+    // The Modern/Classic picker lives on the setup screen now; home does not
+    // duplicate it.
+    expect(find.text('Modern'), findsNothing);
+    expect(find.text('Classic'), findsNothing);
   });
 
   testWidgets('setup flow loads real preset tabs and starts Classic mode', (
@@ -244,6 +246,11 @@ Future<void> _start(WidgetTester tester, {required bool classic}) async {
   expect(find.text('Junior Bible Quiz 2026'), findsOneWidget);
 
   if (classic) {
+    await tester.scrollUntilVisible(
+      find.text('Classic'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('Classic'));
     await tester.pumpAndSettle();
   }

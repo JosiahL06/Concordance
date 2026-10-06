@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../app/round_controller.dart';
 import '../engine/events.dart';
-import 'common/common_bits.dart';
 import 'common/live_chrome.dart';
 import 'common/theme_toggle.dart';
 
@@ -37,10 +36,8 @@ class _ClassicScreenState extends State<ClassicScreen> {
             return Column(
               children: [
                 _header(context),
-                AlertBanner(round: round),
                 Expanded(child: _ledger(context)),
-                if (round.matchComplete || round.inOvertime)
-                  EndOfRoundBar(round: round),
+                NoticeSlot(round: round),
                 ScoringConsole(round: round),
                 LiveBottomBar(round: round),
               ],
@@ -117,22 +114,22 @@ class _ClassicScreenState extends State<ClassicScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
             child: Column(
               children: [
                 _columnHeaders(context),
                 const SizedBox(height: 4),
+                // Each team block shares the remaining height and sizes its
+                // quizzer rows to fit, so the ledger never scrolls.
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        _teamBlock(context, Side.red),
-                        const SizedBox(height: 4),
-                        _teamBlock(context, Side.green),
-                      ],
-                    ),
+                  child: Column(
+                    children: [
+                      Expanded(child: _teamBlock(context, Side.red)),
+                      const SizedBox(height: 4),
+                      Expanded(child: _teamBlock(context, Side.green)),
+                    ],
                   ),
                 ),
               ],
@@ -214,26 +211,71 @@ class _ClassicScreenState extends State<ClassicScreen> {
   }
 
   Widget _teamBlock(BuildContext context, Side side) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: sideTint(side),
+        color: sideTintFor(side, scheme),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: sideColor(side), width: 1.5),
+        border: Border.all(color: sideAccent(side, scheme), width: 1.5),
       ),
       child: Column(
         children: [
           _teamTitleRow(context, side),
           const SizedBox(height: 2),
-          for (var i = 0; i < round.teamOf(side).quizzers.length; i++)
-            _quizzerRow(context, side, i),
-          _runningTotalRow(context, side),
+          // Rows flex to fill the block, so the ledger fits the screen height.
+          Expanded(
+            child: Column(
+              children: [
+                for (final q in round.teamOf(side).seated)
+                  Expanded(child: _quizzerRow(context, side, q.index)),
+              ],
+            ),
+          ),
+          if (round.teamOf(side).bench.isNotEmpty) _benchLine(context, side),
+        ],
+      ),
+    );
+  }
+
+  /// One-line bench strip inside the team block: each quizzer's name with
+  /// their running total. Substitution is reached through the More menu.
+  Widget _benchLine(BuildContext context, Side side) {
+    final scheme = Theme.of(context).colorScheme;
+    final bench = round.teamOf(side).bench;
+    return Padding(
+      padding: const EdgeInsets.only(top: 3),
+      child: Row(
+        children: [
+          SizedBox(
+            width: _kLabelWidth,
+            child: Text(
+              'BENCH',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: sideInkMutedFor(scheme),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              [for (final q in bench) '${q.label} ${q.score}'].join('   ·   '),
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: sideInkFor(scheme),
+                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _teamTitleRow(BuildContext context, Side side) {
+    final scheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         SizedBox(
@@ -244,7 +286,7 @@ class _ClassicScreenState extends State<ClassicScreen> {
               fontSize: 15,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
-              color: sideColor(side),
+              color: sideAccent(side, scheme),
             ),
           ),
         ),
@@ -252,10 +294,10 @@ class _ClassicScreenState extends State<ClassicScreen> {
         const Spacer(),
         Text(
           'SCORE ${round.scoreOf(side)}',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w900,
-            color: sideInk,
+            color: sideInkFor(scheme),
           ),
         ),
         SizedBox(width: _kTotalWidth, child: Container()),
@@ -264,7 +306,7 @@ class _ClassicScreenState extends State<ClassicScreen> {
   }
 
   Widget _quizzerRow(BuildContext context, Side side, int index) {
-    final quizzer = round.teamOf(side).quizzers[index];
+    final quizzer = round.teamOf(side).roster[index];
     final selected = round.selected == (side, index);
     final scheme = Theme.of(context).colorScheme;
     final label = Material(
@@ -310,6 +352,7 @@ class _ClassicScreenState extends State<ClassicScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           label,
           for (final n in _visibleQuestions)
@@ -336,7 +379,7 @@ class _ClassicScreenState extends State<ClassicScreen> {
     final scheme = Theme.of(context).colorScheme;
     final mark = round.cellOutcome(side, index, n);
     final hasFoul = round.cellHasFoul(side, index, n);
-    final quizzer = round.teamOf(side).quizzers[index];
+    final quizzer = round.teamOf(side).roster[index];
     String text = hasFoul && mark == null ? 'F' : '';
     var color = scheme.outline;
     var weight = FontWeight.w500;
@@ -365,7 +408,6 @@ class _ClassicScreenState extends State<ClassicScreen> {
         n == round.questionNumber && round.selected == (side, index);
     Widget cell = Container(
       width: double.infinity,
-      height: 48,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: n == round.questionNumber
@@ -410,7 +452,6 @@ class _ClassicScreenState extends State<ClassicScreen> {
     if (contested || interrupted) {
       cell = Container(
         width: double.infinity,
-        height: 48,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           border: Border.all(
@@ -433,71 +474,13 @@ class _ClassicScreenState extends State<ClassicScreen> {
     );
   }
 
-  Widget _runningTotalRow(BuildContext context, Side side) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: Row(
-        children: [
-          const SizedBox(
-            width: _kLabelWidth,
-            child: Text(
-              'RUNNING',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: sideInkMuted,
-              ),
-            ),
-          ),
-          for (final n in _visibleQuestions)
-            Expanded(
-              child: Container(
-                alignment: Alignment.center,
-                child: Builder(
-                  builder: (context) {
-                    var running = 0;
-                    for (var m = 1; m <= n; m++) {
-                      running += round.teamDelta(side, m);
-                    }
-                    return Text(
-                      running == 0 ? '' : '$running',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: sideInkMuted,
-                        fontFeatures: <FontFeature>[
-                          FontFeature.tabularFigures(),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          SizedBox(
-            width: _kTotalWidth,
-            child: Center(
-              child: Text(
-                '${round.scoreOf(side)}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: sideInk,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _timeOutRail(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     Widget railButton(Side side) {
       final taken = round.teamOf(side).timeOuts;
       final limit = round.timeOutDisplayCap(side);
       return Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             sideName(round, side).toUpperCase(),
@@ -553,23 +536,22 @@ class _ClassicScreenState extends State<ClassicScreen> {
         color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            const Text(
-              'TIME',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
-            ),
-            const Text(
-              'OUT',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 4),
-            railButton(Side.red),
-            const SizedBox(height: 8),
-            railButton(Side.green),
-          ],
-        ),
+      // No scrolling: the two team groups share the rail height.
+      child: Column(
+        children: [
+          const Text(
+            'TIME',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+          ),
+          const Text(
+            'OUT',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 4),
+          Expanded(child: Center(child: railButton(Side.red))),
+          const SizedBox(height: 8),
+          Expanded(child: Center(child: railButton(Side.green))),
+        ],
       ),
     );
   }

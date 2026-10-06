@@ -20,10 +20,14 @@ class RoundController extends ChangeNotifier {
     required this.greenName,
     required List<String> redSeats,
     required List<String> greenSeats,
+    List<String> redBench = const <String>[],
+    List<String> greenBench = const <String>[],
   }) : view = RoundView(
          ruleset: ruleset,
          redLabels: redSeats,
          greenLabels: greenSeats,
+         redBench: redBench,
+         greenBench: greenBench,
        );
 
   final Ruleset ruleset;
@@ -80,14 +84,15 @@ class RoundController extends ChangeNotifier {
 
   List<QuizzerRef> _roster(Side side) {
     final team = view.teamOf(side);
+    // Only seated quizzers can be selected to answer.
     return [
-      for (var i = 0; i < team.quizzers.length; i++)
-        QuizzerRef(side: side, index: i, view: team.quizzers[i]),
+      for (final q in team.seated)
+        QuizzerRef(side: side, index: q.index, view: q),
     ];
   }
 
   void select(Side side, int index) {
-    final q = view.teamOf(side).quizzers[index];
+    final q = view.teamOf(side).roster[index];
     if (!q.active) return;
     final ref = (side, index);
     selected = selected == ref ? null : ref;
@@ -102,6 +107,12 @@ class RoundController extends ChangeNotifier {
 
   void clearAlert() {
     lastAlert = null;
+    notifyListeners();
+  }
+
+  /// Raises a one-off banner (e.g. a keeper action that could not proceed).
+  void showAlert(String message) {
+    lastAlert = message;
     notifyListeners();
   }
 
@@ -291,20 +302,19 @@ class RoundController extends ChangeNotifier {
     return true;
   }
 
-  /// Substitutes the quizzer at ([side], [outIndex]) with [label]. Points
-  /// already scored under the slot are preserved (schema decision D7).
-  /// Returns false when the engine rejects the substitution.
+  /// Substitutes the bench quizzer at [benchIndex] in for the out quizzer at
+  /// ([side], [outIndex]). Points already scored under the slot are preserved
+  /// (schema decision D7). Returns false when the engine rejects it.
   bool substituteQuizzer({
     required Side side,
     required int outIndex,
-    required String label,
+    required int benchIndex,
   }) {
-    if (label.trim().isEmpty) return false;
     final violation = view.apply(
       SubstituteQuizzerEvent(
         side: side,
         outIndex: outIndex,
-        label: label.trim(),
+        benchIndex: benchIndex,
       ),
     );
     if (violation != null) {
@@ -354,8 +364,8 @@ class RoundController extends ChangeNotifier {
   bool questionAnswered(int n) {
     for (final side in Side.values) {
       final team = view.teamOf(side);
-      for (var i = 0; i < team.quizzers.length; i++) {
-        final mark = view.cellOutcome(side, i, n);
+      for (final q in team.roster) {
+        final mark = view.cellOutcome(side, q.index, n);
         if (mark == 'correct' || mark == 'incorrect') return true;
       }
     }

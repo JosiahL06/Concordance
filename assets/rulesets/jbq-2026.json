@@ -9,7 +9,8 @@
     "pointValues": [10, 10, 20, 10, 20, 30, 10, 20, 10, 10, 20, 10, 30, 20, 10, 10, 20, 30, 10, 20],
     "minActivePerTeam": 1,
     "maxActivePerTeam": 4,
-    "teamsPerMatch": 2
+    "teamsPerMatch": 2,
+    "maxRosterPerTeam": 8
   },
   "scoring": {
     "correctMultiplier": 1.0,

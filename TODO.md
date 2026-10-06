@@ -127,6 +127,33 @@
       so the retraction shows in the Classic ledger too
 - [x] Back button on both live screens' headers returns to the starting screen
       (Home); the round autosaves, so it resumes from Home
+- [x] Second polishing pass:
+      - [x] Unifying notice placement: all notices render in one slot above the
+            scoring console, where the end-of-round strip already appeared
+            (`NoticeSlot`)
+      - [x] Remove unnecessary running team total row (Classic `RUNNING` row
+            deleted; the team total stays in the team header)
+      - [x] Remove unnecessary modern/classic selection from start screen (the
+            view is picked on the setup screen when starting a round)
+      - [x] Move rule set selection down from header in new round settings (now
+            an in-body segmented row with the other settings)
+      - [x] Decouple quizzer names from team name (per-quizzer name fields;
+            blank falls back to "<Team> N")
+      - [x] Add a bench section for excess quizzers + substitutions from the
+            bench (single stable roster with seat numbers so a replacement
+            takes the vacated seat and the seated order is preserved; setup
+            bench roster; bench strips in both live views showing each quizzer's
+            running total; the More menu swaps ANY seated quizzer with a bench
+            quizzer — no quiz-out required — via
+            `SubstituteQuizzerEvent(outIndex, benchIndex)`; the PDF/CSV export
+            carries a Position column so benched points are shown)
+      - [x] Dark mode color pass (theme-aware team tints/ink:
+            `sideTintFor`/`sideInkFor`; deep tints + light ink in dark mode)
+      - [x] Ensure widgets always fit within allowed space (no scrolling in the
+            live game: ledger rows, team cards, question navigator and the
+            time-out rail all size to the screen)
+      - [x] Update summary page for announcements: 1st/2nd place team and the
+            top two individual scorers across the whole match
 - [ ] Touch verification pass (emulator now, real tablet later)
 - [ ] Accessibility (Semantics) + haptics pass
 - [ ] CI workflow: build APK + Windows installer + Linux on tag (`.github/workflows/`)
@@ -135,3 +162,5 @@
 - [ ] Global edit/undo dialogue: selective journal edit (change/delete any
       entry + refold) — needs new `RoundView` API + persistence + conflict
       surface; single-step undo + `undoLabel` covers v1 mis-taps
+- [ ] Add settings page accessible from inside a live-game: change rule set, change theme/color,
+      etc

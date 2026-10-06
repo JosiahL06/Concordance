@@ -91,18 +91,21 @@ class SubstituteQuestionEvent extends RoundEvent {
   final int value;
 }
 
-/// An inactive eligible quizzer ([label]) immediately replaces the
+/// The bench quizzer at [benchIndex] immediately replaces the
 /// quizzed/striked/fouled-out quizzer at [outIndex] — no time-out needed.
+/// The entrant is a first-class bench member (`RoundView` seeds the bench);
+/// the out quizzer stays in the roster as inactive so their points keep
+/// counting (schema decision D7).
 class SubstituteQuizzerEvent extends RoundEvent {
   const SubstituteQuizzerEvent({
     required this.side,
     required this.outIndex,
-    required this.label,
+    required this.benchIndex,
   });
 
   final Side side;
   final int outIndex;
-  final String label;
+  final int benchIndex;
 }
 
 /// An overtime question of [value] is appended as a new slot

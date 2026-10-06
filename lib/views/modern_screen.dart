@@ -31,7 +31,6 @@ class _ModernScreenState extends State<ModernScreen> {
             return Column(
               children: [
                 _header(context),
-                AlertBanner(round: round),
                 Expanded(
                   child: Row(
                     children: [
@@ -41,8 +40,7 @@ class _ModernScreenState extends State<ModernScreen> {
                     ],
                   ),
                 ),
-                if (round.matchComplete || round.inOvertime)
-                  EndOfRoundBar(round: round),
+                NoticeSlot(round: round),
                 ScoringConsole(round: round),
                 QuestionNavigator(round: round),
                 LiveBottomBar(round: round),
@@ -120,7 +118,7 @@ class _ModernScreenState extends State<ModernScreen> {
     final scheme = Theme.of(context).colorScheme;
     final team = round.teamOf(side);
     return Container(
-      color: sideTint(side),
+      color: sideTintFor(side, scheme),
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -130,7 +128,7 @@ class _ModernScreenState extends State<ModernScreen> {
             decoration: BoxDecoration(
               color: scheme.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: sideColor(side), width: 3),
+              border: Border.all(color: sideAccent(side, scheme), width: 3),
             ),
             child: Row(
               children: [
@@ -174,8 +172,59 @@ class _ModernScreenState extends State<ModernScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          for (var i = 0; i < team.quizzers.length; i++)
-            _quizzerCard(context, side, i),
+          // Cards flex to fill the team half, so the field never scrolls.
+          Expanded(
+            child: Column(
+              children: [
+                for (final q in team.seated)
+                  Expanded(child: _quizzerCard(context, side, q.index)),
+              ],
+            ),
+          ),
+          if (team.bench.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            _benchRow(context, side),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Compact bench strip: each quizzer's name with their running total, so a
+  /// rotated quizzer's points stay visible while they sit behind the table.
+  /// Substitution happens through the More menu.
+  Widget _benchRow(BuildContext context, Side side) {
+    final scheme = Theme.of(context).colorScheme;
+    final bench = round.teamOf(side).bench;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          Text(
+            'BENCH',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: scheme.outline,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              [for (final q in bench) '${q.label} ${q.score}'].join('   ·   '),
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: scheme.onSurface,
+                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -183,7 +232,7 @@ class _ModernScreenState extends State<ModernScreen> {
 
   Widget _quizzerCard(BuildContext context, Side side, int index) {
     final scheme = Theme.of(context).colorScheme;
-    final q = round.teamOf(side).quizzers[index];
+    final q = round.teamOf(side).roster[index];
     final selected = round.selected == (side, index);
     return Material(
       color: Colors.transparent,

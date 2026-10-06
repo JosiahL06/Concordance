@@ -17,6 +17,8 @@ RoundView freshJbq({List<int>? values}) => RoundView(
   ruleset: loadJbq(),
   redLabels: const ['Red 1', 'Red 2', 'Red 3', 'Red 4'],
   greenLabels: const ['Green 1', 'Green 2', 'Green 3', 'Green 4'],
+  redBench: const ['Red 5', 'Red 6'],
+  greenBench: const ['Green 5'],
   questionValues: values,
 );
 
@@ -53,9 +55,9 @@ void main() {
         );
       }
       final team = view.teamOf(Side.red);
-      expect(team.quizzers[0].correct, 6);
-      expect(team.quizzers[0].score, 70); // 6×10 + 10
-      expect(team.quizzers[0].status, 'QUIZ-OUT');
+      expect(team.roster[0].correct, 6);
+      expect(team.roster[0].score, 70); // 6×10 + 10
+      expect(team.roster[0].status, 'QUIZ-OUT');
       expect(view.state.teams[Side.red]!.quizzers[0].leftMatch, isTrue);
     });
 
@@ -71,8 +73,8 @@ void main() {
           ),
         );
       }
-      expect(view.teamOf(Side.green).quizzers[1].status, '');
-      expect(view.teamOf(Side.green).quizzers[1].score, 50);
+      expect(view.teamOf(Side.green).roster[1].status, '');
+      expect(view.teamOf(Side.green).roster[1].score, 50);
     });
 
     test('strike-out leaves the match; other-person foul −5 team', () {
@@ -87,13 +89,39 @@ void main() {
           ),
         );
       }
-      expect(view.teamOf(Side.red).quizzers[2].status, 'STRIKE-OUT');
+      expect(view.teamOf(Side.red).roster[2].status, 'STRIKE-OUT');
       expect(view.state.teams[Side.red]!.quizzers[2].leftMatch, isTrue);
       view.apply(const FoulEvent(side: Side.green));
       expect(view.scoreOf(Side.green), -5);
     });
 
-    test('substitute quizzer replaces an out quizzer immediately', () {
+    test('a substitution keeps the seat order (replacement takes the seat)', () {
+      final view = freshJbq(values: List.filled(20, 20));
+      // Seated Red 1..Red 4 (seats 1–4), bench Red 5/Red 6. Sub Red 2 → Red 5.
+      expect(
+        view.apply(
+          const SubstituteQuizzerEvent(
+            side: Side.red,
+            outIndex: 1,
+            benchIndex: 4,
+          ),
+        ),
+        isNull,
+      );
+      // Red 5 sits in Red 2's seat; the other seats are untouched.
+      expect(view.teamOf(Side.red).seated.map((q) => q.label), [
+        'Red 1',
+        'Red 5',
+        'Red 3',
+        'Red 4',
+      ]);
+      expect(view.teamOf(Side.red).bench.map((q) => q.label), [
+        'Red 2',
+        'Red 6',
+      ]);
+    });
+
+    test('a substitution swaps a seated quizzer with a bench quizzer', () {
       final view = freshJbq(values: List.filled(20, 20));
       for (var n = 1; n <= 3; n++) {
         view.apply(
@@ -105,39 +133,75 @@ void main() {
           ),
         );
       }
-      // The substitute ENTERS (appended): the out quizzer stays in the
-      // roster so their points keep counting toward the team total.
+      // Red 1 is struck out. Swap them with the bench quizzer Red 5 (roster
+      // index 4): Red 5 takes the table, Red 1 sits behind it.
       expect(
         view.apply(
           const SubstituteQuizzerEvent(
             side: Side.red,
             outIndex: 0,
-            label: 'Red 5',
+            benchIndex: 4,
           ),
         ),
         isNull,
       );
-      expect(view.state.teams[Side.red]!.quizzers.length, 5);
-      // Red 1's 3 wrong (−30) still count after leaving.
+      // The roster keeps a stable size and order (stable indices).
+      expect(view.state.teams[Side.red]!.quizzers.length, 6);
+      // Red 5 takes Red 1's vacated seat (seat order is preserved).
+      expect(view.teamOf(Side.red).seated.map((q) => q.label), [
+        'Red 5',
+        'Red 2',
+        'Red 3',
+        'Red 4',
+      ]);
+      // Red 1 is on the bench now (their out flag carries with them).
+      expect(view.teamOf(Side.red).bench.map((q) => q.label), [
+        'Red 1',
+        'Red 6',
+      ]);
+      // Red 1's 3 wrong (−30) still count toward the team total.
       expect(view.scoreOf(Side.red), -30);
-      // Replacing an active quizzer is rejected.
-      final violation = view.apply(
+
+      // A HEALTHY seated quizzer can be substituted too — no need to be out:
+      // swap Red 2 (index 1) with Red 6 (index 5).
+      expect(
+        view.apply(
+          const SubstituteQuizzerEvent(
+            side: Side.red,
+            outIndex: 1,
+            benchIndex: 5,
+          ),
+        ),
+        isNull,
+      );
+      // Red 6 takes Red 2's seat: the seated order is unchanged apart from the
+      // swap in place.
+      expect(view.teamOf(Side.red).seated.map((q) => q.label), [
+        'Red 5',
+        'Red 6',
+        'Red 3',
+        'Red 4',
+      ]);
+
+      // Substituting a seated quizzer for another seated quizzer is rejected.
+      final notBenched = view.apply(
         const SubstituteQuizzerEvent(
           side: Side.red,
-          outIndex: 1,
-          label: 'Red 6',
+          outIndex: 2,
+          benchIndex: 3,
         ),
       );
-      expect(violation!.code, 'quizzer-still-active');
-      // Re-substituting the same slot is rejected too.
-      final again = view.apply(
+      expect(notBenched!.code, 'quizzer-not-benched');
+
+      // A quizzer already on the bench cannot be substituted out.
+      final notSeated = view.apply(
         const SubstituteQuizzerEvent(
           side: Side.red,
           outIndex: 0,
-          label: 'Red 7',
+          benchIndex: 2,
         ),
       );
-      expect(again!.code, 'quizzer-already-replaced');
+      expect(notSeated!.code, 'quizzer-not-seated');
     });
   });
 

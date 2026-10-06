@@ -89,8 +89,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Back button on both live-scoring screens' headers returns to the starting
   screen (Home); every ruling autosaves, so leaving mid-match is safe and the
   round resumes from Home.
+- **Bench roster + substitutions.** New Round now takes a seated count plus a
+  bench count, with a name field per quizzer; the bench is bounded by each
+  ruleset's roster cap (JBQ 8 quizzers; TBQ uncapped). A team is a single,
+  stable roster (`QuizzerState.onBench`); a substitution SWAPS a seated quizzer
+  with a bench quizzer — during or after a time-out, and with **no requirement
+  that anyone has quizzed out**. The entrant takes the outgoing quizzer's
+  **seat**, so the seated order is preserved (subbing Red 2 → Red 5 gives
+  Red 1, Red 5, Red 3, Red 4). Both keep their points (a rotated-out quizzer
+  moves to the bench, where each name shows its running total) and stable
+  indices keep every recorded answer attributed to its quizzer. Both live views
+  show a BENCH strip; the More menu drives the swap
+  (`SubstituteQuizzerEvent` carries `outIndex` + `benchIndex`, both roster
+  indices). Roster + bench persist and are restored on resume.
+- `match.maxRosterPerTeam` (nullable) added to the ruleset schema; JBQ sets 8,
+  TBQ leaves it uncapped.
 
 ### Changed
+
+- Second polishing pass (UI):
+  - All notices (transient alerts and the end-of-round strip) share one slot
+    directly above the scoring console (`NoticeSlot`).
+  - Classic ledger: the redundant RUNNING total row is removed; the team total
+    stays in the team header.
+  - Home no longer carries a Modern/Classic picker; the view is chosen on the
+    New Round setup screen.
+  - New Round: the ruleset pick moved from an AppBar tab bar into an in-body
+    segmented settings row.
+  - Quizzer names are decoupled from the team name — each seated and bench
+    quizzer has its own name field (a blank field falls back to "<Team> N").
+  - Dark-mode color pass: team tints and ink are theme-aware
+    (`sideTintFor`/`sideInkFor`) — deep tints with light ink in dark mode,
+    while light mode is unchanged.
+  - The live game no longer scrolls: ledger rows, team cards, the question
+    navigator, and the time-out rail all size to the 1280×800 screen.
+  - Summary leads with an Announcements block — 1st/2nd place team and the top
+    two individual scorers across the whole match.
+  - PDF/CSV export lists every roster quizzer with a Position column
+    (`seat N` / `bench`) so benched quizzers' points are shown, not lost.
 
 - Overtime is now automatic and deterministic: a tie after the final question
   appends the next overtime question from the ruleset sequence (TBQ: 10-point

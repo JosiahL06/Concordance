@@ -73,7 +73,9 @@ never engine forks.
   §3a-d, validated at session setup, not per event).
   `match.minActivePerTeam` / `maxActivePerTeam`:
   TBQ Team §4: 1–3; JBQ Team §5: 2–4 (1 with approval — v1: min 1).
-  `match.teamsPerMatch` = 2.
+  `match.maxRosterPerTeam`: whole-team cap (seated + bench), null when the
+  book sets none. JBQ Team Eligibility: 8; TBQ's match guidelines only fix
+  the seated count, so TBQ is null. `match.teamsPerMatch` = 2.
 - `scoring.correctMultiplier` = 1.0, `incorrectMultiplier` = 0.5
   (both books Scoring §§1–3).
 - `scoring.quizOut`: TBQ §2: 5 correct + 20 bonus, stays at table;
@@ -128,7 +130,7 @@ quizmaster may override reality — the journal records what was recorded).
 | `challenge` | q, team, successful | per-question cap (TBQ) / allotment (JBQ) → violation, still recordable on override |
 | `voidQuestion` | q | q in range (retracts answer points per D3) |
 | `substituteQuestion` | q, value | q voided first (D4) |
-| `substituteQuizzer` | team, outIndex, label | out quizzer out/inactive (immediate, no time-out) |
+| `substituteQuizzer` | team, outIndex, benchIndex | swaps a SEATED quizzer (`outIndex`) with a BENCH quizzer (`benchIndex`) — during or after a time-out, and **no one need be out**. The entrant takes the outgoing quizzer's **seat**, so the seated order (Red 1, Red 2, …) is preserved with the replacement in place. Both keep their points; the roster order is stable so every recorded answer stays attributed to its quizzer (D7). Rejected when `outIndex` is on the bench, `benchIndex` is seated, or the entrant is out. `benchIndex` is a roster index. |
 | `overtimeQuestion` | value | tie after regulation (append slot per D4) |
 
 ## View-model (`RoundView`, serves Modern + Classic)

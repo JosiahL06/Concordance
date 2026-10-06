@@ -20,6 +20,8 @@ RoundController freshTbq() => RoundController(
   greenName: 'Green',
   redSeats: const ['Red 1', 'Red 2'],
   greenSeats: const ['Green 1', 'Green 2'],
+  redBench: const ['Red 3', 'Red 4'],
+  greenBench: const ['Green 3', 'Green 4'],
 );
 
 RoundController wideTbq() => RoundController(
@@ -163,7 +165,7 @@ void main() {
         c.select(Side.red, 0);
         c.markCorrect();
       }
-      final q = c.teamOf(Side.red).quizzers[0];
+      final q = c.teamOf(Side.red).roster[0];
       expect(q.status, 'QUIZ-OUT');
       expect(c.lastAlert, contains('quizzed out'));
     });
@@ -197,7 +199,7 @@ void main() {
         c.select(Side.green, 1);
         c.markIncorrect();
       }
-      expect(c.teamOf(Side.green).quizzers[1].status, 'STRIKE-OUT');
+      expect(c.teamOf(Side.green).roster[1].status, 'STRIKE-OUT');
       expect(c.lastAlert, contains('struck out'));
 
       c.select(Side.red, 0);
@@ -239,7 +241,7 @@ void main() {
 
       // Undo the 5th correct answer: the quiz-out is no longer in effect.
       c.undo();
-      expect(c.teamOf(Side.red).quizzers[0].status, '');
+      expect(c.teamOf(Side.red).roster[0].status, '');
 
       // The quizzer quizzes out again at a later question -> announced again.
       c.jumpToQuestion(6);
@@ -258,14 +260,15 @@ void main() {
       expect(c.lastAlert, contains('quizzed out'));
       c.clearAlert();
 
+      // Red 4 is the second bench quizzer (roster index 3).
       expect(
-        c.substituteQuizzer(side: Side.red, outIndex: 0, label: 'Red 4'),
+        c.substituteQuizzer(side: Side.red, outIndex: 0, benchIndex: 3),
         isTrue,
       );
       expect(c.lastAlert, isNull);
 
       // The substitute (a distinct quizzer) quizzes out -> fresh notice.
-      final sub = c.teamOf(Side.red).quizzers.length - 1;
+      final sub = c.teamOf(Side.red).roster.length - 1;
       for (var n = 6; n <= 10; n++) {
         c.jumpToQuestion(n);
         c.select(Side.red, sub);
@@ -288,7 +291,7 @@ void main() {
           ),
         );
       }
-      expect(c.teamOf(Side.red).quizzers[0].status, 'QUIZ-OUT');
+      expect(c.teamOf(Side.red).roster[0].status, 'QUIZ-OUT');
 
       c.markCurrentNoticesSeen();
       expect(c.lastAlert, isNull);
@@ -300,6 +303,32 @@ void main() {
       c.select(Side.green, 0);
       expect(c.markCorrect(), isTrue);
       expect(c.lastAlert, isNull);
+    });
+  });
+
+  group('substitutions', () {
+    test('a healthy quizzer may be substituted; points follow to the bench', () {
+      final c = freshTbq();
+      // Red 1 scores Q1 (+10) while seated.
+      c.jumpToQuestion(1);
+      c.select(Side.red, 0);
+      c.markCorrect();
+      expect(c.scoreOf(Side.red), 10);
+
+      // No one is out, yet the keeper may rotate Red 1. Red 3 (roster index 2)
+      // comes in; the bench still holds Red 4.
+      expect(
+        c.substituteQuizzer(side: Side.red, outIndex: 0, benchIndex: 2),
+        isTrue,
+      );
+      final bench = c.teamOf(Side.red).bench;
+      expect(bench.map((q) => q.label), ['Red 1', 'Red 4']);
+      // The rotated-out quizzer's points stay tracked on the bench...
+      expect(bench.first.score, 10);
+      // ...and still count toward the team total.
+      expect(c.scoreOf(Side.red), 10);
+      // Red 3 takes Red 1's seat; Red 2 keeps seat 2.
+      expect(c.teamOf(Side.red).seated.map((q) => q.label), ['Red 3', 'Red 2']);
     });
   });
 

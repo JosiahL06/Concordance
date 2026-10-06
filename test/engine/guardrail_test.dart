@@ -193,11 +193,11 @@ void main() {
       for (var n = 1; n <= 5; n++) {
         v.apply(ans(Side.red, 0, correct: true, q: n));
       }
-      expect(v.teamOf(Side.red).quizzers[0].status, 'QUIZ-OUT');
+      expect(v.teamOf(Side.red).roster[0].status, 'QUIZ-OUT');
       expect(v.scoreOf(Side.red), 110); // 90 + 20 bonus
 
       v.apply(const VoidQuestionEvent(questionNumber: 5)); // Q5 = 30pt
-      final quizzer = v.teamOf(Side.red).quizzers[0];
+      final quizzer = v.teamOf(Side.red).roster[0];
       expect(quizzer.status, '', reason: 'no longer quizzed out');
       expect(quizzer.correct, 4);
       expect(v.scoreOf(Side.red), 60, reason: 'Q5 (30) + bonus (20) removed');
