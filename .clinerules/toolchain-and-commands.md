@@ -58,6 +58,29 @@ If a stale `build/linux/.../CMakeCache.txt` was generated under a different
 toolchain you may see `The CMAKE_CXX_COMPILER: /usr/bin/clang++ is not a full
 path to an existing compiler tool.` — delete `build/linux` and rebuild.
 
+## Android release signing
+Release signing is **env-driven** (`android/app/build.gradle.kts`):
+`ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`,
+`ANDROID_KEY_PASSWORD`. **If `ANDROID_KEYSTORE_PATH` is empty or absent the
+build falls back to the debug keystore**, so local `flutter build apk --release`
+keeps working with zero setup. In CI the keystore comes from the secret
+`ANDROID_KEYSTORE_BASE64` (base64 of the `.jks`), decoded to `$RUNNER_TEMP`, and
+the APK signer is printed via `apksigner --print-certs`. NEVER commit a
+keystore — if one ever lands in git, rotate it (losing the keystore means no
+more updatable releases).
+
+## Distribution trust (deferred)
+- **Windows Authenticode:** SignPath Foundation (free, OV-level) once the GitHub
+  repo is public; alternative Azure Artifact Signing (~$9.99/mo, individuals
+  US/CA only). EV certs no longer bypass SmartScreen (removed 2024), so OV is
+  sufficient.
+- **macOS notarization:** requires Apple Developer Program ($99/yr) + Developer
+  ID Application cert + `ENABLE_HARDENED_RUNTIME = YES` (the scaffold uses
+  ad-hoc `CODE_SIGN_IDENTITY = "-"`), then `codesign` → `notarytool submit
+  --wait` → `stapler staple` in CI (App Store Connect API key as secrets).
+- `~/sdk/cache/actionlint` (downloaded) lints workflows: run
+  `~/sdk/cache/actionlint .github/workflows/*.yml` after editing them.
+
 ## Timing gotchas
 - Tool calls have a **~30s timeout**. Long work (builds, SDK installs, emulator boots) MUST be backgrounded:
   ```sh

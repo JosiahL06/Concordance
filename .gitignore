@@ -25,6 +25,7 @@ key.properties
 *.keystore
 *.p12
 *.pem
+*.p8
 *.mobileprovision
 secrets/
 .env

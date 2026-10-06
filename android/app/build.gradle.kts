@@ -28,11 +28,34 @@ android {
         versionName = flutter.versionName
     }
 
+    // Release signing is driven entirely by environment variables so the
+    // private keystore never enters the repo — CI supplies them from secrets.
+    // When they are absent (local dev on this machine) we fall back to the
+    // debug keystore, so `flutter build apk` and `flutter run --release` keep
+    // working without any setup.
+    val releaseStorePath: String = System.getenv("ANDROID_KEYSTORE_PATH") ?: ""
+    val hasReleaseKeystore = releaseStorePath.isNotEmpty()
+
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = file(releaseStorePath)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Proper release keystore in CI; debug keys only as a local fallback
+            // so the release build stays runnable when no keystore is configured.
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

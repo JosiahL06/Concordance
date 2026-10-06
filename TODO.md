@@ -164,8 +164,7 @@
 - [ ] Accessibility (Semantics) + haptics pass
 - [x] CI workflows (`.github/workflows/`): `ci.yml` (analyze + test on
       push/PR) and `build.yml` (Android APK + Linux + Windows + macOS on `v*`
-      tags and manual dispatch, artifacts attached to a GitHub Release;
-      unsigned — Android debug-signed)
+      tags and manual dispatch, artifacts attached to a GitHub Release)
 - [x] macOS desktop scaffolding (`macos/` Xcode runner): bundle id
       `org.concordance.app`, app name "Concordance", landscape-tablet default
       window (1280×800, min 1024×700), sandboxed no-network entitlements,
@@ -174,6 +173,28 @@
 - [ ] macOS distribution pass (on a Mac): `flutter build macos` → wrap the
       `.app` in a `.dmg`; optionally Developer ID sign + notarize for a clean
       Gatekeeper experience (unsigned works via right-click-Open)
+
+## Phase 5 — Distribution trust (raised platform warnings)
+
+- [x] Android release signing driven by GitHub secrets (`ANDROID_KEYSTORE_BASE64`
+      / `_PASSWORD` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD`), decoded into
+      the runner temp dir, with a debug-key fallback so local release builds keep
+      working; CI prints the APK signer via `apksigner --print-certs`
+- [x] Release `SHA256SUMS` published with every release (all four artifacts)
+- [x] Desktop identity metadata unified to "Concordance" (Windows `VERSIONINFO`,
+      Windows/Linux window titles, AGPL-3.0-only copyright)
+
+### Deferred (requires accounts / public repo)
+- [ ] **Windows Authenticode** via SignPath Foundation (free, OV-level) — apply
+      once the GitHub repo goes public; sign the PE files then the package.
+      Alternative: Azure Artifact Signing (~$9.99/mo). Note: EV certs no longer
+      bypass SmartScreen (removed 2024), so OV is sufficient.
+- [ ] **macOS notarization** — Apple Developer Program ($99/yr) + Developer ID
+      Application cert + `ENABLE_HARDENED_RUNTIME = YES` (currently ad-hoc
+      `CODE_SIGN_IDENTITY = "-"`), then `codesign` → `notarytool submit --wait`
+      → `stapler staple` in CI (App Store Connect API key as secrets)
+- [ ] Optional: GitHub artifact attestations (free for public repos only)
+- [ ] Submit release binaries to AV vendors for false-positive whitelisting
 
 ## Post-v1
 - [ ] Global edit/undo dialogue: selective journal edit (change/delete any

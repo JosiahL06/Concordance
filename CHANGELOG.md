@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `v*` tags and manual dispatch, attaching the artifacts to a GitHub Release.
   Every job is gated on `github.server_url == 'https://github.com'` so a mirror
   to Gitea Actions skips them instead of failing.
+- **Android release signing in CI** — the release APK is signed with a
+  keystore supplied via GitHub secrets (`ANDROID_KEYSTORE_BASE64` + password/
+  alias), decoded into the runner temp dir at build time and verified with
+  `apksigner --print-certs`. Falls back to the debug key when the secret is
+  absent, so local release builds keep working with no setup.
+- **Release checksums** — every release now publishes a `SHA256SUMS` file
+  covering all four artifacts, so downloads can be verified with
+  `sha256sum -c`.
 - **macOS desktop target** — `macos/` runner scaffolded and configured for the
   secondary desktop story: bundle id `org.concordance.app`, app name
   "Concordance", AGPL-3.0-only copyright string, and a landscape-tablet default
@@ -119,6 +127,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Desktop identity metadata now reads "Concordance" everywhere: Windows
+  `VERSIONINFO` `CompanyName` / `FileDescription` / `ProductName` (previously
+  lowercase "concordance" / "org.concordance"), and `LegalCopyright` corrected
+  from "All rights reserved" to AGPL-3.0-only. Windows and Linux window titles
+  updated to match the Android/macOS label.
 - Second polishing pass (UI):
   - All notices (transient alerts and the end-of-round strip) share one slot
     directly above the scoring console (`NoticeSlot`).

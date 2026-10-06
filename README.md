@@ -78,9 +78,56 @@ git tag v1.0.0
 git push origin-github v1.0.0   # 'origin-github' is the GitHub remote
 ```
 
-All artifacts are **unsigned** — the Android APK is signed with the debug key
-and the desktop builds are unnotarized — which is fine for sideloading/testing
-but not for app-store distribution.
+All desktop artifacts are **unsigned/unnotarized** and will show platform trust
+warnings until Windows and macOS signing land (below). The Android APK **is**
+release-signed when the keystore secrets are configured, and debug-signed only
+as a fallback.
+
+## Release signing & distribution trust
+
+### Android
+
+CI signs the release APK with a release keystore supplied as GitHub secrets.
+When the secret is absent the build falls back to the debug key, so a local
+`flutter build apk --release` keeps working with no setup.
+
+Create the keystore once, then add these repo secrets
+(**Settings → Secrets and variables → Actions**):
+
+| Secret | Value |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | `base64 -w0 release.keystore` |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore password |
+| `ANDROID_KEY_ALIAS` | key alias |
+| `ANDROID_KEY_PASSWORD` | key password |
+
+```sh
+keytool -genkeypair -v -keystore release.keystore -alias concordance \
+  -keyalg RSA -keysize 2048 -validity 10000 \
+  -dname "CN=Concordance, O=Concordance"
+base64 -w0 release.keystore   # paste into ANDROID_KEYSTORE_BASE64
+```
+
+Keep the keystore **backed up outside this repo** — losing it means you can no
+longer ship updates over an installed copy.
+
+### Checksums
+
+Every release includes a `SHA256SUMS` file, so anyone can verify a download
+matches what CI built:
+
+```sh
+sha256sum -c SHA256SUMS
+```
+
+### Windows & macOS (not yet signed)
+
+- **Windows** — Authenticode signing via **SignPath Foundation** (free for open
+  source, OV-level), planned for when the repository goes public.
+- **macOS** — Gatekeeper requires the **Apple Developer Program ($99/yr)** +
+  Developer ID cert + hardened runtime + notarization; planned separately.
+- Until then both will show trust warnings, which is expected for sideloaded
+  builds.
 
 ## License
 

@@ -42,7 +42,39 @@ jobs:
       - run: flutter pub get
       # The runner image ships the Android SDK; this just pre-accepts licences.
       - run: yes | flutter doctor --android-licenses || true
-      - run: flutter build apk --release
+
+      # Decode the release keystore from a secret into the runner temp dir. If
+      # the secret is absent we build debug-signed instead and say so, so a
+      # missing secret can never break an otherwise-good release build.
+      - name: Prepare release keystore
+        id: keystore
+        env:
+          KS_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KS_BASE64" ]; then
+            printf '%s' "$KS_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+            echo "path=$RUNNER_TEMP/release.keystore" >> "$GITHUB_OUTPUT"
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No ANDROID_KEYSTORE_BASE64 secret; APK will be debug-signed."
+          fi
+
+      - name: Build release APK
+        run: flutter build apk --release
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ steps.keystore.outputs.path }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Report APK signer
+        if: steps.keystore.outputs.configured == 'true'
+        run: |
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          APKSIGNER="$(find "$SDK/build-tools" -name apksigner -type f | sort -V | tail -n1)"
+          test -n "$APKSIGNER" || { echo "::error::apksigner not found in $SDK/build-tools"; exit 1; }
+          "$APKSIGNER" verify --print-certs build/app/outputs/flutter-apk/app-release.apk
 
       - uses: actions/upload-artifact@v4
         with:
@@ -144,7 +176,18 @@ jobs:
         with:
           path: artifacts
 
+      # Flatten the artifacts into one directory and publish a SHA-256 for each
+      # so users can verify a download matches what we built.
+      - name: Generate SHA-256 checksums
+        run: |
+          mkdir -p dist
+          find artifacts -type f -exec cp -t dist {} +
+          cd dist
+          sha256sum -- * > SHA256SUMS
+          echo "Checksums:"
+          cat SHA256SUMS
+
       - uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/*
+          files: dist/*
           generate_release_notes: true
