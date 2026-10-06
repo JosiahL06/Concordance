@@ -194,76 +194,45 @@ class RoundView {
 
   // ── Classic-only ledger reads ──
 
-  /// Signed point delta for [side] on question [n] (RUNNING row).
-  /// Derived by replaying answer/foul events per question from the journal
-  /// (the fold accumulates per-quizzer totals; the ledger needs per-cell
-  /// attribution, including quiz-out bonus on the crossing event).
+  /// Signed point delta for [side] on question [n] (RUNNING row). Read from
+  /// the slot's recorded answers/fouls so a voided question reports zero once
+  /// its answers are retracted (D3); the quiz-out bonus is attributed to the
+  /// slot where it was crossed.
   int teamDelta(Side side, int n) {
+    final q = state.questions[n];
+    if (q == null) return 0;
     var delta = 0;
-    for (final event in journal) {
-      if (event is AnswerEvent &&
-          event.questionNumber == n &&
-          event.side == side) {
-        final q = state.question(n);
-        final value = q.substituteValue ?? state.valueOf(n);
-        delta += event.correct
-            ? ruleset.scoring.correctPoints(value)
-            : -ruleset.scoring.incorrectLoss(value);
-        if (event.correct) {
-          var prior = 0;
-          for (final e in journal) {
-            if (identical(e, event)) break;
-            if (e is AnswerEvent &&
-                e.correct &&
-                e.side == side &&
-                e.quizzerIndex == event.quizzerIndex) {
-              prior += 1;
-            }
-          }
-          if (prior + 1 == ruleset.scoring.quizOutCorrect) {
-            delta += ruleset.scoring.quizOutBonus;
-          }
-        }
-      } else if (event is FoulEvent &&
-          event.side == side &&
-          event.questionNumber == n) {
-        if (event.quizzerIndex == null) {
-          delta -= ruleset.scoring.teamFoulDeduction;
-        } else {
-          delta -= ruleset.scoring.foulDeduction;
-        }
-      }
+    for (final a in q.answers) {
+      if (a.side == side) delta += a.delta + a.bonus;
+    }
+    for (final f in q.fouls) {
+      if (f.side == side) delta -= f.deduction;
     }
     return delta;
   }
 
   /// Outcome mark for one quizzer cell: 'correct' | 'incorrect' | null.
-  /// A personal foul no longer overwrites the answer mark — the cell shows
-  /// the score plus an `F` badge (see [cellHasFoul]).
+  /// A personal foul does not overwrite the answer mark — the cell shows the
+  /// score plus an `F` badge (see [cellHasFoul]). Read from the slot so a void
+  /// retracts the mark (D3).
   String? cellOutcome(Side side, int quizzerIndex, int n) {
+    final q = state.questions[n];
+    if (q == null) return null;
     String? mark;
-    for (final event in journal) {
-      if (event is AnswerEvent &&
-          event.questionNumber == n &&
-          event.side == side &&
-          event.quizzerIndex == quizzerIndex) {
-        mark = event.correct ? 'correct' : 'incorrect';
+    for (final a in q.answers) {
+      if (a.side == side && a.quizzerIndex == quizzerIndex) {
+        mark = a.correct ? 'correct' : 'incorrect';
       }
     }
     return mark;
   }
 
   /// Whether [side]'s quizzer has a personal foul on question [n]. Shown as
-  /// a capital-F badge alongside the answer mark, never instead of it.
+  /// a capital-F badge alongside the answer mark, never instead of it. Fouls
+  /// survive voiding (D3), so retraction never clears them.
   bool cellHasFoul(Side side, int quizzerIndex, int n) {
-    for (final event in journal) {
-      if (event is FoulEvent &&
-          event.side == side &&
-          event.quizzerIndex == quizzerIndex &&
-          event.questionNumber == n) {
-        return true;
-      }
-    }
-    return false;
+    final q = state.questions[n];
+    if (q == null) return false;
+    return q.fouls.any((f) => f.side == side && f.quizzerIndex == quizzerIndex);
   }
 }

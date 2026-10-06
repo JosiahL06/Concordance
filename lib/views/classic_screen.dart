@@ -59,6 +59,8 @@ class _ClassicScreenState extends State<ClassicScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
+          const LiveBackButton(),
+          const SizedBox(width: 4),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,

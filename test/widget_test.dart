@@ -164,6 +164,19 @@ void main() {
     expect(find.text('CONTEST 0/3'), findsNWidgets(2));
   });
 
+  testWidgets('live screen back button returns to the starting screen', (
+    WidgetTester tester,
+  ) async {
+    await _startClassic(tester);
+    expect(find.text('QUESTION 1 OF 20'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back to start'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('START A NEW ROUND'), findsOneWidget);
+    expect(find.text('QUESTION 1 OF 20'), findsNothing);
+  });
+
   testWidgets('home deletes a saved round only after confirmation', (
     WidgetTester tester,
   ) async {

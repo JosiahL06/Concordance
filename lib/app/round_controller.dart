@@ -126,14 +126,11 @@ class RoundController extends ChangeNotifier {
     }
     selected = null;
     // An incorrect answer on an *interrupted* question is re-read to the
-    // other team, so the keeper must stay on it instead of advancing.
+    // other team, so the keeper stays on it instead of advancing (no banner —
+    // the position not moving is the signal).
     final interrupted = view.questionMarks[questionNumber - 1].interrupted;
     lastAlert = (!correct && interrupted)
-        ? _joinNotices(
-            _notices(),
-            'Incorrect on interrupted Q$questionNumber — question stays for '
-            "the other team's re-read.",
-          )
+        ? _notices()
         : _joinNotices(_notices(), _advance());
     _saved();
     return true;

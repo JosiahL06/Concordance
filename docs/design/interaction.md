@@ -19,6 +19,9 @@ or `DirectionBScreen` → `SummaryScreen(round)`.
 - Production home's "Resume round" list each row taps to resume and carries a
   delete affordance that first asks for confirmation (a mis-tap must not lose
   a round silently).
+- A live screen's header carries a back button that returns to the starting
+  screen (Home); every ruling autosaves, so leaving mid-match is safe and the
+  round resumes from Home.
 
 ## 2. Global principles (locked)
 
@@ -52,7 +55,7 @@ Applies identically to Modern `_scoringZone` and Classic `_console`.
 |---|---|---|---|
 | Quizzer card / label cell | team half / ledger label | `select` (view-local, NOT journaled; no-op on inactive; re-tap deselects) | Enables CORRECT / INCORRECT / quizzer FOUL |
 | CORRECT | console (needs selection) | `markCorrect` → `AnswerEvent(q, side, index, correct)` | `+value`; correct++; quiz-out check (5/TBQ, 6/JBQ) adds bonus + flag + alert; advances to next Q, clears selection, repaints immediately; forbidden by the D10 guardrails (console disables the button + shows the reason) when the quizzer or their team already answered Q, or Q already has a correct answer |
-| INCORRECT | console (needs selection) | `markIncorrect` → `AnswerEvent(..., incorrect)` | `−value~/2`; strike-out at 3; clears selection, repaints; same D10 guardrails. Advances to the next Q EXCEPT when the current question is interrupted — an incorrect interrupted question is re-read to the other team, so the keeper stays on it (with a notice) |
+| INCORRECT | console (needs selection) | `markIncorrect` → `AnswerEvent(..., incorrect)` | `−value~/2`; strike-out at 3; clears selection, repaints; same D10 guardrails. Advances to the next Q EXCEPT when the current question is interrupted — an incorrect interrupted question is re-read to the other team, so the keeper stays on it |
 | FOUL | console → dialog (quizzer foul vs team foul) | `addQuizzerFoul` / `addTeamFoul` → `FoulEvent(q, side, index?)` | `−foulDeduction` (ruleset, D9); foul-out at 3; team foul hits team total only, never a ledger cell (D9); stays on Q, clears selection, repaints. Quizzer fouls show as an `F` badge beside the score mark, never replacing it; team fouls have a `TEAM FOUL n` header button beside each team name |
 | RED/GRN TO (Modern header / Classic ledger rail) | time-out controls | `takeTimeOut` → `TimeOutEvent(side)` | capped by `LimitsConfig.timeOutCap`: 3 in regulation; in overtime TBQ allows none (remaining may not be used) and JBQ allows remaining +1. Over-cap requests are denied (not journaled) and the keeper is told to assign the resulting team foul — the app never auto-fouls. Counters read `taken/displayCap`. The old shared bottom-bar duplicates were removed in the polish pass |
 | Interruption | bottom bar toggle | `toggleInterruption` → `InterruptionEvent(q)` | toggles ring on current Q (marks only) |
@@ -68,7 +71,9 @@ ADVANCE; FOUL STAYS.".
 The console enforces D10 proactively: when the selected quizzer cannot
 answer the current question under the guardrails, CORRECT/INCORRECT are
 disabled and the status line reads `BLOCKED — <reason>` (FOUL stays live —
-a foul is not an answer).
+a foul is not an answer). This includes a miss on a non-interrupted
+question, which is not reread and therefore closes the question to the
+opposing team; only an interrupted miss reopens it.
 
 ## 5. Modern specifics (`direction_a_screen.dart`)
 

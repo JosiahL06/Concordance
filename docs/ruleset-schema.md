@@ -18,7 +18,14 @@ never engine forks.
   per-team corrective-procedure tallies with success/failure and a limit
   that triggers a scorekeeper notification.
 - **D3 — fouls survive voiding.** Both books: assessed fouls remain even if
-  the question is later voided. `voidQuestion` retracts answer points only.
+  the question is later voided. `voidQuestion` retracts answer points only:
+  the void fold reverses each recorded answer on the slot (points plus the
+  correct/incorrect count) and re-evaluates the affected quizzers' quiz-out /
+  strike-out flags — including the quiz-out bonus — so a voided crossing
+  cannot leave a stale out behind, then clears the slot's answer ledger so a
+  substitute read starts fresh (D4). The Classic ledger reads (`cellOutcome`,
+  `teamDelta`) are derived from the same slot records, so a void retracts its
+  cell mark and RUNNING delta automatically. Implemented.
 - **D4 — void + substitute occupy the same slot.** A voided question is
   replaced by an equal-value substitute under the same number.
   Overtime questions append new slots.
@@ -43,15 +50,16 @@ never engine forks.
 - **D10 — answer guardrails are engine mechanics, not ruleset data.** A
   question slot admits at most one answer per quizzer, one answer per team,
   and one *correct* answer overall; a correct answer closes the question to
-  both teams. Because an incorrectly answered question is re-read to the
-  opposing team (TBQ Reading §13 / JBQ Reading §12; overtime TBQ OT §4 /
-  JBQ OT §4), the only legal two-answer sequences are wrong+right or
-  wrong+wrong — "at most two answers, at most one of them correct" falls out
-  of those three checks. Both shipped books share these mechanics, so they
-  live in the fold (`answerGuardrail`) like `inRange`, not in the ruleset
-  JSON. A blocked answer is rejected (never journaled) and surfaced by the
-  scoring console (disabled CORRECT/INCORRECT + reason). Voiding a question
-  clears its answer ledger so the substitute reads fresh (D4).
+  both teams. An *interrupted* miss is re-read to the opposing team (TBQ
+  Reading §13 / JBQ Reading §12; overtime TBQ OT §4 / JBQ OT §4), so
+  wrong+right and wrong+wrong are the only legal two-answer sequences there; a
+  *non-interrupted* miss is not re-read, so it closes the question to the
+  other team as well (`answer-no-reread`). Both shipped books share these
+  mechanics, so they live in the fold (`answerGuardrail`) like `inRange`, not
+  in the ruleset JSON. A blocked answer is rejected (never journaled) and
+  surfaced by the scoring console (disabled CORRECT/INCORRECT + reason).
+  Voiding a question retracts its answer points and clears its ledger so the
+  substitute reads fresh (D3/D4).
 
 
 ## Schema fields
@@ -131,7 +139,10 @@ Shared reads: `questionValues`, `scoreOf(team)`, per-quizzer
 time-out/challenge limit warnings), per-question marks, timeouts taken,
 foul/challenge aggregates.
 Classic-only reads: `cellOutcome(q, n)`, `teamDelta(team, n)` (RUNNING),
-overtime slots. Writes: the event list above (same for both views).
+overtime slots. These (and `cellHasFoul`) read the slot's recorded
+answers/fouls rather than re-scanning the journal, so voiding a question
+retracts its cell mark and RUNNING delta while its fouls stand (D3).
+Writes: the event list above (same for both views).
 
   (coach/inactive/other-person fouls), teamFoulLimit null
   (both Fouls intros: no team limit).

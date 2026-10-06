@@ -74,11 +74,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Answer guardrails (schema decision D10), enforced in the pure engine
   (`answerGuardrail`) and surfaced by the scoring console: a question admits
   at most one answer per quizzer, one answer per team, and one correct answer
-  — a correct answer closes the question to both teams, so the only legal
-  two-answer orders are wrong+right / wrong+wrong. A guarded answer is
-  rejected (never journaled); the console disables CORRECT/INCORRECT and
-  shows `BLOCKED — <reason>` (FOUL stays live). Voiding a question clears its
-  answer ledger so the substitute reads fresh (D4).
+  — a correct answer closes the question to both teams. An *interrupted* miss
+  is reread to the other team (so wrong+right / wrong+wrong are its legal
+  two-answer orders); a *non-interrupted* miss is not reread and closes the
+  question to the other team too. A guarded answer is rejected (never
+  journaled); the console disables CORRECT/INCORRECT and shows `BLOCKED —
+  <reason>` (FOUL stays live). Voiding a question clears its answer ledger so
+  the substitute reads fresh (D4), and retracts the slot's answer points (D3):
+  each recorded answer is reversed (points, the correct/incorrect count, and
+  any quiz-out/strike-out plus its bonus), the Classic ledger's cell mark and
+  RUNNING delta clear, and fouls on the slot stand. The ledger reads
+  (`cellOutcome`/`teamDelta`/`cellHasFoul`) now derive from the slot's
+  recorded answers/fouls instead of re-scanning the journal.
+- Back button on both live-scoring screens' headers returns to the starting
+  screen (Home); every ruling autosaves, so leaving mid-match is safe and the
+  round resumes from Home.
 
 ### Changed
 
@@ -118,7 +128,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ignore `android/.kotlin/` (Gradle's Kotlin session dir).
 - An incorrect answer on an *interrupted* question no longer auto-advances:
   interrupted questions are re-read to the other team, so the keeper stays on
-  the question (with a notice) rather than moving on.
+  the question rather than moving on (no banner — the position not moving is
+  the signal).
 - The footer Contest/Appeal gavel button was removed — the per-team header
   buttons are now the single challenge entry point, and the duplicate dialog
   path in `LiveBottomBar` is gone.

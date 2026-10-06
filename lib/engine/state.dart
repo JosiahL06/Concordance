@@ -71,18 +71,51 @@ class QuestionState {
   bool voided = false;
   int? substituteValue;
 
-  /// Answer ledger for this slot: quizzer indexes that have answered, per
-  /// team. Rebuilt from the journal on re-fold and cleared when the question
-  /// is voided (the substitute reads fresh, D4). Drives the answer guardrails
-  /// (D10).
-  final Map<Side, Set<int>> answered = <Side, Set<int>>{
-    Side.red: <int>{},
-    Side.green: <int>{},
-  };
+  /// Answers recorded on this slot, in journal order. Drives the answer
+  /// guardrails (D10) and the per-cell / per-question ledger reads; cleared
+  /// when the question is voided so its points are retracted and the
+  /// substitute reads fresh (D3/D4). Each entry carries the exact score change
+  /// so the void can reverse it.
+  final List<SlotAnswer> answers = <SlotAnswer>[];
 
-  /// Whether a correct answer has been recorded on this slot. A correct
-  /// answer closes the question to both teams (D10).
-  bool answeredCorrect = false;
+  /// Fouls recorded on this slot (quizzer fouls carry an index; team fouls are
+  /// null). Fouls survive voiding (D3), so these are never cleared.
+  final List<SlotFoul> fouls = <SlotFoul>[];
+}
+
+/// One recorded answer on a question slot. [delta] is the score change to the
+/// quizzer excluding the quiz-out bonus; [bonus] is the quiz-out bonus this
+/// answer crossed (0 when it did not). Kept so a void can reverse the answer
+/// exactly (D3) and the ledger can attribute points per cell.
+class SlotAnswer {
+  const SlotAnswer({
+    required this.side,
+    required this.quizzerIndex,
+    required this.correct,
+    required this.delta,
+    required this.bonus,
+  });
+
+  final Side side;
+  final int quizzerIndex;
+  final bool correct;
+  final int delta;
+  final int bonus;
+}
+
+/// One recorded foul on a question slot. [deduction] is the score change
+/// already applied (quizzer or team foul). Team fouls have a null
+/// [quizzerIndex] and never attach to a cell (D9).
+class SlotFoul {
+  const SlotFoul({
+    required this.side,
+    required this.quizzerIndex,
+    required this.deduction,
+  });
+
+  final Side side;
+  final int? quizzerIndex;
+  final int deduction;
 }
 
 /// Whole-round derived state.

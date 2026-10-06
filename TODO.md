@@ -111,17 +111,22 @@
       - [x] Once a teammate has answered, the team cannot answer again
             (`answer-team-twice`)
       - [x] One correct answer per question; a correct answer closes the
-            question to both teams (`answer-question-closed`), so the only
-            legal two-answer orders are wrong+right / wrong+wrong
+            question to both teams (`answer-question-closed`)
+      - [x] A miss on a NON-interrupted question is not reread, so it closes
+            the question to the opposing team (`answer-no-reread`); only an
+            interrupted miss reopens it (wrong+right / wrong+wrong)
       - [x] Console disables CORRECT/INCORRECT and shows the reason when the
             selected quizzer is guarded (FOUL stays live); voiding a question
             clears its answer ledger (substitute reads fresh, D4)
-- [ ] Void point-retraction (D3): `VoidQuestionEvent` marks the slot void and
-      resets its guardrail ledger, but does not retract points already scored
-      on it (or clear its cell mark) — verified: a 10-pt correct answer on a
-      slot keeps +10 after the slot is voided. Implement retraction so a
-      voided-then-replaced question scores cleanly (edge case; the common void
-      is a mis-read question with no answers yet).
+- [x] Void point-retraction (D3): `VoidQuestionEvent` now reverses each
+      answer recorded on the slot (points + correct/incorrect count), clears
+      the slot's ledger so the substitute reads fresh (D4), and re-evaluates
+      the affected quizzers' quiz-out/strike-out flags (including the quiz-out
+      bonus) so a voided crossing cannot leave a stale out. Fouls still stand
+      (D3); `cellOutcome`/`teamDelta`/`cellHasFoul` now read the slot records
+      so the retraction shows in the Classic ledger too
+- [x] Back button on both live screens' headers returns to the starting screen
+      (Home); the round autosaves, so it resumes from Home
 - [ ] Touch verification pass (emulator now, real tablet later)
 - [ ] Accessibility (Semantics) + haptics pass
 - [ ] CI workflow: build APK + Windows installer + Linux on tag (`.github/workflows/`)

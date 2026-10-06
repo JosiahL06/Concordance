@@ -54,6 +54,23 @@ String sideName(RoundController round, Side side) =>
 
 String rulesetTitle(Ruleset r) => '${r.displayName} ${r.season}';
 
+/// Returns from a live-scoring screen to the starting screen (Home). Every
+/// ruling autosaves, so leaving mid-match is safe — the round resumes from
+/// Home. Mirrors the Summary screen's back affordance, and pops to the first
+/// route rather than just one step so it works from the resume path too.
+class LiveBackButton extends StatelessWidget {
+  const LiveBackButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: 'Back to start',
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+    );
+  }
+}
+
 /// Shared scoring console: quizzer picker is the parent screen; this row
 /// records the ruling for the selected quizzer (or team foul).
 class ScoringConsole extends StatelessWidget {

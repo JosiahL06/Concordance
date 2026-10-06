@@ -62,6 +62,8 @@ class _ModernScreenState extends State<ModernScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
+          const LiveBackButton(),
+          const SizedBox(width: 4),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,

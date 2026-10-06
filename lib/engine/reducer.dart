@@ -86,13 +86,36 @@ FoldResult applyEvent(Ruleset ruleset, RoundState state, RoundEvent event) {
       if (!range.ok) return range;
       final q = state.question(event.questionNumber);
       q.voided = true;
-      // The guardrail ledger resets so a substitute read (D4) starts fresh.
-      // NOTE: D3's point-retraction for an already-answered slot is NOT yet
-      // implemented (tracked in TODO.md) — voiding currently keeps any points
-      // already scored on the slot.
-      q.answered[Side.red]!.clear();
-      q.answered[Side.green]!.clear();
-      q.answeredCorrect = false;
+      // Retract the slot's answer points (D3): reverse each recorded answer,
+      // then re-evaluate the affected quizzers' out flags so a voided crossing
+      // can't leave a stale quiz-out / strike-out (and its bonus) behind.
+      // Fouls stand (D3) and the ledger clears so the substitute reads fresh
+      // (D4).
+      final scoring = ruleset.scoring;
+      final affected = <(Side, int)>{};
+      for (final a in q.answers) {
+        final quizzer = state.teams[a.side]!.quizzers[a.quizzerIndex];
+        quizzer.score -= a.delta;
+        if (a.correct) {
+          quizzer.correct -= 1;
+        } else {
+          quizzer.incorrect -= 1;
+        }
+        affected.add((a.side, a.quizzerIndex));
+      }
+      for (final (side, index) in affected) {
+        final quizzer = state.teams[side]!.quizzers[index];
+        if (quizzer.quizzedOut && quizzer.correct < scoring.quizOutCorrect) {
+          quizzer.quizzedOut = false;
+          quizzer.score -= scoring.quizOutBonus;
+          if (scoring.quizOutLeavesMatch) quizzer.leftMatch = false;
+        }
+        if (quizzer.struckOut && quizzer.incorrect < scoring.strikeOutIncorrect) {
+          quizzer.struckOut = false;
+          if (scoring.quizOutLeavesMatch) quizzer.leftMatch = false;
+        }
+      }
+      q.answers.clear();
       return FoldResult.ok(state);
     case SubstituteQuestionEvent():
       return substituteQuestionFold(state, event.questionNumber, event.value);
@@ -120,10 +143,10 @@ FoldResult inRange(RoundState state, int n) {
 
 /// Answer guardrails (schema decision D10). A question slot admits at most
 /// one answer per quizzer, one answer per team, and one *correct* answer
-/// overall — a correct answer closes the question to both teams. Because an
-/// incorrectly answered question is re-read to the opposing team, the only
-/// legal two-answer sequences are wrong+right or wrong+wrong, so "at most two
-/// answers, at most one of them correct" falls out of these checks. Returns
+/// overall — a correct answer closes the question to both teams. An
+/// *interrupted* miss is re-read to the opposing team, so wrong+right and
+/// wrong+wrong are the only legal two-answer sequences there; a
+/// *non-interrupted* miss is not re-read and closes the question too. Returns
 /// the violation for a disallowed answer, or null when the answer is allowed.
 ///
 /// Both shipped rulebooks share these mechanics, so this is fixed engine
@@ -135,22 +158,31 @@ RuleViolation? answerGuardrail(
   int quizzerIndex,
 ) {
   final q = state.questions[n];
-  if (q == null) return null; // untouched slot: nothing recorded yet
+  if (q == null || q.answers.isEmpty) return null; // nothing recorded yet
   final teamName = side == Side.red ? 'Red' : 'Green';
-  if (q.answered[side]!.contains(quizzerIndex)) {
+  if (q.answers.any((a) => a.side == side && a.quizzerIndex == quizzerIndex)) {
     final label = state.teams[side]!.quizzers[quizzerIndex].label;
     return RuleViolation('answer-quizzer-twice', '$label already answered Q$n');
   }
-  if (q.answered[side]!.isNotEmpty) {
+  if (q.answers.any((a) => a.side == side)) {
     return RuleViolation(
       'answer-team-twice',
       '$teamName already answered Q$n — one answer per team',
     );
   }
-  if (q.answeredCorrect) {
+  if (q.answers.any((a) => a.correct)) {
     return RuleViolation(
       'answer-question-closed',
       'Q$n already has a correct answer',
+    );
+  }
+  // A miss on a NON-interrupted question is not reread to the opposing team, so
+  // it closes the question too. An interrupted miss IS reread (the other team
+  // may answer), which is why the interruption flag is consulted here.
+  if (!q.interrupted && q.answers.any((a) => !a.correct)) {
+    return RuleViolation(
+      'answer-no-reread',
+      'Q$n was missed without an interruption, so it is not reread',
     );
   }
   return null;
@@ -191,25 +223,39 @@ FoldResult answerFold(
   if (guardrail != null) return FoldResult.rejected(guardrail);
   final scoring = ruleset.scoring;
   final value = q.substituteValue ?? state.valueOf(n);
+  var bonus = 0;
+  late final int delta;
   if (correct) {
-    quizzer.score += scoring.correctPoints(value);
+    delta = scoring.correctPoints(value);
+    quizzer.score += delta;
     quizzer.correct += 1;
     if (quizzer.correct >= scoring.quizOutCorrect && !quizzer.quizzedOut) {
-      quizzer.score += scoring.quizOutBonus;
+      bonus = scoring.quizOutBonus;
+      quizzer.score += bonus;
       quizzer.quizzedOut = true;
       if (scoring.quizOutLeavesMatch) quizzer.leftMatch = true;
     }
   } else {
-    quizzer.score -= scoring.incorrectLoss(value);
+    delta = -scoring.incorrectLoss(value);
+    quizzer.score += delta;
     quizzer.incorrect += 1;
     if (quizzer.incorrect >= scoring.strikeOutIncorrect && !quizzer.struckOut) {
       quizzer.struckOut = true;
       if (scoring.quizOutLeavesMatch) quizzer.leftMatch = true;
     }
   }
-  // Record the answer so later answers on this slot are guarded (D10).
-  q.answered[side]!.add(quizzerIndex);
-  if (correct) q.answeredCorrect = true;
+  // Record the answer: it guards later answers on this slot (D10), attributes
+  // the ledger delta (Classic RUNNING), and carries the exact score change so
+  // a later void can retract it (D3).
+  q.answers.add(
+    SlotAnswer(
+      side: side,
+      quizzerIndex: quizzerIndex,
+      correct: correct,
+      delta: delta,
+      bonus: bonus,
+    ),
+  );
   return FoldResult.ok(state);
 }
 
@@ -229,6 +275,15 @@ FoldResult foulFold(
   if (quizzerIndex == null) {
     team.teamFouls += 1;
     team.teamFoulPoints -= scoring.teamFoulDeduction;
+    if (n != null) {
+      state.question(n).fouls.add(
+        SlotFoul(
+          side: side,
+          quizzerIndex: null,
+          deduction: scoring.teamFoulDeduction,
+        ),
+      );
+    }
     return FoldResult.ok(state);
   }
   if (quizzerIndex < 0 || quizzerIndex >= team.quizzers.length) {
@@ -239,6 +294,17 @@ FoldResult foulFold(
   final quizzer = team.quizzers[quizzerIndex];
   quizzer.score -= scoring.foulDeduction;
   quizzer.fouls += 1;
+  // Fouls survive voiding (D3), so the slot keeps them even if answers are
+  // later retracted.
+  if (n != null) {
+    state.question(n).fouls.add(
+      SlotFoul(
+        side: side,
+        quizzerIndex: quizzerIndex,
+        deduction: scoring.foulDeduction,
+      ),
+    );
+  }
   if (quizzer.fouls >= scoring.foulsToFoulOut && !quizzer.fouledOut) {
     quizzer.fouledOut = true;
     if (scoring.quizOutLeavesMatch) quizzer.leftMatch = true;

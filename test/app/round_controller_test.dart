@@ -90,7 +90,8 @@ void main() {
       // the keeper can record the other team's re-read.
       expect(c.questionNumber, 1);
       expect(c.scoreOf(Side.red), -5);
-      expect(c.lastAlert, contains('interrupted'));
+      // Staying put is the only signal — no banner/alert.
+      expect(c.lastAlert, isNull);
       expect(c.selected, isNull);
     });
 
