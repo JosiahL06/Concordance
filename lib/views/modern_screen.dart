@@ -4,7 +4,7 @@ import '../app/round_controller.dart';
 import '../engine/events.dart';
 import 'common/common_bits.dart';
 import 'common/live_chrome.dart';
-import 'summary_screen.dart';
+import 'common/theme_toggle.dart';
 
 /// Modern live-scoring view: split-field spatial layout over RoundController.
 /// Thin layout only — all scoring goes through [RoundController] + shared
@@ -23,40 +23,31 @@ class _ModernScreenState extends State<ModernScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF455A64),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      child: Scaffold(
-        body: SafeArea(
-          child: ListenableBuilder(
-            listenable: round,
-            builder: (context, _) {
-              return Column(
-                children: [
-                  _header(context),
-                  AlertBanner(round: round),
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Expanded(child: _teamHalf(context, Side.red)),
-                        const VerticalDivider(width: 2, thickness: 2),
-                        Expanded(child: _teamHalf(context, Side.green)),
-                      ],
-                    ),
+    return Scaffold(
+      body: SafeArea(
+        child: ListenableBuilder(
+          listenable: round,
+          builder: (context, _) {
+            return Column(
+              children: [
+                _header(context),
+                AlertBanner(round: round),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Expanded(child: _teamHalf(context, Side.red)),
+                      const VerticalDivider(width: 2, thickness: 2),
+                      Expanded(child: _teamHalf(context, Side.green)),
+                    ],
                   ),
-                  if (round.matchComplete) _matchCompleteBar(context),
-                  ScoringConsole(round: round),
-                  QuestionNavigator(round: round),
-                  LiveBottomBar(round: round),
-                ],
-              );
-            },
-          ),
+                ),
+                if (round.matchComplete || round.inOvertime) EndOfRoundBar(round: round),
+                ScoringConsole(round: round),
+                QuestionNavigator(round: round),
+                LiveBottomBar(round: round),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -116,6 +107,7 @@ class _ModernScreenState extends State<ModernScreen> {
               ),
             ),
           ),
+          const ThemeToggleButton(),
         ],
       ),
     );
@@ -258,56 +250,6 @@ class _ModernScreenState extends State<ModernScreen> {
         fontWeight: FontWeight.w800,
         color: color,
         fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-      ),
-    );
-  }
-
-  Widget _matchCompleteBar(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final red = round.scoreOf(Side.red);
-    final green = round.scoreOf(Side.green);
-    final tied = red == green;
-    return Container(
-      color: scheme.primaryContainer,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              tied
-                  ? 'TIED $red–$green — ADD AN OVERTIME QUESTION'
-                  : '${(red > green ? round.redName : round.greenName).toUpperCase()} '
-                      'WINS $red–$green',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: scheme.onPrimaryContainer,
-              ),
-            ),
-          ),
-          if (tied)
-            SizedBox(
-              height: 48,
-              child: FilledButton.tonal(
-                style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
-                onPressed: round.addOvertimeQuestion,
-                child: const Text('Add overtime question'),
-              ),
-            ),
-          const SizedBox(width: 10),
-          SizedBox(
-            height: 48,
-            child: FilledButton.tonal(
-              style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => SummaryScreen(controller: round),
-                ),
-              ),
-              child: const Text('View summary'),
-            ),
-          ),
-        ],
       ),
     );
   }

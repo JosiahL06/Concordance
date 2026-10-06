@@ -419,3 +419,57 @@ class LiveBottomBar extends StatelessWidget {
     );
   }
 }
+
+/// Persistent end-of-round strip. Shows the winner once the round is decided,
+/// or the live overtime state while overtime is in progress. Overtime opens
+/// automatically when regulation ends tied, so there is deliberately no
+/// button here for the keeper to press.
+class EndOfRoundBar extends StatelessWidget {
+  const EndOfRoundBar({super.key, required this.round});
+
+  final RoundController round;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final red = round.scoreOf(Side.red);
+    final green = round.scoreOf(Side.green);
+    final headline = round.matchComplete
+        ? '${(red > green ? round.redName : round.greenName).toUpperCase()} '
+            'WINS $red\u2013$green'
+        : 'OVERTIME \u00b7 Q${round.questionNumber} \u00b7 '
+            '${round.currentValue(round.questionNumber)} PTS \u00b7 '
+            '$red\u2013$green';
+    return Container(
+      color: scheme.primaryContainer,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              headline,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: scheme.onPrimaryContainer,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            height: 48,
+            child: FilledButton.tonal(
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => SummaryScreen(controller: round),
+                ),
+              ),
+              child: const Text('View summary'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

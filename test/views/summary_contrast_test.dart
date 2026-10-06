@@ -6,8 +6,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:concordance/app/round_controller.dart';
+import 'package:concordance/app/settings.dart';
+import 'package:concordance/app/theme.dart';
+import 'package:concordance/views/common/theme_toggle.dart';
 import 'package:concordance/engine/events.dart';
 import 'package:concordance/engine/ruleset.dart';
 import 'package:concordance/views/common/live_chrome.dart';
@@ -30,16 +34,23 @@ Future<void> pumpDark(WidgetTester tester, Widget home) async {
   tester.view.physicalSize = const Size(1280, 800);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
+  SharedPreferences.setMockInitialValues(<String, Object>{});
+  final prefs = await ViewPreference.load();
+  final theme = ThemeController(prefs);
+  addTearDown(theme.dispose);
   await tester.pumpWidget(
-    MaterialApp(
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF37474F),
-          brightness: Brightness.dark,
+    ThemeScope(
+      notifier: theme,
+      child: MaterialApp(
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF37474F),
+            brightness: Brightness.dark,
+          ),
+          useMaterial3: true,
         ),
-        useMaterial3: true,
+        home: home,
       ),
-      home: home,
     ),
   );
   await tester.pumpAndSettle();
@@ -74,5 +85,30 @@ void main() {
     // And genuinely dark against the light tint it sits on.
     expect(timeOuts.style!.color!.computeLuminance(), lessThan(0.4));
     expect(fouls.style!.color!.computeLuminance(), lessThan(0.4));
+  });
+
+  testWidgets('theme toggle cycles modes and persists the choice', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final prefs = await ViewPreference.load();
+    final theme = ThemeController(prefs);
+    addTearDown(theme.dispose);
+    await tester.pumpWidget(
+      ThemeScope(
+        notifier: theme,
+        child: const MaterialApp(home: Scaffold(body: ThemeToggleButton())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(theme.mode, ThemeMode.system);
+    await tester.tap(find.byType(ThemeToggleButton));
+    await tester.pumpAndSettle();
+    expect(theme.mode, ThemeMode.light);
+    await tester.tap(find.byType(ThemeToggleButton));
+    await tester.pumpAndSettle();
+    expect(theme.mode, ThemeMode.dark);
+    expect(prefs.themeMode, ThemeMode.dark);
   });
 }

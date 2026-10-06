@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Which live-scoring layout a round uses. Persisted per-device, overridable
@@ -11,6 +13,7 @@ class ViewPreference {
   final SharedPreferences _prefs;
 
   static const key = 'scoreboard_view';
+  static const themeKey = 'theme_mode';
 
   static Future<ViewPreference> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -27,4 +30,14 @@ class ViewPreference {
 
   Future<void> setView(ScoreboardView view) =>
       _prefs.setString(key, view.name);
+
+  /// Persisted light/dark/system choice; defaults to following the system.
+  ThemeMode get themeMode => switch (_prefs.getString(themeKey)) {
+    'light' => ThemeMode.light,
+    'dark' => ThemeMode.dark,
+    _ => ThemeMode.system,
+  };
+
+  Future<void> setThemeMode(ThemeMode mode) =>
+      _prefs.setString(themeKey, mode.name);
 }

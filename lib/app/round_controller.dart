@@ -120,8 +120,8 @@ class RoundController extends ChangeNotifier {
       return false;
     }
     selected = null;
-    _advance();
-    lastAlert = _notices();
+    final endNotice = _advance();
+    lastAlert = _joinNotices(_notices(), endNotice);
     _saved();
     return true;
   }
@@ -206,21 +206,22 @@ class RoundController extends ChangeNotifier {
 
   /// Pops the last journal event and restores the screen position.
   bool undo() {
-    final ok = view.undo();
-    if (ok) {
-      _finished = false;
-      lastAlert = null;
-      _saved();
+    if (view.journal.isEmpty) return false;
+    view.undo();
+    // An auto-added overtime question is a *consequence* of the answer that
+    // forced the tie, not a separate keeper action - one undo must revert the
+    // whole ruling, otherwise the tie would immediately re-open overtime and
+    // undo would appear to do nothing.
+    while (view.journal.isNotEmpty && _tiedAndComplete()) {
+      view.undo();
     }
-    return ok;
-  }
-
-  /// Appends the next overtime question per the book's sequence.
-  void addOvertimeQuestion() {
-    final value = nextOvertimeValue();
-    view.apply(OvertimeQuestionEvent(value: value));
+    _finished = false;
     lastAlert = null;
+    if (questionIndex > questionCount - 1) {
+      questionIndex = questionCount - 1;
+    }
     _saved();
+    return true;
   }
 
   /// Next overtime value per the ruleset: TBQ sudden-death 10s; JBQ
@@ -292,21 +293,16 @@ class RoundController extends ChangeNotifier {
   /// Re-derives completion after journal replay (resume path). A voided
   /// question with no substitute counts as unanswered, so such rounds stay
   /// open for the keeper to resolve.
+  /// Re-derives completion after journal replay (resume path). A tied,
+  /// fully-answered round opens overtime here too, so a resumed match lands
+  /// in the same state a live one would.
   void recomputeCompletion() {
     _finished = false;
-    for (var n = 1; n <= questionCount; n++) {
-      if (!questionAnswered(n)) return;
+    questionIndex = firstOpenQuestion() - 1;
+    if (questionIndex > questionCount - 1) {
+      questionIndex = questionCount - 1;
     }
-    final red = scoreOf(Side.red);
-    final green = scoreOf(Side.green);
-    if (red == green) {
-      lastAlert = 'Tie after Q$questionCount — overtime needed.';
-      return;
-    }
-    _finished = true;
-    lastAlert =
-        '${red > green ? redName : greenName} wins $red–$green — '
-        'match complete.';
+    lastAlert = _joinNotices(_notices(), _evaluateEnd());
   }
 
   /// First question with no recorded answer, or [questionCount] when all
@@ -344,30 +340,71 @@ class RoundController extends ChangeNotifier {
     return notices.isEmpty ? null : notices.last.message;
   }
 
-  void _advance() {
+  /// Combines a rulebook notice with the end-of-round announcement so neither
+  /// can swallow the other: a quiz-out firing on the overtime ruling must not
+  /// hide the fact that overtime started.
+  String? _joinNotices(String? first, String? second) {
+    if (first == null || first.isEmpty) return second;
+    if (second == null || second.isEmpty) return first;
+    return '$first  \u00b7  $second';
+  }
+
+  /// Advances the screen position after a ruling. On the final question it
+  /// evaluates the match end instead - overtime is deterministic, so it opens
+  /// automatically rather than waiting for a keeper to press a button.
+  String? _advance() {
     if (questionIndex + 1 < questionCount) {
       questionIndex += 1;
-    } else {
-      _finishRegulation();
+      return null;
     }
+    return _evaluateEnd();
   }
 
   bool _finished = false;
 
-  /// Whether the round is over (leader after Q20, or OT decided).
+  /// Whether the round is over: a lead exists and every question is answered.
   bool get matchComplete => _finished;
 
-  void _finishRegulation() {
+  /// Whether the keeper has passed the regulation question count.
+  bool get inOvertime => questionCount > ruleset.match.regulationQuestions;
+
+  /// Evaluates the end of the round once the final question is answered. A
+  /// tie deterministically opens the next overtime question; a lead ends the
+  /// match. Returns the notice to show, or null while the round continues.
+  String? _evaluateEnd() {
+    if (questionIndex + 1 < questionCount) return null;
+    if (!questionAnswered(questionCount)) return null;
     final red = scoreOf(Side.red);
     final green = scoreOf(Side.green);
-    if (red == green) {
-      lastAlert = 'Tie after Q$questionCount — overtime needed.';
-    } else {
+    if (red != green) {
       _finished = true;
-      lastAlert =
-          '${red > green ? redName : greenName} wins $red–$green — '
+      return '${red > green ? redName : greenName} wins $red-$green - '
           'match complete.';
     }
+    return _openOvertime(red, green);
+  }
+
+  /// Appends the next overtime question from the ruleset sequence (TBQ
+  /// sudden-death 10s; JBQ 10/20/30 then 20s), jumps to it, and returns the
+  /// notice shown to the keeper.
+  String? _openOvertime(int red, int green) {
+    final value = nextOvertimeValue();
+    final violation = view.apply(OvertimeQuestionEvent(value: value));
+    if (violation != null) {
+      return 'Tied $red-$green - overtime needed (${violation.message}).';
+    }
+    questionIndex = questionCount - 1;
+    return 'Tied $red-$green - overtime question $questionCount '
+        '($value pts) added automatically.';
+  }
+
+  /// True while every question carries an answer and the scores are level: the
+  /// state in which an auto-added overtime question would re-trigger forever.
+  bool _tiedAndComplete() {
+    for (var n = 1; n <= questionCount; n++) {
+      if (!questionAnswered(n)) return false;
+    }
+    return scoreOf(Side.red) == scoreOf(Side.green);
   }
 
   String _describe(RoundEvent event) => switch (event) {

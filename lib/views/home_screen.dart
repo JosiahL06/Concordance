@@ -11,6 +11,7 @@ import '../engine/ruleset.dart';
 import 'classic_screen.dart';
 import 'modern_screen.dart';
 import 'setup_screen.dart';
+import 'common/theme_toggle.dart';
 
 /// Production home: start a new round, resume an autosaved round, or switch
 /// the per-device scoreboard view. No demo seeding in prod (decision).
@@ -20,6 +21,7 @@ class HomeScreen extends StatefulWidget {
     required this.prefs,
     this.store,
     this.presets,
+    this.storeOpener,
   });
 
   final ViewPreference prefs;
@@ -31,6 +33,9 @@ class HomeScreen extends StatefulWidget {
   /// Injected ruleset presets (tests); null loads via rootBundle.
   final List<Ruleset>? presets;
 
+  /// Injected store opener (tests); null uses [RoundStore.open].
+  final Future<RoundStore> Function()? storeOpener;
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -38,6 +43,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   RoundStore? _store;
   List<Map<String, Object?>> _rounds = const [];
+  String? _storeError;
   ScoreboardView _view = ScoreboardView.modern;
 
   @override
@@ -53,16 +59,27 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Opens the local store, surfacing failures instead of leaving the Start
+  /// button disabled with no explanation. Retryable from the error card.
   Future<void> _openStore() async {
-    final store = await RoundStore.open();
-    if (!mounted) {
-      store.close();
-      return;
+    try {
+      final store = await (widget.storeOpener ?? RoundStore.open)();
+      if (!mounted) {
+        store.close();
+        return;
+      }
+      setState(() {
+        _store = store;
+        _storeError = null;
+        _rounds = store.listRounds();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _store = null;
+        _storeError = '$e';
+      });
     }
-    setState(() {
-      _store = store;
-      _rounds = store.listRounds();
-    });
   }
 
   @override
@@ -74,8 +91,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Concordance')),
+      appBar: AppBar(
+        title: const Text('Concordance'),
+        actions: const [ThemeToggleButton()],
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 560),
@@ -88,6 +109,59 @@ class _HomeScreenState extends State<HomeScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
+              if (_storeError != null) ...[
+                Card(
+                  color: scheme.errorContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: scheme.onErrorContainer,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Storage unavailable',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: scheme.onErrorContainer,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Rounds cannot be saved or resumed until the local '
+                          'database opens - scores would be lost if the app '
+                          'closed.',
+                          style: TextStyle(color: scheme.onErrorContainer),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _storeError!,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: scheme.onErrorContainer,
+                          ),
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton.icon(
+                          onPressed: _openStore,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Try again'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               SizedBox(
                 height: 72,
                 child: FilledButton(
@@ -181,7 +255,17 @@ class _HomeScreenState extends State<HomeScreen> {
     if (row == null) return;
     // Ruleset preset lookup by id (v1 ships two presets).
     final ruleset = await loadPreset(row['ruleset_id'] as String);
-    if (ruleset == null || !context.mounted) return;
+    if (!context.mounted) return;
+    if (ruleset == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not load that round - its ruleset is no longer available.',
+          ),
+        ),
+      );
+      return;
+    }
     final redSeats = _decodeSeats(row['red_seats'] as String);
     final greenSeats = _decodeSeats(row['green_seats'] as String);
     final controller = RoundController(

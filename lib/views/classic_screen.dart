@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../app/round_controller.dart';
 import '../engine/events.dart';
-import 'summary_screen.dart';
 import 'common/common_bits.dart';
 import 'common/live_chrome.dart';
+import 'common/theme_toggle.dart';
 
 /// Classic live-scoring view: paper-style scoresheet ledger over
 /// [RoundController]. Thin layout only — cells navigate, the shared console
@@ -29,31 +29,22 @@ class _ClassicScreenState extends State<ClassicScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF263238),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      child: Scaffold(
-        body: SafeArea(
-          child: ListenableBuilder(
-            listenable: round,
-            builder: (context, _) {
-              return Column(
-                children: [
-                  _header(context),
-                  AlertBanner(round: round),
-                  Expanded(child: _ledger(context)),
-                  if (round.matchComplete) _matchCompleteBar(context),
-                  ScoringConsole(round: round),
-                  LiveBottomBar(round: round),
-                ],
-              );
-            },
-          ),
+    return Scaffold(
+      body: SafeArea(
+        child: ListenableBuilder(
+          listenable: round,
+          builder: (context, _) {
+            return Column(
+              children: [
+                _header(context),
+                AlertBanner(round: round),
+                Expanded(child: _ledger(context)),
+                if (round.matchComplete || round.inOvertime) EndOfRoundBar(round: round),
+                ScoringConsole(round: round),
+                LiveBottomBar(round: round),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -115,6 +106,7 @@ class _ClassicScreenState extends State<ClassicScreen> {
               ),
             ),
           ),
+          const ThemeToggleButton(),
         ],
       ),
     );
@@ -514,56 +506,6 @@ class _ClassicScreenState extends State<ClassicScreen> {
             railButton(Side.green),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _matchCompleteBar(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final red = round.scoreOf(Side.red);
-    final green = round.scoreOf(Side.green);
-    final tied = red == green;
-    return Container(
-      color: scheme.primaryContainer,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              tied
-                  ? 'TIED $red\u2013$green \u2014 ADD AN OVERTIME QUESTION'
-                  : '${(red > green ? round.redName : round.greenName).toUpperCase()} '
-                      'WINS $red\u2013$green',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: scheme.onPrimaryContainer,
-              ),
-            ),
-          ),
-          if (tied)
-            SizedBox(
-              height: 48,
-              child: FilledButton.tonal(
-                style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
-                onPressed: round.addOvertimeQuestion,
-                child: const Text('Add overtime question'),
-              ),
-            ),
-          const SizedBox(width: 10),
-          SizedBox(
-            height: 48,
-            child: FilledButton.tonal(
-              style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => SummaryScreen(controller: round),
-                ),
-              ),
-              child: const Text('View summary'),
-            ),
-          ),
-        ],
       ),
     );
   }

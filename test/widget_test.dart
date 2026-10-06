@@ -113,6 +113,46 @@ void main() {
 
     expect(find.text('QUESTION 2 OF 20'), findsOneWidget);
   });
+
+  testWidgets('storage failure shows an actionable, retryable error', (
+    WidgetTester tester,
+  ) async {
+    var fail = true;
+    final prefs = await ViewPreference.load();
+
+    await tester.pumpWidget(
+      ConcordanceApp(
+        prefs: prefs,
+        presets: _presets(),
+        storeOpener: () async {
+          if (fail) throw StateError('database is locked');
+          return RoundStore.inMemory();
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The failure is explained instead of leaving a dead disabled button.
+    expect(find.text('Storage unavailable'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    final start = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'START A NEW ROUND'),
+    );
+    expect(start.onPressed, isNull, reason: 'blocked until storage opens');
+
+    // Retry with a working opener clears the error and enables scoring.
+    fail = false;
+    await tester.tap(find.text('Try again'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Storage unavailable'), findsNothing);
+    expect(find.text('Try again'), findsNothing);
+    final enabled = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'START A NEW ROUND'),
+    );
+    expect(enabled.onPressed, isNotNull);
+  });
+
 }
 
 /// Drives the real flow Home -> Setup -> live scoring at the Fire HD 10

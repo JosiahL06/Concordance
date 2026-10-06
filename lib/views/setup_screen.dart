@@ -4,6 +4,7 @@ import '../app/presets.dart';
 import '../app/round_controller.dart';
 import '../app/settings.dart';
 import '../engine/ruleset.dart';
+import 'common/theme_toggle.dart';
 
 /// Result of setup: the ready-to-run round plus the view the keeper picked
 /// for this session (overrides the per-device setting for the round).
@@ -120,6 +121,7 @@ class _SetupScreenState extends State<SetupScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('New round'),
+          actions: const [ThemeToggleButton()],
           bottom: presets == null
               ? null
               : TabBar(

@@ -84,9 +84,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Linux. Verified on the `fire_hd_10` (API 30) emulator: the app now opens the
   store and creates `concordance.db`.
 - Ignore `android/.kotlin/` (Gradle's Kotlin session dir).
+- Storage failures are actionable: if the SQLite store cannot be opened, the
+  home screen explains the failure and offers a retry instead of leaving a
+  dead disabled button.
 
 ### Changed
 
+- Overtime is now automatic and deterministic: a tie after the final question
+  appends the next overtime question from the ruleset sequence (TBQ: 10-point
+  substitutes; JBQ: 10/20/30 then 20s) with a notice to the keeper. There is
+  no longer a button to enter overtime. Undo reverts the overtime question
+  and the ruling that forced it.
+- Live screens follow the app theme (system / light / dark) from a single
+  shared seed instead of forcing light mode; a theme toggle (system → light
+  → dark) is present on Home, Setup, both live headers, and Summary, and the
+  choice is persisted per device.
 - Scoring console: CORRECT is green and INCORRECT red again, for at-a-glance
   clarity from across the table.
 - Classic time-out rail: a used time-out now fills solid in the team color with

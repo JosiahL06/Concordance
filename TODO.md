@@ -51,9 +51,17 @@
 - [x] Void / substitute-question / substitute-quizzer UI entry points
       (documented gap in `docs/design/interaction.md` §7)
 - [x] Tests: engine goldens + `RoundController` adapter + store round-trip +
-      widget flows (setup, Classic scoring/undo, Modern scoring) — 38 passing
+      widget flows (setup, Classic scoring/undo, Modern scoring), storage
+      failure, dark-mode contrast, theme toggle — 46 passing
 
 ## Phase 4 — Packaging & polish
+- [x] Overtime is automatic: tie after the final question appends the next
+      overtime question from the ruleset sequence with a notice (no button);
+      undo reverts the overtime question and the forcing ruling
+- [x] Storage failures surface an actionable error card with retry
+- [x] Live screens follow the app theme from a single shared seed; theme
+      toggle (system → light → dark) on Home, Setup, both live headers,
+      and Summary, choice persisted per device
 - [ ] Polish pass: UI design, usability, intuitiveness, UI logic (button prominence,
       placement, alert placement)
 - [ ] Guardrail logic pass: block impossible entries (same quizzer scoring twice

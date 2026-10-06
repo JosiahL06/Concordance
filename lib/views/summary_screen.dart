@@ -4,6 +4,7 @@ import '../app/round_controller.dart';
 import '../data/export.dart';
 import '../engine/events.dart';
 import 'common/live_chrome.dart';
+import 'common/theme_toggle.dart';
 
 /// Round summary: final result, team/individual tallies, question-by-question
 /// review, and working PDF/CSV export via the platform share sheet.
@@ -21,7 +22,10 @@ class SummaryScreen extends StatelessWidget {
     final tied = redScore == greenScore;
     final winnerSide = tied ? null : (redScore > greenScore ? Side.red : Side.green);
     return Scaffold(
-      appBar: AppBar(title: const Text('Round summary')),
+      appBar: AppBar(
+        title: const Text('Round summary'),
+        actions: const [ThemeToggleButton()],
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1080),
