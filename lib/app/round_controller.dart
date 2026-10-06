@@ -65,6 +65,8 @@ class RoundController extends ChangeNotifier {
   int scoreOf(Side side) => view.scoreOf(side);
   String? cellOutcome(Side side, int index, int n) =>
       view.cellOutcome(side, index, n);
+  bool cellHasFoul(Side side, int index, int n) =>
+      view.cellHasFoul(side, index, n);
   int teamDelta(Side side, int n) => view.teamDelta(side, n);
 
   List<QuizzerRef> get redRoster => _roster(Side.red);
@@ -117,8 +119,16 @@ class RoundController extends ChangeNotifier {
       return false;
     }
     selected = null;
-    final endNotice = _advance();
-    lastAlert = _joinNotices(_notices(), endNotice);
+    // An incorrect answer on an *interrupted* question is re-read to the
+    // other team, so the keeper must stay on it instead of advancing.
+    final interrupted = view.questionMarks[questionNumber - 1].interrupted;
+    lastAlert = (!correct && interrupted)
+        ? _joinNotices(
+            _notices(),
+            'Incorrect on interrupted Q$questionNumber — question stays for '
+            "the other team's re-read.",
+          )
+        : _joinNotices(_notices(), _advance());
     _saved();
     return true;
   }

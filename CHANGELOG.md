@@ -65,28 +65,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     sheet (`pdf`, `csv`, `share_plus`).
   - Void question, read substitute question, and quizzer substitution entry
     points, closing the gaps flagged in `docs/design/interaction.md`.
-
-### Fixed
-
-- Classic ledger could overflow horizontally at the 1280dp design width:
-  question cells now flex instead of using a computed fixed width, so the
-  grid cannot overflow at any width.
-- Live bottom bar overflowed once the "More" actions menu was added; the undo
-  button now flexes and its label ellipsizes.
-- The setup screen's Modern/Classic choice was ignored when starting a round
-  (the home screen routed with its own setting); the choice now drives the
-  live screen and becomes the remembered default.
-- Setup no longer shows an indeterminate progress spinner (never settles in
-  tests, and the project avoids decorative motion).
-- **Android: the app crashed at launch with `Failed to load dynamic library
-  'libsqlite3.so'`.** The `sqlite3` package alone does not bundle the native
-  library; added `sqlite3_flutter_libs`, which ships it for Android/Windows/
-  Linux. Verified on the `fire_hd_10` (API 30) emulator: the app now opens the
-  store and creates `concordance.db`.
-- Ignore `android/.kotlin/` (Gradle's Kotlin session dir).
-- Storage failures are actionable: if the SQLite store cannot be opened, the
-  home screen explains the failure and offers a retry instead of leaving a
-  dead disabled button.
+  - Team header buttons beside each team name in both live views: `TEAM FOUL n`
+    (team-only tally) and contest/appeal (TBQ unsuccessful/3, JBQ
+    used/2), with side-scoped entry dialogs. Personal fouls are per-quizzer
+    and show on the cells, so the header counts team fouls only.
+- Home "Resume round" list: delete a saved round via `RoundStore.deleteRound`,
+  guarded by a confirmation dialog so a mis-tap cannot silently lose a round.
 
 ### Changed
 
@@ -108,6 +92,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Classic ledger could overflow horizontally at the 1280dp design width:
+  question cells now flex instead of using a computed fixed width, so the
+  grid cannot overflow at any width.
+- Live bottom bar overflowed once the "More" actions menu was added; the undo
+  button now flexes and its label ellipsizes.
+- The setup screen's Modern/Classic choice was ignored when starting a round
+  (the home screen routed with its own setting); the choice now drives the
+  live screen and becomes the remembered default.
+- Setup no longer shows an indeterminate progress spinner (never settles in
+  tests, and the project avoids decorative motion).
+- **Android: the app crashed at launch with `Failed to load dynamic library
+  'libsqlite3.so'`.** The `sqlite3` package alone does not bundle the native
+  library; added `sqlite3_flutter_libs`, which ships it for Android/Windows/
+  Linux. Verified on the `fire_hd_10` (API 30) emulator: the app now opens the
+  store and creates `concordance.db`.
+- Ignore `android/.kotlin/` (Gradle's Kotlin session dir).
+- An incorrect answer on an *interrupted* question no longer auto-advances:
+  interrupted questions are re-read to the other team, so the keeper stays on
+  the question (with a notice) rather than moving on.
+- The footer Contest/Appeal gavel button was removed — the per-team header
+  buttons are now the single challenge entry point, and the duplicate dialog
+  path in `LiveBottomBar` is gone.
+- Storage failures are actionable: if the SQLite store cannot be opened, the
+  home screen explains the failure and offers a retry instead of leaving a
+  dead disabled button.
 - Summary team cards were unreadable in **dark mode**: score, time-outs and
   fouls inherited theme colors (near-white) while the card background is a
   fixed *light* team tint. Content on a tinted surface now uses a fixed dark
@@ -169,6 +178,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   used two reads "2/2"), and the overtime announcement states the rule. The
   free one-minute overtime time-out both books declare is the Quizmaster's, not
   a team time-out, so it is not counted.
+- **Personal fouls no longer erase the score mark.** `RoundView.cellOutcome`
+  was last-write-wins, so a foul on an answered cell replaced `+20`/`−10`
+  with `F`. The cell read is now split: `cellOutcome` returns the answer
+  mark only and `cellHasFoul` reports the foul; the Classic ledger shows the
+  score plus a capital-F badge pinned to the cell's top-right corner (the
+  cell `Stack` expands so the badge anchors to the cell, with the score
+  wrapped in `Center`) — foul-only cells keep the bare `F` — and the
+  summary/CSV notes list both. `TeamView` additionally exposes `teamFouls`,
+  `challengesUsed`, and `unsuccessfulChallenges` for the header tallies.
+  Tests: `test/views/classic_polish_test.dart`.
+- **Polish pass (bottom bar, headers, marks, gating).** The shared
+  bottom-bar `RED/GRN TO` duplicates are removed (Modern takes time-outs
+  from a header button; Classic keeps its ledger rail); Summary is disabled
+  until the match completes; interrupted questions ring the Classic column
+  header like the paper circle; the selected-quizzer × current-question
+  intersect highlights; the More menu disables void once the current
+  question is voided and substitute-question until a void exists.
+  `docs/design/interaction.md` updated; global edit/undo dialogue deferred
+  to post-v1 (single-step undo + `undoLabel` covers v1).
 
 <!-- Version link references (e.g. [0.1.0]: <repo>/compare/v0.0.1...v0.1.0)
      are added here at the first release, once the canonical repo URL exists. -->

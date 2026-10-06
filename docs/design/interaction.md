@@ -16,6 +16,9 @@ or `DirectionBScreen` → `SummaryScreen(round)`.
   the live screen; Summary "Done" pops until the first route (home).
 - System back from a live screen returns to setup; the round object is
   discarded (Phase 3: autosave makes this a resume instead).
+- Production home's "Resume round" list each row taps to resume and carries a
+  delete affordance that first asks for confirmation (a mis-tap must not lose
+  a round silently).
 
 ## 2. Global principles (locked)
 
@@ -49,14 +52,14 @@ Applies identically to Modern `_scoringZone` and Classic `_console`.
 |---|---|---|---|
 | Quizzer card / label cell | team half / ledger label | `select` (view-local, NOT journaled; no-op on inactive; re-tap deselects) | Enables CORRECT / INCORRECT / quizzer FOUL |
 | CORRECT | console (needs selection) | `markCorrect` → `AnswerEvent(q, side, index, correct)` | `+value`; correct++; quiz-out check (5/TBQ, 6/JBQ) adds bonus + flag + alert; advances to next Q, clears selection, repaints immediately; blocked with alert if quizzer/team already scored on Q (guardrail) |
-| INCORRECT | console (needs selection) | `markIncorrect` → `AnswerEvent(..., incorrect)` | `−value~/2`; strike-out at 3; advances, clears selection, repaints; same guardrail |
-| FOUL | console → dialog (quizzer foul vs team foul) | `addFoul` / team path → `FoulEvent(q?, side, index?)` | `−foulDeduction` (ruleset, D9); foul-out at 3; team foul hits team total only, never a ledger cell (D9); stays on Q, clears selection, repaints |
-| RED/GRN TO (bottom bar / ledger rail) | time-out controls | `takeTimeOut` → `TimeOutEvent(side)` | capped by `LimitsConfig.timeOutCap`: 3 in regulation; in overtime TBQ allows none (remaining may not be used) and JBQ allows remaining +1. Over-cap requests are denied (not journaled) and the keeper is told to assign the resulting team foul — the app never auto-fouls. Counters read `taken/displayCap` |
+| INCORRECT | console (needs selection) | `markIncorrect` → `AnswerEvent(..., incorrect)` | `−value~/2`; strike-out at 3; clears selection, repaints; same guardrail. Advances to the next Q EXCEPT when the current question is interrupted — an incorrect interrupted question is re-read to the other team, so the keeper stays on it (with a notice) |
+| FOUL | console → dialog (quizzer foul vs team foul) | `addQuizzerFoul` / `addTeamFoul` → `FoulEvent(q, side, index?)` | `−foulDeduction` (ruleset, D9); foul-out at 3; team foul hits team total only, never a ledger cell (D9); stays on Q, clears selection, repaints. Quizzer fouls show as an `F` badge beside the score mark, never replacing it; team fouls have a `TEAM FOUL n` header button beside each team name |
+| RED/GRN TO (Modern header / Classic ledger rail) | time-out controls | `takeTimeOut` → `TimeOutEvent(side)` | capped by `LimitsConfig.timeOutCap`: 3 in regulation; in overtime TBQ allows none (remaining may not be used) and JBQ allows remaining +1. Over-cap requests are denied (not journaled) and the keeper is told to assign the resulting team foul — the app never auto-fouls. Counters read `taken/displayCap`. The old shared bottom-bar duplicates were removed in the polish pass |
 | Interruption | bottom bar toggle | `toggleInterruption` → `InterruptionEvent(q)` | toggles ring on current Q (marks only) |
-| gavel (Contest / Appeal) | bottom bar → team+outcome dialog | `recordChallenge` → `ChallengeEvent(q, side, successful)` | per-team match-wide tallies (D8); 3rd-unsuccessful (TBQ) / exhausted (JBQ) alert; over-limit rejected |
+| gavel (Contest / Appeal) | per-team header button beside the team name → outcome dialog | `recordChallenge` → `ChallengeEvent(q, side, successful)` | per-team match-wide tallies (D8) shown beside each team name like time-outs; 3rd-unsuccessful (TBQ) / exhausted (JBQ) alert; over-limit rejected. The old footer gavel button was removed in the polish pass — the header buttons are the only entry point |
 | UNDO — label | bottom bar (disabled when empty) | `undo` → journal pop + re-fold | restores scores/cells/question/completion/alert exactly |
-| Ledger cell (Classic) | grid tap | `jumpToQuestion` (view state, D6/D1) | moves screen position; scoring there targets that Q explicitly |
-| Summary | bottom bar | — (navigation) | pushes `SummaryScreen(round)` |
+| Ledger cell (Classic) | grid tap | `jumpToQuestion` (view state, D6/D1) | moves screen position and selects the quizzer; the intersect of selection × current question highlights; scoring there targets that Q explicitly |
+| Summary | bottom bar (enabled only at match complete) + end-of-round strip | — (navigation) | pushes `SummaryScreen(round)` |
 
 Console hint line states the contract: "TAP A QUIZZER, THEN CORRECT /
 INCORRECT / FOUL — TEAM FOUL NEEDS NO SELECTION. CORRECT / INCORRECT
@@ -74,11 +77,16 @@ question" (tie only) + "View summary".
 ## 6. Classic specifics (`direction_b_screen.dart`)
 
 Ledger grid geometry: 20×48 + 140 label + 64 total = 1164dp, fits 1280
-(shrinks only for overtime columns). Title row per team: name, FOUL n,
-CONTEST/APPEAL n (+limit), live score. Quizzer rows: tappable 48dp cells
-showing `+value` / `−half` / `F` with contest/interruption rings; RUNNING
+(shrinks only for overtime columns). Title row per team: name, `TEAM FOUL n`
+and contest/appeal header buttons with tallies (unsuccessful/used challenges
++ limit; personal fouls are per-quizzer, on the cells), live score. Quizzer rows: tappable 48dp cells
+showing `+value` / `−half` (personal fouls add an `F` badge beside the mark,
+never replacing it; foul-only cells show a bare `F`) with contest/interruption rings;
+interrupted questions also ring the column header; selected quizzer × current
+question intersect highlights. RUNNING
 row = signed per-question team delta (empty cells "·"). Vertical TIME OUT
-1/2/3 rail per team. Same console + bottom bar as Modern (Summary only).
+1/2/3 rail per team. Same console + bottom bar as Modern (Summary gated until
+the match completes; More menu guards void/substitute state).
 
 ## 7. Alerts, limits, overtime
 

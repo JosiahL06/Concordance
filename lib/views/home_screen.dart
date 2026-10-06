@@ -207,7 +207,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     subtitle: Text(
                       '${r['ruleset_id']} \u00b7 ${r['created_at']}',
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Delete round',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => _confirmDelete(
+                            context,
+                            r['id'] as int,
+                            '${r['red_name']} vs ${r['green_name']}',
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
                     onTap: () => _resume(context, r['id'] as int),
                   ),
                 ),
@@ -300,6 +314,43 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     };
     _openLive(context, controller);
+  }
+
+  /// Confirms, then permanently deletes an autosaved round. The confirmation
+  /// guards against an accidental tap on the delete affordance.
+  Future<void> _confirmDelete(
+    BuildContext context,
+    int id,
+    String label,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete this round?'),
+        content: Text('Delete "$label" permanently? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    _store!.deleteRound(id);
+    setState(() => _rounds = _store!.listRounds());
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Round deleted.')));
   }
 
   List<String> _decodeSeats(String raw) {

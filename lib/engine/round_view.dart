@@ -40,12 +40,24 @@ class TeamView {
     required this.side,
     required this.score,
     required this.timeOuts,
+    required this.teamFouls,
+    required this.challengesUsed,
+    required this.unsuccessfulChallenges,
     required this.quizzers,
   });
 
   final Side side;
   final int score;
   final int timeOuts;
+
+  /// Coach/assistant/inactive fouls: hit the team total only, never a cell.
+  final int teamFouls;
+
+  /// Match-wide contest/appeal bookkeeping (TBQ: unsuccessful cap; JBQ: used
+  /// allotment).
+  final int challengesUsed;
+  final int unsuccessfulChallenges;
+
   final List<QuizzerView> quizzers;
 }
 
@@ -138,6 +150,9 @@ class RoundView {
       side: side,
       score: team.score,
       timeOuts: team.timeOuts,
+      teamFouls: team.teamFouls,
+      challengesUsed: team.challengesUsed,
+      unsuccessfulChallenges: team.unsuccessfulChallenges,
       quizzers: [
         for (final q in team.quizzers)
           QuizzerView(
@@ -215,8 +230,9 @@ class RoundView {
     return delta;
   }
 
-  /// Outcome mark for one quizzer cell: 'correct' | 'incorrect' | 'foul' |
-  /// null. Last-write-wins per cell from the journal.
+  /// Outcome mark for one quizzer cell: 'correct' | 'incorrect' | null.
+  /// A personal foul no longer overwrites the answer mark — the cell shows
+  /// the score plus an `F` badge (see [cellHasFoul]).
   String? cellOutcome(Side side, int quizzerIndex, int n) {
     String? mark;
     for (final event in journal) {
@@ -225,13 +241,22 @@ class RoundView {
           event.side == side &&
           event.quizzerIndex == quizzerIndex) {
         mark = event.correct ? 'correct' : 'incorrect';
-      } else if (event is FoulEvent &&
-          event.side == side &&
-          event.quizzerIndex == quizzerIndex &&
-          event.questionNumber == n) {
-        mark = 'foul';
       }
     }
     return mark;
+  }
+
+  /// Whether [side]'s quizzer has a personal foul on question [n]. Shown as
+  /// a capital-F badge alongside the answer mark, never instead of it.
+  bool cellHasFoul(Side side, int quizzerIndex, int n) {
+    for (final event in journal) {
+      if (event is FoulEvent &&
+          event.side == side &&
+          event.quizzerIndex == quizzerIndex &&
+          event.questionNumber == n) {
+        return true;
+      }
+    }
+    return false;
   }
 }

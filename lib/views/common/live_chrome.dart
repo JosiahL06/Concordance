@@ -172,7 +172,9 @@ class ScoringConsole extends StatelessWidget {
   }
 }
 
-/// Shared bottom bar: undo, interruption, contest/appeal, time-outs, summary.
+/// Shared bottom bar: undo, interruption, contest/appeal, overflow, summary.
+/// Team time-outs live beside the team names (Classic rail + Modern header),
+/// not here — the bottom-right duplicates were removed in the polish pass.
 class LiveBottomBar extends StatelessWidget {
   const LiveBottomBar({super.key, required this.round});
 
@@ -213,31 +215,41 @@ class LiveBottomBar extends StatelessWidget {
           const SizedBox(width: 12),
           SizedBox(
             height: 48,
-            child: OutlinedButton.icon(
-              onPressed: round.matchComplete
-                  ? null
-                  : () => _recordChallenge(context),
-              icon: const Icon(Icons.gavel_outlined),
-              label: Text(round.challengeLabel),
-            ),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            height: 48,
             child: PopupMenuButton<String>(
               tooltip: 'More actions',
               onSelected: (v) => _more(context, v),
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: 'void', child: Text('Void question')),
-                PopupMenuItem(
-                  value: 'sub-question',
-                  child: Text('Read substitute question'),
-                ),
-                PopupMenuItem(
-                  value: 'sub-quizzer',
-                  child: Text('Substitute quizzer'),
-                ),
-              ],
+              itemBuilder: (context) {
+                final marks = round.view.questionMarks;
+                final voided =
+                    round.questionNumber <= marks.length &&
+                    marks[round.questionNumber - 1].voided;
+                final anyVoided = marks.any((m) => m.voided);
+                return [
+                  PopupMenuItem(
+                    value: 'void',
+                    enabled: !voided,
+                    child: Text(
+                      voided
+                          ? 'Void question (Q${round.questionNumber} already void)'
+                          : 'Void question',
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'sub-question',
+                    // The engine rejects a substitute without a voided slot.
+                    enabled: anyVoided,
+                    child: Text(
+                      anyVoided
+                          ? 'Read substitute question'
+                          : 'Read substitute question (void a question first)',
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'sub-quizzer',
+                    child: Text('Substitute quizzer'),
+                  ),
+                ];
+              },
               child: const SizedBox(
                 height: 48,
                 child: Row(
@@ -255,79 +267,15 @@ class LiveBottomBar extends StatelessWidget {
           SizedBox(
             height: 48,
             child: OutlinedButton.icon(
-              onPressed: () => _openSummary(context),
+              onPressed: round.matchComplete
+                  ? () => _openSummary(context)
+                  : null,
               icon: const Icon(Icons.receipt_long),
               label: const Text('Summary'),
             ),
           ),
-          const SizedBox(width: 12),
-          SizedBox(
-            height: 48,
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: sideAccent(Side.red, scheme), width: 2),
-                foregroundColor: sideAccent(Side.red, scheme),
-              ),
-              onPressed: () => round.takeTimeOut(Side.red),
-              child: Text(
-                'RED TO ${round.teamOf(Side.red).timeOuts}/${round.timeOutDisplayCap(Side.red)}',
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            height: 48,
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(
-                  color: sideAccent(Side.green, scheme),
-                  width: 2,
-                ),
-                foregroundColor: sideAccent(Side.green, scheme),
-              ),
-              onPressed: () => round.takeTimeOut(Side.green),
-              child: Text(
-                'GREEN TO ${round.teamOf(Side.green).timeOuts}/${round.timeOutDisplayCap(Side.green)}',
-              ),
-            ),
-          ),
         ],
       ),
-    );
-  }
-
-  Future<void> _recordChallenge(BuildContext context) async {
-    final choice = await showDialog<String>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: Text('Record ${round.challengeLabel}'),
-        children: [
-          for (final side in Side.values)
-            for (final successful in const <bool>[true, false])
-              SimpleDialogOption(
-                onPressed: () => Navigator.pop(
-                  context,
-                  '${side.name}|${successful ? 1 : 0}',
-                ),
-                child: SizedBox(
-                  height: 48,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '${sideName(round, side)} — '
-                      '${successful ? 'granted (successful)' : 'denied (unsuccessful)'}',
-                    ),
-                  ),
-                ),
-              ),
-        ],
-      ),
-    );
-    if (choice == null) return;
-    final parts = choice.split('|');
-    round.recordChallenge(
-      Side.values.byName(parts[0]),
-      successful: parts[1] == '1',
     );
   }
 
@@ -442,6 +390,85 @@ class LiveBottomBar extends StatelessWidget {
 /// or the live overtime state while overtime is in progress. Overtime opens
 /// automatically when regulation ends tied, so there is deliberately no
 /// button here for the keeper to press.
+/// Team-level buttons beside the team name: team foul (coach/assistant/
+/// inactive — hits the team total only) and contest/appeal tally + entry.
+/// Mirrors the time-out pattern: the tally reads like the paper sheet and the
+/// button is the entry point. Personal fouls are recorded per-quizzer and show
+/// on the cells, so they are deliberately not counted here.
+class TeamHeaderButtons extends StatelessWidget {
+  const TeamHeaderButtons({super.key, required this.round, required this.side});
+
+  final RoundController round;
+  final Side side;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final team = round.teamOf(side);
+    final limits = round.ruleset.limits;
+    // TBQ tracks unsuccessful contests (3rd ends them); JBQ tracks used
+    // appeals against the 2-per-team allotment.
+    final challenges = limits.challengeAllotmentPerTeam != null
+        ? '${team.challengesUsed}/${limits.challengeAllotmentPerTeam}'
+        : '${team.unsuccessfulChallenges}/${limits.challengeLimitCount}';
+    final style = OutlinedButton.styleFrom(
+      side: BorderSide(color: sideAccent(side, scheme), width: 1.5),
+      foregroundColor: sideAccent(side, scheme),
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 48,
+          child: OutlinedButton(
+            style: style,
+            onPressed: round.matchComplete ? null : () => round.addTeamFoul(side),
+            child: Text('TEAM FOUL ${team.teamFouls}'),
+          ),
+        ),
+        const SizedBox(width: 6),
+        SizedBox(
+          height: 48,
+          child: OutlinedButton(
+            style: style,
+            onPressed: round.matchComplete
+                ? null
+                : () => _recordChallenge(context),
+            child: Text('${round.challengeLabel.toUpperCase()} $challenges'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _recordChallenge(BuildContext context) async {
+    final successful = await showDialog<bool>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text('Record ${round.challengeLabel} — ${sideName(round, side)}'),
+        children: [
+          for (final s in const <bool>[true, false])
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, s),
+              child: SizedBox(
+                height: 48,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    s ? 'Granted (successful)' : 'Denied (unsuccessful)',
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+    if (successful == null) return;
+    round.recordChallenge(side, successful: successful);
+  }
+}
+
+
 class EndOfRoundBar extends StatelessWidget {
   const EndOfRoundBar({super.key, required this.round});
 

@@ -145,30 +145,53 @@ class _ClassicScreenState extends State<ClassicScreen> {
 
   Widget _columnHeaders(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final marks = round.view.questionMarks;
     return Row(
       children: [
         const SizedBox(width: _kLabelWidth),
         for (final n in _visibleQuestions)
           Expanded(
-            child: Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              decoration: BoxDecoration(
-                color: n == round.questionNumber
-                    ? scheme.primary
-                    : scheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                '$n',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: n == round.questionNumber
-                      ? scheme.onPrimary
-                      : scheme.onSurface,
-                ),
-              ),
+            child: Builder(
+              builder: (context) {
+                final interrupted =
+                    n <= marks.length && marks[n - 1].interrupted;
+                Widget cell = Container(
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: n == round.questionNumber
+                        ? scheme.primary
+                        : scheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '$n',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: n == round.questionNumber
+                          ? scheme.onPrimary
+                          : scheme.onSurface,
+                    ),
+                  ),
+                );
+                if (interrupted) {
+                  // Paper sheet circles the interrupted question number —
+                  // same orange ring as QuestionNavigator.
+                  cell = Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: const Color(0xFFEF6C00),
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: cell,
+                  );
+                }
+                return cell;
+              },
             ),
           ),
         Container(
@@ -209,7 +232,6 @@ class _ClassicScreenState extends State<ClassicScreen> {
   }
 
   Widget _teamTitleRow(BuildContext context, Side side) {
-    final team = round.teamOf(side);
     return Row(
       children: [
         SizedBox(
@@ -224,12 +246,8 @@ class _ClassicScreenState extends State<ClassicScreen> {
             ),
           ),
         ),
-        Expanded(
-          child: Text(
-            'FOUL ${team.quizzers.fold(0, (a, q) => a + q.fouls)}',
-            style: const TextStyle(fontSize: 12, color: sideInkMuted),
-          ),
-        ),
+        TeamHeaderButtons(round: round, side: side),
+        const Spacer(),
         Text(
           'SCORE ${round.scoreOf(side)}',
           style: const TextStyle(
@@ -315,8 +333,9 @@ class _ClassicScreenState extends State<ClassicScreen> {
   Widget _ledgerCell(BuildContext context, Side side, int index, int n) {
     final scheme = Theme.of(context).colorScheme;
     final mark = round.cellOutcome(side, index, n);
+    final hasFoul = round.cellHasFoul(side, index, n);
     final quizzer = round.teamOf(side).quizzers[index];
-    String text = '';
+    String text = hasFoul && mark == null ? 'F' : '';
     var color = scheme.outline;
     var weight = FontWeight.w500;
     if (mark == 'correct') {
@@ -327,8 +346,8 @@ class _ClassicScreenState extends State<ClassicScreen> {
       text = '\u2212${round.currentValue(n) ~/ 2}';
       color = scheme.error;
       weight = FontWeight.w800;
-    } else if (mark == 'foul') {
-      text = 'F';
+    } else if (hasFoul) {
+      // Foul-only cell (no answer): bare F in tertiary, as before.
       color = scheme.tertiary;
       weight = FontWeight.w800;
     }
@@ -338,6 +357,10 @@ class _ClassicScreenState extends State<ClassicScreen> {
     final interrupted =
         round.view.questionMarks.length >= n &&
         round.view.questionMarks[n - 1].interrupted;
+    // Highlight the intersect of the selected quizzer and the current
+    // question so the keeper can see exactly which cell scores next.
+    final isTarget =
+        n == round.questionNumber && round.selected == (side, index);
     Widget cell = Container(
       width: double.infinity,
       height: 48,
@@ -347,11 +370,39 @@ class _ClassicScreenState extends State<ClassicScreen> {
             ? scheme.primaryContainer.withValues(alpha: 0.45)
             : scheme.surface,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: scheme.outlineVariant),
+        border: Border.all(
+          color: isTarget ? scheme.primary : scheme.outlineVariant,
+          width: isTarget ? 3 : 1,
+        ),
       ),
-      child: Text(
-        text,
-        style: TextStyle(fontSize: 13, fontWeight: weight, color: color),
+      child: Stack(
+        // Expand so the Stack fills the cell: that lets the foul badge pin
+        // to the cell corner, and the score is wrapped in [Center] so it
+        // still centers within the filled Stack.
+        fit: StackFit.expand,
+        children: [
+          Center(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 13, fontWeight: weight, color: color),
+            ),
+          ),
+          // Personal foul shares the cell with the score: small capital F
+          // badge top-right, never replacing the answer mark.
+          if (hasFoul && mark != null)
+            Positioned(
+              top: 2,
+              right: 3,
+              child: Text(
+                'F',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  color: scheme.tertiary,
+                ),
+              ),
+            ),
+        ],
       ),
     );
     if (contested || interrupted) {

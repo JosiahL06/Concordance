@@ -168,11 +168,10 @@ void main() {
         greaterThan(0.4),
       );
 
-      // The time-out strip sits on the fixed light tint → fixed dark ink.
-      expect(
-        textColor(tester, find.textContaining('TIME-OUTS').first),
-        sideInkMuted,
-      );
+      // The time-out button sits in the team half below the tinted band and
+      // carries the side accent as its foreground (button text inherits it).
+      final timeOuts = find.textContaining('TIME-OUT');
+      expect(timeOuts, findsNWidgets(2));
     });
 
     testWidgets('light mode keeps the deep team accent', (
@@ -234,26 +233,35 @@ void main() {
       expect(railLabel.style!.color!.computeLuminance(), greaterThan(0.4));
     });
 
-    testWidgets('RED/GREEN time-out accents are the lightened dark-mode ones', (
-      WidgetTester tester,
-    ) async {
-      // The shared bottom bar is wider than the 1280dp test viewport at this
-      // widget-test size, so assert the button styling directly rather than
-      // looking up overflowing text. ClassicScreen renders the same widgets.
+    testWidgets('Modern header time-out uses the lightened dark-mode accent',
+        (WidgetTester tester) async {
       await pumpBrightness(
         tester,
-        ClassicScreen(controller: freshRound()),
+        ModernScreen(controller: freshRound()),
         Brightness.dark,
       );
 
-      final out = OutlinedButton.styleFrom(
-        side: BorderSide(color: sideAccent(Side.red, _darkScheme), width: 2),
-        foregroundColor: sideAccent(Side.red, _darkScheme),
+      // Each team half now carries its own TIME-OUT button beside the team
+      // name (the shared bottom-bar duplicates were removed). The button
+      // text inherits the OutlinedButton foreground, which must be the
+      // lightened accent on the dark surface.
+      final buttons = find.textContaining('TIME-OUT');
+      expect(buttons, findsNWidgets(2));
+      final redButton = tester.widget<OutlinedButton>(
+        find.ancestor(of: buttons.first, matching: find.byType(OutlinedButton)),
+      );
+      final greenButton = tester.widget<OutlinedButton>(
+        find.ancestor(of: buttons.last, matching: find.byType(OutlinedButton)),
+      );
+      WidgetStateProperty<Color?>? fg(OutlinedButton b) =>
+          b.style?.foregroundColor;
+      expect(
+        fg(redButton)?.resolve(<WidgetState>{}),
+        expectedAccent(Side.red, Brightness.dark),
       );
       expect(
-        out.foregroundColor!.resolve(<WidgetState>{}),
-        redAccentDark,
-        reason: 'RED TO must use the lightened accent on a dark surface',
+        fg(greenButton)?.resolve(<WidgetState>{}),
+        expectedAccent(Side.green, Brightness.dark),
       );
       expect(redAccentDark.computeLuminance(), greaterThan(0.4));
       expect(greenAccentDark.computeLuminance(), greaterThan(0.4));

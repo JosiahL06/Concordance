@@ -58,6 +58,27 @@ void main() {
       expect(c.scoreOf(Side.green), -5);
     });
 
+    test('incorrect on an interrupted question does NOT advance', () {
+      final c = freshTbq();
+      c.toggleInterruption(); // Q1 is interrupted
+      c.select(Side.red, 0);
+      expect(c.markIncorrect(), isTrue);
+      // Interrupted questions are re-read to the other team: stay on Q1 so
+      // the keeper can record the other team's re-read.
+      expect(c.questionNumber, 1);
+      expect(c.scoreOf(Side.red), -5);
+      expect(c.lastAlert, contains('interrupted'));
+      expect(c.selected, isNull);
+    });
+
+    test('correct on an interrupted question still advances', () {
+      final c = freshTbq();
+      c.toggleInterruption();
+      c.select(Side.red, 0);
+      expect(c.markCorrect(), isTrue);
+      expect(c.questionNumber, 2);
+    });
+
     test('quizzer foul stays on question and clears selection', () {
       final c = freshTbq();
       c.select(Side.red, 0);

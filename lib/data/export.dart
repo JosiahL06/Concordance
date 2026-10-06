@@ -117,8 +117,12 @@ String _notes(RoundController c, int n) {
     final team = c.teamOf(side);
     for (var i = 0; i < team.quizzers.length; i++) {
       final mark = c.cellOutcome(side, i, n);
-      if (mark == null) continue;
-      parts.add('${team.quizzers[i].label}: $mark');
+      if (mark != null) {
+        parts.add('${team.quizzers[i].label}: $mark');
+      }
+      if (c.cellHasFoul(side, i, n)) {
+        parts.add('${team.quizzers[i].label}: foul');
+      }
     }
   }
   return parts.isEmpty ? '-' : parts.join('; ');

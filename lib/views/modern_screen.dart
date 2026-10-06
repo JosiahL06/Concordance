@@ -154,9 +154,22 @@ class _ModernScreenState extends State<ModernScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            'TIME-OUTS ${team.timeOuts}/${round.timeOutDisplayCap(side)}',
-            style: const TextStyle(fontSize: 13, color: sideInkMuted),
+          TeamHeaderButtons(round: round, side: side),
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 48,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: sideAccent(side, scheme), width: 2),
+                foregroundColor: sideAccent(side, scheme),
+              ),
+              onPressed: round.matchComplete
+                  ? null
+                  : () => round.takeTimeOut(side),
+              child: Text(
+                'TIME-OUT  ${team.timeOuts}/${round.timeOutDisplayCap(side)}',
+              ),
+            ),
           ),
           const SizedBox(height: 4),
           for (var i = 0; i < team.quizzers.length; i++)

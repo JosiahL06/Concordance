@@ -62,7 +62,7 @@
 - [x] Live screens follow the app theme from a single shared seed; theme
       toggle (system → light → dark) on Home, Setup, both live headers,
       and Summary, choice persisted per device
-- [ ] Polish pass: UI design, usability, intuitiveness, UI logic (button prominence,
+- [x] Polish pass: UI design, usability, intuitiveness, UI logic (button prominence,
       placement, alert placement)
       - [x] Dark-mode text contrast in the live views: fixed-light team tints now
             use the fixed dark `sideInk`/`sideInkMuted`, and the deep red/green
@@ -75,11 +75,43 @@
             and the keeper is prompted to assign the team foul (never automatic)
       - [x] Overtime time-outs per rulebook: TBQ voids remaining (none in OT);
             JBQ carries remaining + 1 extra (cap 4), announced at OT start
+      - [x] Timeout buttons in the bottom right are not needed (removed from
+            `LiveBottomBar`; Modern takes time-outs from a header button
+            beside each team name, Classic keeps its ledger rail)
+      - [x] Personal fouls on a quizzer show as a capital-F badge beside the
+            score mark (`RoundView.cellHasFoul`), never replacing the cell;
+            foul-only cells keep the bare F
+      - [x] Team fouls tracked separately (`TeamView.teamFouls`) with a
+            `TEAM FOUL n` button beside each team name (team fouls only —
+            personal fouls live on the cells)
+      - [x] Team contests/appeals visually tracked like time-outs
+            (`TeamView.challengesUsed/unsuccessfulChallenges`) with a header
+            button beside each team name (TBQ unsuccessful/3, JBQ used/2)
+      - [x] Void and substitute question kept under More (needed for
+            thrown-out questions); sub-question disabled until a void exists,
+            void disabled once the current question is voided
+      - [x] Interruptions ring the Classic column header (same orange ring as
+            the Modern navigator), matching the paper circle
+      - [x] Summary gated until the match is finished (bottom-bar button
+            disabled mid-round; end-of-round strip stays the in-flow entry)
+      - [x] Selected quizzer x current question intersect highlights (3px
+            primary border on the target Classic cell)
+      - [x] Footer contest/appeal button removed — the per-team header buttons
+            are now the only challenge entry point
+      - [x] Incorrect answer on an interrupted question does NOT advance
+            (interrupted questions are re-read to the other team; the keeper
+            stays put with a notice)
+      - [x] Delete saved rounds from the home "Resume round" list, guarded by a
+            confirmation dialog (`RoundStore.deleteRound`)
 - [ ] Guardrail logic pass: block impossible entries (same quizzer scoring twice
       on one question, two quizzers on the same team both scoring on one question)
       in the real engine as `RuleViolation`s with UI surfacing per the interaction
       spec (prototype has a first cut: `canScore`/`scoreBlockedReason`)
-- [ ] Signed APK + Windows installer release pipeline (CI under `.github/workflows/`)
 - [ ] Touch verification pass (emulator now, real tablet later)
 - [ ] Accessibility (Semantics) + haptics pass
 - [ ] CI workflow: build APK + Windows installer + Linux on tag (`.github/workflows/`)
+
+## Post-v1
+- [ ] Global edit/undo dialogue: selective journal edit (change/delete any
+      entry + refold) — needs new `RoundView` API + persistence + conflict
+      surface; single-step undo + `undoLabel` covers v1 mis-taps

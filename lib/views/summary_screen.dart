@@ -311,15 +311,21 @@ class SummaryScreen extends StatelessWidget {
       final team = controller.teamOf(side);
       for (var i = 0; i < team.quizzers.length; i++) {
         final mark = controller.cellOutcome(side, i, n);
-        if (mark == null) continue;
+        final hasFoul = controller.cellHasFoul(side, i, n);
+        if (mark == null && !hasFoul) continue;
         final label = team.quizzers[i].label;
         switch (mark) {
           case 'correct':
             parts.add('$label +${controller.currentValue(n)}');
           case 'incorrect':
             parts.add('$label -${controller.currentValue(n) ~/ 2}');
-          case 'foul':
-            parts.add('$label F -${controller.ruleset.scoring.foulDeduction}');
+          case null:
+            break;
+        }
+        if (hasFoul) {
+          parts.add(
+            '$label F -${controller.ruleset.scoring.foulDeduction}',
+          );
         }
       }
     }

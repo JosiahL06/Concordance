@@ -152,6 +152,57 @@ void main() {
     );
     expect(enabled.onPressed, isNotNull);
   });
+
+  testWidgets('live footer drops the contest button for the team headers', (
+    WidgetTester tester,
+  ) async {
+    await _startClassic(tester);
+
+    // The gavel/Contest entry point moved to the per-team header buttons; the
+    // old footer button is gone.
+    expect(find.byIcon(Icons.gavel_outlined), findsNothing);
+    expect(find.text('CONTEST 0/3'), findsNWidgets(2));
+  });
+
+  testWidgets('home deletes a saved round only after confirmation', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final store = RoundStore.inMemory();
+    store.createRound(
+      rulesetId: 'tbq-25-26',
+      redName: 'Alpha',
+      greenName: 'Beta',
+      redSeats: const ['Red 1'],
+      greenSeats: const ['Green 1'],
+    );
+    final prefs = await ViewPreference.load();
+    await tester.pumpWidget(
+      ConcordanceApp(prefs: prefs, store: store, presets: _presets()),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Alpha vs Beta'), findsOneWidget);
+
+    // Delete asks first: cancelling keeps the round.
+    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete this round?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Alpha vs Beta'), findsOneWidget);
+    expect(store.listRounds(), hasLength(1));
+
+    // Confirming removes it permanently.
+    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(find.text('Alpha vs Beta'), findsNothing);
+    expect(store.listRounds(), isEmpty);
+  });
 }
 
 /// Drives the real flow Home -> Setup -> live scoring at the Fire HD 10
