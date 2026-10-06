@@ -30,6 +30,13 @@ RoundController wideTbq() => RoundController(
   greenSeats: const ['Green 1', 'Green 2', 'Green 3', 'Green 4'],
 );
 
+RoundController freshJbq() => RoundController(
+  ruleset: loadPreset('jbq-2026'),
+  redName: 'Red',
+  greenName: 'Green',
+  redSeats: const ['Red 1', 'Red 2', 'Red 3'],
+  greenSeats: const ['Green 1', 'Green 2', 'Green 3'],
+);
 
 void main() {
   group('console contract', () {
@@ -67,14 +74,24 @@ void main() {
       expect(c.cellOutcome(Side.green, 0, 1), isNull);
     });
 
-    test('fourth time-out request alerts', () {
+    test('time-outs cap at the allotment; a 4th request is denied', () {
       final c = freshTbq();
-      c.takeTimeOut(Side.red);
-      c.takeTimeOut(Side.red);
-      c.takeTimeOut(Side.red);
-      c.takeTimeOut(Side.red);
-      expect(c.teamOf(Side.red).timeOuts, 4);
-      expect(c.lastAlert, contains('4th time-out'));
+      expect(c.takeTimeOut(Side.red), isTrue);
+      expect(c.takeTimeOut(Side.red), isTrue);
+      expect(c.takeTimeOut(Side.red), isTrue);
+      expect(c.teamOf(Side.red).timeOuts, 3);
+
+      // Over-cap request: denied, not counted, and the keeper is told to
+      // assign the team foul themselves.
+      expect(c.takeTimeOut(Side.red), isFalse);
+      expect(c.teamOf(Side.red).timeOuts, 3);
+      expect(c.lastAlert, contains('denied'));
+      expect(c.lastAlert, contains('team foul'));
+
+      // The denied attempt is not journaled, so undo has nothing to revert.
+      expect(c.undoLabel, 'time-out');
+      expect(c.undo(), isTrue);
+      expect(c.teamOf(Side.red).timeOuts, 2);
     });
 
     test('undo restores scores and label clears', () {
@@ -107,6 +124,137 @@ void main() {
     });
   });
 
+  group('notices do not repeat', () {
+    test('quiz-out is announced once and stays silent on later answers', () {
+      final c = freshTbq();
+      for (var n = 1; n <= 5; n++) {
+        c.jumpToQuestion(n);
+        c.select(Side.red, 0);
+        c.markCorrect();
+      }
+      expect(c.lastAlert, contains('quizzed out'));
+
+      // The keeper may dismiss the banner; the notice must not come back.
+      c.clearAlert();
+      expect(c.lastAlert, isNull);
+
+      // A later answer by a different quizzer must not re-fire the quiz-out.
+      c.select(Side.green, 0);
+      c.markCorrect();
+      expect(c.lastAlert, isNull);
+    });
+
+    test('strike-out is announced once', () {
+      final c = wideTbq();
+      // Three incorrect answers strike a quizzer out (TBQ).
+      for (var n = 1; n <= 3; n++) {
+        c.jumpToQuestion(n);
+        c.select(Side.green, 1);
+        c.markIncorrect();
+      }
+      expect(c.teamOf(Side.green).quizzers[1].status, 'STRIKE-OUT');
+      expect(c.lastAlert, contains('struck out'));
+
+      c.select(Side.red, 0);
+      c.markCorrect();
+      expect(c.lastAlert, isNull);
+    });
+
+    test('denied time-out reminder does not repeat on later rulings', () {
+      final c = freshTbq();
+      // The first three are granted silently.
+      for (var i = 0; i < 3; i++) {
+        expect(c.takeTimeOut(Side.red), isTrue);
+      }
+      expect(c.lastAlert, isNull);
+
+      // The 4th request is denied and the keeper is prompted to foul.
+      expect(c.takeTimeOut(Side.red), isFalse);
+      expect(c.lastAlert, contains('denied'));
+
+      // The keeper dismisses it; a later ruling must not bring it back.
+      c.clearAlert();
+      c.select(Side.red, 0);
+      c.markCorrect();
+      expect(c.lastAlert, isNull);
+
+      c.addTeamFoul(Side.green);
+      expect(c.lastAlert, isNull);
+    });
+
+    test('an undone quiz-out is re-announced when it happens again', () {
+      final c = freshTbq();
+      for (var n = 1; n <= 5; n++) {
+        c.jumpToQuestion(n);
+        c.select(Side.red, 0);
+        c.markCorrect();
+      }
+      expect(c.lastAlert, contains('quizzed out'));
+      c.clearAlert();
+
+      // Undo the 5th correct answer: the quiz-out is no longer in effect.
+      c.undo();
+      expect(c.teamOf(Side.red).quizzers[0].status, '');
+
+      // The quizzer quizzes out again at a later question -> announced again.
+      c.jumpToQuestion(6);
+      c.select(Side.red, 0);
+      c.markCorrect();
+      expect(c.lastAlert, contains('quizzed out'));
+    });
+
+    test('a replaced quizzer substitute quizzes out and is announced', () {
+      final c = freshTbq();
+      for (var n = 1; n <= 5; n++) {
+        c.jumpToQuestion(n);
+        c.select(Side.red, 0);
+        c.markCorrect();
+      }
+      expect(c.lastAlert, contains('quizzed out'));
+      c.clearAlert();
+
+      expect(
+        c.substituteQuizzer(side: Side.red, outIndex: 0, label: 'Red 4'),
+        isTrue,
+      );
+      expect(c.lastAlert, isNull);
+
+      // The substitute (a distinct quizzer) quizzes out -> fresh notice.
+      final sub = c.teamOf(Side.red).quizzers.length - 1;
+      for (var n = 6; n <= 10; n++) {
+        c.jumpToQuestion(n);
+        c.select(Side.red, sub);
+        c.markCorrect();
+      }
+      expect(c.lastAlert, contains('Red 4'));
+      expect(c.lastAlert, contains('quizzed out'));
+    });
+    test('resume settles history so settled outs are not re-announced', () {
+      final c = freshTbq();
+      // Journal replay, exactly as the resume path does before any keeper
+      // action: this controller never "saw" these rulings.
+      for (var n = 1; n <= 5; n++) {
+        c.view.apply(
+          AnswerEvent(
+            questionNumber: n,
+            side: Side.red,
+            quizzerIndex: 0,
+            correct: true,
+          ),
+        );
+      }
+      expect(c.teamOf(Side.red).quizzers[0].status, 'QUIZ-OUT');
+
+      c.markCurrentNoticesSeen();
+      expect(c.lastAlert, isNull);
+
+      // A later ruling must not replay the settled quiz-out.
+      c.select(Side.green, 0);
+      c.markCorrect();
+      expect(c.lastAlert, isNull);
+    });
+  });
+
   group('overtime (deterministic, no button)', () {
     test('regulation tie opens overtime automatically', () {
       final c = wideTbq();
@@ -133,8 +281,16 @@ void main() {
       expect(c.questionCount, 21, reason: 'overtime question appended');
       expect(c.inOvertime, isTrue);
       expect(c.matchComplete, isFalse, reason: 'match continues in OT');
-      expect(c.questionNumber, 21, reason: 'already positioned on the OT question');
-      expect(c.currentValue(21), 10, reason: 'TBQ sudden-death is a 10-pointer');
+      expect(
+        c.questionNumber,
+        21,
+        reason: 'already positioned on the OT question',
+      );
+      expect(
+        c.currentValue(21),
+        10,
+        reason: 'TBQ sudden-death is a 10-pointer',
+      );
       expect(c.lastAlert, contains('overtime question 21'));
     });
 
@@ -206,4 +362,45 @@ void main() {
     });
   });
 
+  group('overtime time-outs (Time-outs §4)', () {
+    test('JBQ carries remaining time-outs plus one extra in overtime', () {
+      final c = freshJbq();
+      expect(c.timeOutCap, 3);
+      expect(c.timeOutDisplayCap(Side.red), 3);
+
+      // Two used in regulation.
+      c.takeTimeOut(Side.red);
+      c.takeTimeOut(Side.red);
+      expect(c.timeOutDisplayCap(Side.red), 3);
+
+      // Enter overtime (append the overtime question as the fold does).
+      c.view.apply(const OvertimeQuestionEvent(value: 10));
+      expect(c.inOvertime, isTrue);
+      expect(c.timeOutCap, 4); // remaining 1 + 1 extra
+      expect(c.timeOutDisplayCap(Side.red), 4);
+
+      // Two more are granted (totalling 4); the next is denied.
+      expect(c.takeTimeOut(Side.red), isTrue);
+      expect(c.takeTimeOut(Side.red), isTrue);
+      expect(c.teamOf(Side.red).timeOuts, 4);
+      expect(c.takeTimeOut(Side.red), isFalse);
+      expect(c.teamOf(Side.red).timeOuts, 4);
+    });
+
+    test('TBQ allows no team time-out in overtime, with a clear denial', () {
+      final c = freshTbq();
+      c.takeTimeOut(Side.red); // one used, two "remaining"
+      c.view.apply(const OvertimeQuestionEvent(value: 10));
+      expect(c.inOvertime, isTrue);
+
+      expect(c.timeOutCap, 0);
+      // Display never drops below what was taken, so it reads "1/1".
+      expect(c.timeOutDisplayCap(Side.red), 1);
+
+      expect(c.takeTimeOut(Side.red), isFalse);
+      expect(c.teamOf(Side.red).timeOuts, 1);
+      expect(c.lastAlert, contains('overtime'));
+      expect(c.lastAlert, contains('team foul'));
+    });
+  });
 }

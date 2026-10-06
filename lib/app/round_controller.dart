@@ -57,10 +57,9 @@ class RoundController extends ChangeNotifier {
   String? get undoLabel =>
       view.journal.isEmpty ? null : _describe(view.journal.last);
 
-  String get challengeLabel =>
-      ruleset.challengeKind == ChallengeKind.contest
-          ? 'Contest'
-          : "Coach's Appeal";
+  String get challengeLabel => ruleset.challengeKind == ChallengeKind.contest
+      ? 'Contest'
+      : "Coach's Appeal";
 
   TeamView teamOf(Side side) => view.teamOf(side);
   int scoreOf(Side side) => view.scoreOf(side);
@@ -98,10 +97,8 @@ class RoundController extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool markCorrect() =>
-      _answer(correct: true);
-  bool markIncorrect() =>
-      _answer(correct: false);
+  bool markCorrect() => _answer(correct: true);
+  bool markIncorrect() => _answer(correct: false);
 
   bool _answer({required bool correct}) {
     final sel = selected;
@@ -162,20 +159,36 @@ class RoundController extends ChangeNotifier {
     return true;
   }
 
-  /// Takes a time-out for [side]; always accepted, 4th request alerts.
-  void takeTimeOut(Side side) {
+  /// Takes a time-out for [side]. Time-outs are capped at the ruleset
+  /// allotment: a request beyond the cap is denied, never journaled, and the
+  /// keeper is reminded to record the resulting team foul themselves (the app
+  /// never auto-assesses it). Returns true when a time-out was granted.
+  bool takeTimeOut(Side side) {
     if (matchComplete) {
       lastAlert = 'The match is complete — no more time-outs.';
       notifyListeners();
-      return;
+      return false;
     }
-    view.apply(TimeOutEvent(side: side));
-    final count = view.teamOf(side).timeOuts;
-    lastAlert = count >= ruleset.limits.notifyTimeOutRequest
-        ? '${_sideName(side)} requested a ${count}th time-out — '
-            'notify the quizmaster.'
-        : _notices();
+    final violation = view.apply(TimeOutEvent(side: side));
+    if (violation != null) {
+      // Over-cap request: denied. The rules (both books) make the failed
+      // request a team foul, but the keeper assigns it via the foul path —
+      // the engine deliberately does not.
+      final name = side == Side.red ? redName : greenName;
+      lastAlert = inOvertime && !ruleset.limits.overtimeTimeOutsCarry
+          ? '$name has no time-outs available in overtime — that request is '
+                'denied. Assign a team foul; no time-out is granted.'
+          : '$name has used all $timeOutCap time-outs — that request is '
+                'denied. Assign a team foul; no time-out is granted.';
+      notifyListeners();
+      return false;
+    }
+    // The engine's `collectNotices` is the single source of the time-out limit
+    // notice, so it flows through the same once-per-message gate as every
+    // other notice and never repeats.
+    lastAlert = _notices();
     _saved();
+    return true;
   }
 
   /// Toggles the interruption ring on the current question.
@@ -217,6 +230,10 @@ class RoundController extends ChangeNotifier {
     }
     _finished = false;
     lastAlert = null;
+    // Re-arm any notice the undone ruling had fired (e.g. a quiz-out): its
+    // condition no longer holds, so if the quizzer quizzes out again later the
+    // keeper must be told again.
+    _reconcileAnnounced();
     if (questionIndex > questionCount - 1) {
       questionIndex = questionCount - 1;
     }
@@ -332,12 +349,49 @@ class RoundController extends ChangeNotifier {
     return false;
   }
 
-  String _sideName(Side side) =>
-      side == Side.red ? redName : greenName;
+  /// Notices already surfaced to the keeper, so a one-time event (a quizzer's
+  /// quiz-out / strike-out / foul-out, or a limit warning) is announced once
+  /// and not repeated on every later ruling. `collectNotices` derives the
+  /// *currently active* notices from state, which stays true for the rest of
+  /// the round — so the controller must remember what it has already shown.
+  final Set<String> _announced = <String>{};
 
+  /// Newly active notices for the current ruling, keyed by code + message.
+  /// Already-announced notices are suppressed; the rest are recorded so they
+  /// fire once. Dismissing the banner does not re-arm them.
   String? _notices() {
+    // Forget notices whose condition no longer holds (e.g. a quiz-out undone
+    // or a quizzer substituted out), so that if it happens *again* later it is
+    // treated as new and announced again. Without this the suppression would
+    // be permanent and a re-quiz-out after an undo would go unreported.
+    _reconcileAnnounced();
     final notices = collectNotices(ruleset, view.state);
-    return notices.isEmpty ? null : notices.last.message;
+    final fresh = <String>[];
+    for (final n in notices) {
+      if (_announced.add('${n.code}|${n.message}')) fresh.add(n.message);
+    }
+    return fresh.isEmpty ? null : fresh.last;
+  }
+
+  /// Drops remembered notices that are no longer active under current state,
+  /// re-arming them. Keys carry the quizzer label, so a *different* quizzer's
+  /// later quiz-out is always a distinct, fresh notice.
+  void _reconcileAnnounced() {
+    final active = {
+      for (final n in collectNotices(ruleset, view.state))
+        '${n.code}|${n.message}',
+    };
+    _announced.removeWhere((key) => !active.contains(key));
+  }
+
+  /// Marks every currently-active notice as already announced *without*
+  /// showing it. The resume path replays a journal that may already contain
+  /// outs and limit warnings; seeding them here keeps a resumed round from
+  /// re-announcing settled history on the first new ruling.
+  void markCurrentNoticesSeen() {
+    for (final n in collectNotices(ruleset, view.state)) {
+      _announced.add('${n.code}|${n.message}');
+    }
   }
 
   /// Combines a rulebook notice with the end-of-round announcement so neither
@@ -368,6 +422,20 @@ class RoundController extends ChangeNotifier {
   /// Whether the keeper has passed the regulation question count.
   bool get inOvertime => questionCount > ruleset.match.regulationQuestions;
 
+  /// Team time-outs allowed under the current phase: [timeOutsPerTeam] in
+  /// regulation; in overtime it follows the ruleset's carry-over rules
+  /// (TBQ: none may be used; JBQ: remaining carry plus one extra).
+  int get timeOutCap => ruleset.limits.timeOutCap(inOvertime: inOvertime);
+
+  /// Time-out denominator for display: the phase cap, but never below what
+  /// [side] has already taken. TBQ overtime voids any remaining time-outs, so
+  /// a team that used two reads "2/2" — not the confusing "2/0".
+  int timeOutDisplayCap(Side side) {
+    final cap = timeOutCap;
+    final taken = view.teamOf(side).timeOuts;
+    return taken > cap ? taken : cap;
+  }
+
   /// Evaluates the end of the round once the final question is answered. A
   /// tie deterministically opens the next overtime question; a lead ends the
   /// match. Returns the notice to show, or null while the round continues.
@@ -395,7 +463,21 @@ class RoundController extends ChangeNotifier {
     }
     questionIndex = questionCount - 1;
     return 'Tied $red-$green - overtime question $questionCount '
-        '($value pts) added automatically.';
+        '($value pts) added automatically.$_overtimeTimeOutNote';
+  }
+
+  /// Time-out rule in overtime, appended to the overtime announcement so the
+  /// keeper knows what the teams may take before they ask for it.
+  String get _overtimeTimeOutNote {
+    final limits = ruleset.limits;
+    if (!limits.overtimeTimeOutsCarry) {
+      return ' No team time-outs may be used in overtime.';
+    }
+    if (limits.overtimeExtraTimeOuts > 0) {
+      return ' Teams may use remaining time-outs plus '
+          '${limits.overtimeExtraTimeOuts} overtime time-out.';
+    }
+    return ' Teams may use any remaining time-outs.';
   }
 
   /// True while every question carries an answer and the scores are level: the
@@ -434,4 +516,3 @@ class QuizzerRef {
   final int index;
   final QuizzerView view;
 }
-

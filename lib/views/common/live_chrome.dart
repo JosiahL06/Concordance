@@ -14,6 +14,23 @@ const greenTint = Color(0xFFE6F4EA);
 Color sideColor(Side side) => side == Side.red ? redColor : greenColor;
 Color sideTint(Side side) => side == Side.red ? redTint : greenTint;
 
+/// Dark-mode variants of the team accents. [sideColor] is a deep red/green
+/// that disappears against dark theme surfaces (score cards, the bottom bar,
+/// the time-out rail), so on a dark surface the side accent is lightened
+/// instead. Light mode keeps the exact same accent, so light-mode rendering is
+/// untouched.
+const redAccentDark = Color(0xFFFF8A80);
+const greenAccentDark = Color(0xFF81C784);
+
+/// Side accent that stays legible on the *current* theme surface: the fixed
+/// [sideColor] in light mode, a lightened accent in dark mode. Use this for
+/// side labels/borders drawn on `scheme.surface*`; content sitting on a fixed
+/// light [sideTint] must use [sideInk]/[sideInkMuted] instead.
+Color sideAccent(Side side, ColorScheme scheme) {
+  if (scheme.brightness == Brightness.light) return sideColor(side);
+  return side == Side.red ? redAccentDark : greenAccentDark;
+}
+
 /// Ink for content sitting directly on a [sideTint] surface. The tints are
 /// fixed *light* colors, so this text MUST be fixed dark — using
 /// `ColorScheme.onSurface` would render near-white text on a pale tint in
@@ -57,10 +74,10 @@ class ScoringConsole extends StatelessWidget {
           Text(
             sel == null
                 ? 'TAP A QUIZZER, THEN RECORD THE RULING — CORRECT / '
-                    'INCORRECT ADVANCE; FOUL STAYS'
+                      'INCORRECT ADVANCE; FOUL STAYS'
                 : '${sideName(round, sel.$1).toUpperCase()} '
-                    '${round.view.teamOf(sel.$1).quizzers[sel.$2].label.split(' ').last} '
-                    'ON Q${round.questionNumber} — RECORD THE RULING',
+                      '${round.view.teamOf(sel.$1).quizzers[sel.$2].label.split(' ').last} '
+                      'ON Q${round.questionNumber} — RECORD THE RULING',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -80,7 +97,9 @@ class ScoringConsole extends StatelessWidget {
                     foregroundColor: Colors.white,
                   ),
                   onPressed: enabled ? round.markCorrect : null,
-                  child: Text('CORRECT  +${round.currentValue(round.questionNumber)}'),
+                  child: Text(
+                    'CORRECT  +${round.currentValue(round.questionNumber)}',
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -195,7 +214,9 @@ class LiveBottomBar extends StatelessWidget {
           SizedBox(
             height: 48,
             child: OutlinedButton.icon(
-              onPressed: round.matchComplete ? null : () => _recordChallenge(context),
+              onPressed: round.matchComplete
+                  ? null
+                  : () => _recordChallenge(context),
               icon: const Icon(Icons.gavel_outlined),
               label: Text(round.challengeLabel),
             ),
@@ -244,12 +265,12 @@ class LiveBottomBar extends StatelessWidget {
             height: 48,
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: redColor, width: 2),
-                foregroundColor: redColor,
+                side: BorderSide(color: sideAccent(Side.red, scheme), width: 2),
+                foregroundColor: sideAccent(Side.red, scheme),
               ),
               onPressed: () => round.takeTimeOut(Side.red),
               child: Text(
-                'RED TO ${round.teamOf(Side.red).timeOuts}/${round.ruleset.limits.timeOutsPerTeam}',
+                'RED TO ${round.teamOf(Side.red).timeOuts}/${round.timeOutDisplayCap(Side.red)}',
               ),
             ),
           ),
@@ -258,12 +279,15 @@ class LiveBottomBar extends StatelessWidget {
             height: 48,
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: greenColor, width: 2),
-                foregroundColor: greenColor,
+                side: BorderSide(
+                  color: sideAccent(Side.green, scheme),
+                  width: 2,
+                ),
+                foregroundColor: sideAccent(Side.green, scheme),
               ),
               onPressed: () => round.takeTimeOut(Side.green),
               child: Text(
-                'GREEN TO ${round.teamOf(Side.green).timeOuts}/${round.ruleset.limits.timeOutsPerTeam}',
+                'GREEN TO ${round.teamOf(Side.green).timeOuts}/${round.timeOutDisplayCap(Side.green)}',
               ),
             ),
           ),
@@ -309,9 +333,7 @@ class LiveBottomBar extends StatelessWidget {
 
   void _openSummary(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => SummaryScreen(controller: round),
-      ),
+      MaterialPageRoute<void>(builder: (_) => SummaryScreen(controller: round)),
     );
   }
 
@@ -412,11 +434,7 @@ class LiveBottomBar extends StatelessWidget {
     controller.dispose();
     if (label == null || label.trim().isEmpty) return;
     final slot = slots[pick];
-    round.substituteQuizzer(
-      side: slot.$1,
-      outIndex: slot.$2,
-      label: label,
-    );
+    round.substituteQuizzer(side: slot.$1, outIndex: slot.$2, label: label);
   }
 }
 
@@ -436,10 +454,10 @@ class EndOfRoundBar extends StatelessWidget {
     final green = round.scoreOf(Side.green);
     final headline = round.matchComplete
         ? '${(red > green ? round.redName : round.greenName).toUpperCase()} '
-            'WINS $red\u2013$green'
+              'WINS $red\u2013$green'
         : 'OVERTIME \u00b7 Q${round.questionNumber} \u00b7 '
-            '${round.currentValue(round.questionNumber)} PTS \u00b7 '
-            '$red\u2013$green';
+              '${round.currentValue(round.questionNumber)} PTS \u00b7 '
+              '$red\u2013$green';
     return Container(
       color: scheme.primaryContainer,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),

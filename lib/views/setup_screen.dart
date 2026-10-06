@@ -34,9 +34,7 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> {
   final TextEditingController redName = TextEditingController(text: 'Red');
-  final TextEditingController greenName = TextEditingController(
-    text: 'Green',
-  );
+  final TextEditingController greenName = TextEditingController(text: 'Green');
   int redCount = 3;
   int greenCount = 3;
   late ScoreboardView _view;
@@ -103,9 +101,7 @@ class _SetupScreenState extends State<SetupScreen> {
           redName: _redLabel,
           greenName: _greenLabel,
           redSeats: [for (var i = 1; i <= redCount; i++) '$_redLabel $i'],
-          greenSeats: [
-            for (var i = 1; i <= greenCount; i++) '$_greenLabel $i',
-          ],
+          greenSeats: [for (var i = 1; i <= greenCount; i++) '$_greenLabel $i'],
         ),
         view: _view,
       ),
@@ -251,12 +247,12 @@ class _SetupScreenState extends State<SetupScreen> {
                 _ruleRow(
                   'Questions',
                   '${r.match.regulationQuestions} '
-                  '($tens/10s $twenties/20s $thirties/30s)',
+                      '($tens/10s $twenties/20s $thirties/30s)',
                 ),
                 _ruleRow(
                   'Quiz-out',
                   '${r.scoring.quizOutCorrect} correct '
-                  '+${r.scoring.quizOutBonus}',
+                      '+${r.scoring.quizOutBonus}',
                 ),
                 _ruleRow(
                   'Strike-out',
@@ -266,7 +262,8 @@ class _SetupScreenState extends State<SetupScreen> {
                 _ruleRow(
                   'Time-outs',
                   '${r.limits.timeOutsPerTeam} per team, notify on '
-                  '${_ordinal(r.limits.notifyTimeOutRequest)}',
+                      '${_ordinal(r.limits.notifyTimeOutRequest)}'
+                      '${_overtimeTimeOutNote(r.limits)}',
                 ),
                 _ruleRow(challenge, _challengeSummary(r)),
               ],
@@ -285,6 +282,19 @@ class _SetupScreenState extends State<SetupScreen> {
     final max =
         r.limits.challengeAllotmentPerTeam ?? r.limits.challengeLimitCount;
     return 'max $max per team';
+  }
+
+  /// Overtime time-out rule appended to the Time-outs row (TBQ: none may be
+  /// used in overtime; JBQ: remaining carry plus the extra allotment).
+  String _overtimeTimeOutNote(LimitsConfig limits) {
+    if (!limits.overtimeTimeOutsCarry) {
+      return '; none in overtime';
+    }
+    if (limits.overtimeExtraTimeOuts > 0) {
+      return '; overtime: remaining '
+          '+${limits.overtimeExtraTimeOuts}';
+    }
+    return '; overtime: remaining carry';
   }
 
   Widget _ruleRow(String label, String value) {

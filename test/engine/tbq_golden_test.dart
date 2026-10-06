@@ -149,9 +149,58 @@ void main() {
       );
     });
 
-    test('4th time-out request notifies', () {
+    test('time-outs are capped; a 4th request is rejected, not counted', () {
       final view = freshTbq();
-      for (var i = 0; i < 4; i++) {
+      for (var i = 0; i < 3; i++) {
+        expect(view.apply(const TimeOutEvent(side: Side.red)), isNull);
+      }
+      expect(view.teamOf(Side.red).timeOuts, 3);
+
+      final violation = view.apply(const TimeOutEvent(side: Side.red));
+      expect(violation, isNotNull);
+      expect(violation!.code, 'timeout-limit');
+      expect(view.teamOf(Side.red).timeOuts, 3);
+      expect(view.journal.whereType<TimeOutEvent>().length, 3);
+    });
+
+    test('overtime: remaining time-outs may not be used (Time-outs §4)', () {
+      final view = freshTbq();
+      // One used in regulation, two remain — but overtime voids them.
+      view.apply(const TimeOutEvent(side: Side.red));
+      expect(view.apply(const OvertimeQuestionEvent(value: 10)), isNull);
+
+      final violation = view.apply(const TimeOutEvent(side: Side.red));
+      expect(violation, isNotNull);
+      expect(violation!.code, 'timeout-limit');
+      expect(view.teamOf(Side.red).timeOuts, 1);
+
+      // Even a team that used none cannot take one in overtime.
+      final other = freshTbq();
+      other.apply(const OvertimeQuestionEvent(value: 10));
+      expect(
+        other.apply(const TimeOutEvent(side: Side.green))!.code,
+        'timeout-limit',
+      );
+    });
+
+    test('time-out limit notice fires at the ruleset threshold', () {
+      // A ruleset whose notify threshold sits at the cap, so the state-derived
+      // notice is reachable. TBQ/JBQ notify at 4 with a cap of 3: the denied
+      // 4th request is announced by RoundController instead of by this notice.
+      final raw = json.decode(
+        File('assets/rulesets/tbq-25-26.json').readAsStringSync(),
+      ) as Map<String, Object?>;
+      final limits = Map<String, Object?>.of(
+        raw['limits'] as Map<String, Object?>,
+      );
+      limits['notifyTimeOutRequest'] = 3;
+      raw['limits'] = limits;
+      final view = RoundView(
+        ruleset: Ruleset.fromJson(raw),
+        redLabels: const ['Red 1', 'Red 2', 'Red 3'],
+        greenLabels: const ['Green 1', 'Green 2', 'Green 3'],
+      );
+      for (var i = 0; i < 3; i++) {
         view.apply(const TimeOutEvent(side: Side.red));
       }
       final notices = collectNotices(view.ruleset, view.state);

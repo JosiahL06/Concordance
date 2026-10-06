@@ -62,10 +62,23 @@ never engine forks.
   (leavesMatch follows the book like quizOut).
 - `scoring.foul`: deduction 5, foulsToFoulOut 3, teamDeduction 5
 
-- `limits.timeOutsPerTeam` = 3 (both Time-outs §2);
-  `notifyTimeOutRequest` = 4 (Scorekeeper duties: notify on 4th);
-  `overtimeTimeOutsCarry`: TBQ §4 false (NOT usable in OT),
-  JBQ §§4–5 true + `overtimeExtraTimeOuts` 1 (TBQ: 0).
+- `limits.timeOutsPerTeam` = 3 (both Time-outs §2) — the regulation cap.
+  `notifyTimeOutRequest` = 4 (Scorekeeper duties: notify on the 4th request);
+  because a 4th request is over the cap and therefore denied, the engine's
+  state-derived notice is unreachable for these presets and the app raises the
+  notification at the denied request instead (the request is an *attempt*, not
+  state).
+- `limits.overtimeTimeOutsCarry` / `overtimeExtraTimeOuts` define the overtime
+  cap, resolved by `LimitsConfig.timeOutCap({inOvertime})`:
+  - TBQ Time-outs §4: remaining time-outs "may not be used in overtime" and
+    none are granted → `carry` false, `extra` 0 → **no** team time-out in
+    overtime.
+  - JBQ Time-outs §§4–5: remaining carry over *and* each team gets one more →
+    `carry` true, `extra` 1 → overtime cap = 3 + 1 = 4.
+  Both books declare a free one-minute time-out at the start of overtime; that
+  is the Quizmaster's declaration, not a team time-out, so it is not counted.
+  Overtime is detected as appended question slots beyond
+  `match.regulationQuestions`.
 - `limits.challengeLimit`: TBQ Scorekeeper §4: mode `unsuccessful`,
   count 3 (3rd unsuccessful contest); JBQ Scorekeeper §5: mode `used`,
   count 2 (allotment of 2 appeals exhausted).
@@ -90,7 +103,7 @@ quizmaster may override reality — the journal records what was recorded).
 |---|---|---|
 | `answer` | q, team, quizzer, correct | quizzer active; q not voided w/o substitute; q in range |
 | `foul` | q?, team, quizzer? (null = team foul) | team/quizzer exists; foul-out derived, not blocked |
-| `timeOut` | team | always accepted; notify at `notifyTimeOutRequest` |
+| `timeOut` | team | capped by `timeOutCap` (3 regulation; overtime: TBQ none, JBQ remaining +1); an over-cap request is rejected (not journaled) and the keeper assigns the resulting team foul themselves |
 | `interruption` | q | q in range (marks only) |
 | `challenge` | q, team, successful | per-question cap (TBQ) / allotment (JBQ) → violation, still recordable on override |
 | `voidQuestion` | q | q in range (retracts answer points per D3) |

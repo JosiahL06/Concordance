@@ -43,7 +43,14 @@ Future<void> exportPdf(RoundController c, BuildContext context) async {
                   headers: const ['Quizzer', 'Score', 'C', 'I', 'F', 'Status'],
                   data: [
                     for (final q in c.teamOf(side).quizzers)
-                      [q.label, '${q.score}', '${q.correct}', '${q.incorrect}', '${q.fouls}', q.status],
+                      [
+                        q.label,
+                        '${q.score}',
+                        '${q.correct}',
+                        '${q.incorrect}',
+                        '${q.fouls}',
+                        q.status,
+                      ],
                   ],
                 ),
                 pw.SizedBox(height: 8),
@@ -64,15 +71,33 @@ Future<void> exportPdf(RoundController c, BuildContext context) async {
   final dir = await getTemporaryDirectory();
   final file = File('${dir.path}/concordance-round.pdf');
   await file.writeAsBytes(await doc.save());
-  await Share.shareXFiles([XFile(file.path)], text: 'Concordance round score sheet');
+  await Share.shareXFiles([
+    XFile(file.path),
+  ], text: 'Concordance round score sheet');
 }
 
 Future<void> exportCsv(RoundController c, BuildContext context) async {
   final rows = <List<Object>>[
-    const ['quizzer', 'team', 'score', 'correct', 'incorrect', 'fouls', 'status'],
+    const [
+      'quizzer',
+      'team',
+      'score',
+      'correct',
+      'incorrect',
+      'fouls',
+      'status',
+    ],
     for (final side in Side.values)
       for (final q in c.teamOf(side).quizzers)
-        [q.label, side.name, q.score, q.correct, q.incorrect, q.fouls, q.status],
+        [
+          q.label,
+          side.name,
+          q.score,
+          q.correct,
+          q.incorrect,
+          q.fouls,
+          q.status,
+        ],
     const [],
     const ['question', 'value', 'outcome'],
     for (var n = 1; n <= c.questionCount; n++)
@@ -81,7 +106,9 @@ Future<void> exportCsv(RoundController c, BuildContext context) async {
   final dir = await getTemporaryDirectory();
   final file = File('${dir.path}/concordance-round.csv');
   await file.writeAsString(const ListToCsvConverter().convert(rows));
-  await Share.shareXFiles([XFile(file.path)], text: 'Concordance round results');
+  await Share.shareXFiles([
+    XFile(file.path),
+  ], text: 'Concordance round results');
 }
 
 String _notes(RoundController c, int n) {

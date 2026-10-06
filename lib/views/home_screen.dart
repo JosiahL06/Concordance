@@ -166,7 +166,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 72,
                 child: FilledButton(
                   style: FilledButton.styleFrom(
-                    textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                    textStyle: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   onPressed: _store == null ? null : () => _newRound(context),
                   child: const Text('START A NEW ROUND'),
@@ -175,8 +178,14 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 16),
               SegmentedButton<ScoreboardView>(
                 segments: const [
-                  ButtonSegment(value: ScoreboardView.modern, label: Text('Modern')),
-                  ButtonSegment(value: ScoreboardView.classic, label: Text('Classic')),
+                  ButtonSegment(
+                    value: ScoreboardView.modern,
+                    label: Text('Modern'),
+                  ),
+                  ButtonSegment(
+                    value: ScoreboardView.classic,
+                    label: Text('Classic'),
+                  ),
                 ],
                 selected: {_view},
                 onSelectionChanged: (s) async {
@@ -185,15 +194,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              Text('Resume round', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Resume round',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
-              if (_rounds.isEmpty)
-                const Text('No saved rounds yet.'),
+              if (_rounds.isEmpty) const Text('No saved rounds yet.'),
               for (final r in _rounds)
                 Card(
                   child: ListTile(
                     title: Text('${r['red_name']} vs ${r['green_name']}'),
-                    subtitle: Text('${r['ruleset_id']} \u00b7 ${r['created_at']}'),
+                    subtitle: Text(
+                      '${r['ruleset_id']} \u00b7 ${r['created_at']}',
+                    ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _resume(context, r['id'] as int),
                   ),
@@ -208,10 +221,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _newRound(BuildContext context) async {
     final result = await Navigator.of(context).push<SetupResult>(
       MaterialPageRoute(
-        builder: (_) => SetupScreen(
-          initialView: _view,
-          presets: widget.presets,
-        ),
+        builder: (_) =>
+            SetupScreen(initialView: _view, presets: widget.presets),
       ),
     );
     if (result == null || !context.mounted) return;
@@ -233,9 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
       rulesetId: controller.ruleset.id,
       redName: controller.redName,
       greenName: controller.greenName,
-      redSeats: [
-        for (final q in controller.teamOf(Side.red).quizzers) q.label,
-      ],
+      redSeats: [for (final q in controller.teamOf(Side.red).quizzers) q.label],
       greenSeats: [
         for (final q in controller.teamOf(Side.green).quizzers) q.label,
       ],
@@ -278,6 +287,9 @@ class _HomeScreenState extends State<HomeScreen> {
     for (final e in store.loadJournal(id)) {
       controller.view.apply(e);
     }
+    // Settle history: outs and limit warnings already in the journal must not
+    // re-announce on the first ruling after resume.
+    controller.markCurrentNoticesSeen();
     controller.questionIndex = controller.firstOpenQuestion() - 1;
     controller.recomputeCompletion();
     controller.roundId = id;
@@ -308,4 +320,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-

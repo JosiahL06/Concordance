@@ -140,4 +140,51 @@ void main() {
       expect(again!.code, 'quizzer-already-replaced');
     });
   });
+
+  group('time-outs (Time-outs §§2, 4-5)', () {
+    test('regulation allows three per team', () {
+      final view = freshJbq();
+      for (var i = 0; i < 3; i++) {
+        expect(view.apply(const TimeOutEvent(side: Side.red)), isNull);
+      }
+      expect(view.teamOf(Side.red).timeOuts, 3);
+      expect(
+        view.apply(const TimeOutEvent(side: Side.red))!.code,
+        'timeout-limit',
+      );
+      expect(view.teamOf(Side.red).timeOuts, 3);
+    });
+
+    test('overtime carries remaining time-outs plus one extra', () {
+      final view = freshJbq();
+      // Use two in regulation: one remains.
+      for (var i = 0; i < 2; i++) {
+        view.apply(const TimeOutEvent(side: Side.red));
+      }
+      // Enter overtime.
+      expect(view.apply(const OvertimeQuestionEvent(value: 10)), isNull);
+      // Remaining 1 + 1 extra = 2 more available → 4 total.
+      expect(view.apply(const TimeOutEvent(side: Side.red)), isNull);
+      expect(view.apply(const TimeOutEvent(side: Side.red)), isNull);
+      expect(view.teamOf(Side.red).timeOuts, 4);
+      expect(
+        view.apply(const TimeOutEvent(side: Side.red))!.code,
+        'timeout-limit',
+      );
+      expect(view.teamOf(Side.red).timeOuts, 4);
+    });
+
+    test('an unused regulation allotment still caps overtime at 4', () {
+      final view = freshJbq();
+      view.apply(const OvertimeQuestionEvent(value: 10));
+      for (var i = 0; i < 4; i++) {
+        expect(view.apply(const TimeOutEvent(side: Side.green)), isNull);
+      }
+      expect(view.teamOf(Side.green).timeOuts, 4); // 3 + 1
+      expect(
+        view.apply(const TimeOutEvent(side: Side.green))!.code,
+        'timeout-limit',
+      );
+    });
+  });
 }

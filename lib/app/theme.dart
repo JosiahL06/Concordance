@@ -40,11 +40,7 @@ class ThemeController extends ChangeNotifier {
 /// Makes a [ThemeController] reachable from anywhere in the tree. The live
 /// screens have no AppBar, so the toggle must be reachable from their headers.
 class ThemeScope extends InheritedNotifier<ThemeController> {
-  const ThemeScope({
-    super.key,
-    required super.notifier,
-    required super.child,
-  });
+  const ThemeScope({super.key, required super.notifier, required super.child});
 
   static ThemeController of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<ThemeScope>();

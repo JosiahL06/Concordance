@@ -52,7 +52,21 @@ FoldResult applyEvent(Ruleset ruleset, RoundState state, RoundEvent event) {
         event.quizzerIndex,
       );
     case TimeOutEvent():
-      state.teams[event.side]!.timeOuts += 1;
+      // Time-outs are capped at the ruleset allotment (which differs between
+      // regulation and overtime — see `LimitsConfig.timeOutCap`). A request
+      // beyond the cap is *denied* (and, per both rulebooks, becomes a team
+      // foul the keeper records through the normal foul path) — the engine
+      // never auto-assesses the foul, and the rejected request is not
+      // journaled. Overtime is the presence of appended question slots.
+      final team = state.teams[event.side]!;
+      final inOvertime =
+          state.values.length > ruleset.match.regulationQuestions;
+      if (team.timeOuts >= ruleset.limits.timeOutCap(inOvertime: inOvertime)) {
+        return const FoldResult.rejected(
+          RuleViolation('timeout-limit', 'no time-outs remaining'),
+        );
+      }
+      team.timeOuts += 1;
       return FoldResult.ok(state);
     case InterruptionEvent():
       final range = inRange(state, event.questionNumber);

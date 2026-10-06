@@ -28,8 +28,7 @@ class ViewPreference {
     );
   }
 
-  Future<void> setView(ScoreboardView view) =>
-      _prefs.setString(key, view.name);
+  Future<void> setView(ScoreboardView view) => _prefs.setString(key, view.name);
 
   /// Persisted light/dark/system choice; defaults to following the system.
   ThemeMode get themeMode => switch (_prefs.getString(themeKey)) {

@@ -39,11 +39,7 @@ void main() {
         quizzerIndex: 0,
         correct: true,
       ),
-      const FoulEvent(
-        questionNumber: 2,
-        side: Side.green,
-        quizzerIndex: 0,
-      ),
+      const FoulEvent(questionNumber: 2, side: Side.green, quizzerIndex: 0),
       const TimeOutEvent(side: Side.red),
       const InterruptionEvent(questionNumber: 1),
       const ChallengeEvent(
@@ -104,10 +100,7 @@ void main() {
         correct: true,
       ),
     );
-    store.appendEvent(
-      id,
-      const TimeOutEvent(side: Side.red),
-    );
+    store.appendEvent(id, const TimeOutEvent(side: Side.red));
     expect(store.loadJournal(id).length, 2);
 
     store.truncateTo(id, 1);

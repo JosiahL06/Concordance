@@ -152,7 +152,6 @@ void main() {
     );
     expect(enabled.onPressed, isNotNull);
   });
-
 }
 
 /// Drives the real flow Home -> Setup -> live scoring at the Fire HD 10

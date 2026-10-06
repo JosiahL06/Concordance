@@ -15,14 +15,8 @@ class ThemeToggleButton extends StatelessWidget {
         Icons.brightness_auto,
         'Theme: follow system - tap for light',
       ),
-      ThemeMode.light => (
-        Icons.light_mode,
-        'Theme: light - tap for dark',
-      ),
-      ThemeMode.dark => (
-        Icons.dark_mode,
-        'Theme: dark - tap to follow system',
-      ),
+      ThemeMode.light => (Icons.light_mode, 'Theme: light - tap for dark'),
+      ThemeMode.dark => (Icons.dark_mode, 'Theme: dark - tap to follow system'),
     };
     return IconButton(
       tooltip: tooltip,

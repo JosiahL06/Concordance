@@ -41,7 +41,8 @@ class _ModernScreenState extends State<ModernScreen> {
                     ],
                   ),
                 ),
-                if (round.matchComplete || round.inOvertime) EndOfRoundBar(round: round),
+                if (round.matchComplete || round.inOvertime)
+                  EndOfRoundBar(round: round),
                 ScoringConsole(round: round),
                 QuestionNavigator(round: round),
                 LiveBottomBar(round: round),
@@ -137,7 +138,7 @@ class _ModernScreenState extends State<ModernScreen> {
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.5,
-                    color: sideColor(side),
+                    color: sideAccent(side, scheme),
                   ),
                 ),
                 const Spacer(),
@@ -154,7 +155,7 @@ class _ModernScreenState extends State<ModernScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'TIME-OUTS ${team.timeOuts}/${round.ruleset.limits.timeOutsPerTeam}',
+            'TIME-OUTS ${team.timeOuts}/${round.timeOutDisplayCap(side)}',
             style: const TextStyle(fontSize: 13, color: sideInkMuted),
           ),
           const SizedBox(height: 4),

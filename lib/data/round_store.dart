@@ -75,10 +75,12 @@ class RoundStore {
   }
 
   void appendEvent(int roundId, RoundEvent event) {
-    final seq = _db.select(
-      'SELECT COALESCE(MAX(seq), -1) + 1 AS next FROM events WHERE round_id = ?',
-      [roundId],
-    ).first['next'] as int;
+    final seq =
+        _db.select(
+              'SELECT COALESCE(MAX(seq), -1) + 1 AS next FROM events WHERE round_id = ?',
+              [roundId],
+            ).first['next']
+            as int;
     _db.execute(
       'INSERT INTO events (round_id, seq, type, payload) VALUES (?, ?, ?, ?)',
       [roundId, seq, event.runtimeType.toString(), json.encode(_encode(event))],
@@ -86,10 +88,10 @@ class RoundStore {
   }
 
   void truncateTo(int roundId, int length) {
-    _db.execute(
-      'DELETE FROM events WHERE round_id = ? AND seq >= ?',
-      [roundId, length],
-    );
+    _db.execute('DELETE FROM events WHERE round_id = ? AND seq >= ?', [
+      roundId,
+      length,
+    ]);
   }
 
   List<Map<String, Object?>> listRounds() {
@@ -107,7 +109,13 @@ class RoundStore {
       'SELECT type, payload FROM events WHERE round_id = ? ORDER BY seq',
       [roundId],
     );
-    return [for (final r in rows) _decode(r['type'] as String, json.decode(r['payload'] as String) as Map<String, Object?>)];
+    return [
+      for (final r in rows)
+        _decode(
+          r['type'] as String,
+          json.decode(r['payload'] as String) as Map<String, Object?>,
+        ),
+    ];
   }
 
   void deleteRound(int id) {
@@ -118,33 +126,72 @@ class RoundStore {
   void close() => _db.dispose();
 
   static Map<String, Object?> _encode(RoundEvent e) => switch (e) {
-        AnswerEvent(questionNumber: var q, side: var s, quizzerIndex: var i, correct: var c) =>
-          {'q': q, 'side': s.name, 'index': i, 'correct': c},
-        FoulEvent(questionNumber: var q, side: var s, quizzerIndex: var i) =>
-          {'q': q, 'side': s.name, 'index': i},
-        TimeOutEvent(side: var s) => {'side': s.name},
-        InterruptionEvent(questionNumber: var q) => {'q': q},
-        ChallengeEvent(questionNumber: var q, side: var s, successful: var ok) =>
-          {'q': q, 'side': s.name, 'successful': ok},
-        VoidQuestionEvent(questionNumber: var q) => {'q': q},
-        SubstituteQuestionEvent(questionNumber: var q, value: var v) => {'q': q, 'value': v},
-        SubstituteQuizzerEvent(side: var s, outIndex: var o, label: var l) =>
-          {'side': s.name, 'out': o, 'label': l},
-        OvertimeQuestionEvent(value: var v) => {'value': v},
-      };
+    AnswerEvent(
+      questionNumber: var q,
+      side: var s,
+      quizzerIndex: var i,
+      correct: var c,
+    ) =>
+      {'q': q, 'side': s.name, 'index': i, 'correct': c},
+    FoulEvent(questionNumber: var q, side: var s, quizzerIndex: var i) => {
+      'q': q,
+      'side': s.name,
+      'index': i,
+    },
+    TimeOutEvent(side: var s) => {'side': s.name},
+    InterruptionEvent(questionNumber: var q) => {'q': q},
+    ChallengeEvent(questionNumber: var q, side: var s, successful: var ok) => {
+      'q': q,
+      'side': s.name,
+      'successful': ok,
+    },
+    VoidQuestionEvent(questionNumber: var q) => {'q': q},
+    SubstituteQuestionEvent(questionNumber: var q, value: var v) => {
+      'q': q,
+      'value': v,
+    },
+    SubstituteQuizzerEvent(side: var s, outIndex: var o, label: var l) => {
+      'side': s.name,
+      'out': o,
+      'label': l,
+    },
+    OvertimeQuestionEvent(value: var v) => {'value': v},
+  };
 
   static RoundEvent _decode(String type, Map<String, Object?> m) {
     Side side(Object? v) => Side.values.byName(v as String);
     return switch (type) {
-      'AnswerEvent' => AnswerEvent(questionNumber: m['q'] as int, side: side(m['side']), quizzerIndex: m['index'] as int, correct: m['correct'] as bool),
-      'FoulEvent' => FoulEvent(questionNumber: m['q'] as int?, side: side(m['side']), quizzerIndex: m['index'] as int?),
+      'AnswerEvent' => AnswerEvent(
+        questionNumber: m['q'] as int,
+        side: side(m['side']),
+        quizzerIndex: m['index'] as int,
+        correct: m['correct'] as bool,
+      ),
+      'FoulEvent' => FoulEvent(
+        questionNumber: m['q'] as int?,
+        side: side(m['side']),
+        quizzerIndex: m['index'] as int?,
+      ),
       'TimeOutEvent' => TimeOutEvent(side: side(m['side'])),
       'InterruptionEvent' => InterruptionEvent(questionNumber: m['q'] as int),
-      'ChallengeEvent' => ChallengeEvent(questionNumber: m['q'] as int, side: side(m['side']), successful: m['successful'] as bool),
+      'ChallengeEvent' => ChallengeEvent(
+        questionNumber: m['q'] as int,
+        side: side(m['side']),
+        successful: m['successful'] as bool,
+      ),
       'VoidQuestionEvent' => VoidQuestionEvent(questionNumber: m['q'] as int),
-      'SubstituteQuestionEvent' => SubstituteQuestionEvent(questionNumber: m['q'] as int, value: m['value'] as int),
-      'SubstituteQuizzerEvent' => SubstituteQuizzerEvent(side: side(m['side']), outIndex: m['out'] as int, label: m['label'] as String),
-      'OvertimeQuestionEvent' => OvertimeQuestionEvent(value: m['value'] as int),
+      'SubstituteQuestionEvent' => SubstituteQuestionEvent(
+        questionNumber: m['q'] as int,
+        value: m['value'] as int,
+      ),
+      'SubstituteQuizzerEvent' => SubstituteQuizzerEvent(
+        side: side(m['side']),
+        outIndex: m['out'] as int,
+        label: m['label'] as String,
+      ),
+      'OvertimeQuestionEvent' => OvertimeQuestionEvent(
+        value: m['value'] as int,
+      ),
       _ => throw StateError('unknown event type $type'),
     };
   }

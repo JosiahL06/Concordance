@@ -20,7 +20,9 @@ class SummaryScreen extends StatelessWidget {
     final redScore = controller.scoreOf(Side.red);
     final greenScore = controller.scoreOf(Side.green);
     final tied = redScore == greenScore;
-    final winnerSide = tied ? null : (redScore > greenScore ? Side.red : Side.green);
+    final winnerSide = tied
+        ? null
+        : (redScore > greenScore ? Side.red : Side.green);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Round summary'),
@@ -124,9 +126,9 @@ class SummaryScreen extends StatelessWidget {
                 SizedBox(
                   height: 56,
                   child: FilledButton.tonal(
-                    onPressed: () => Navigator.of(
-                      context,
-                    ).popUntil((route) => route.isFirst),
+                    onPressed: () =>
+                        Navigator.of(context)
+                            .popUntil((route) => route.isFirst),
                     child: const Text('Done'),
                   ),
                 ),
@@ -156,7 +158,8 @@ class SummaryScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              (side == Side.red ? controller.redName : controller.greenName).toUpperCase(),
+              (side == Side.red ? controller.redName : controller.greenName)
+                  .toUpperCase(),
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w900,
@@ -175,13 +178,10 @@ class SummaryScreen extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Time-outs ${team.timeOuts}/${controller.ruleset.limits.timeOutsPerTeam}',
+              'Time-outs ${team.timeOuts}/${controller.timeOutDisplayCap(side)}',
               style: const TextStyle(color: sideInkMuted),
             ),
-            Text(
-              'Fouls $fouls',
-              style: const TextStyle(color: sideInkMuted),
-            ),
+            Text('Fouls $fouls', style: const TextStyle(color: sideInkMuted)),
           ],
         ),
       ),
@@ -207,16 +207,12 @@ class SummaryScreen extends StatelessWidget {
             const Divider(),
             for (final side in Side.values)
               for (var i = 0; i < controller.teamOf(side).quizzers.length; i++)
-                _tableRow(
-                  context,
-                  controller.teamOf(side).quizzers[i],
-                ),
+                _tableRow(context, controller.teamOf(side).quizzers[i]),
           ],
         ),
       ),
     );
   }
-
 
   Widget _tableRow(BuildContext context, quizzer) {
     return Padding(
@@ -239,7 +235,12 @@ class SummaryScreen extends StatelessWidget {
     );
   }
 
-  Widget _cell(BuildContext context, String text, {required double w, bool bold = false}) {
+  Widget _cell(
+    BuildContext context,
+    String text, {
+    required double w,
+    bool bold = false,
+  }) {
     return SizedBox(
       width: w,
       child: Text(

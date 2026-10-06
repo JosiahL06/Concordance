@@ -39,7 +39,8 @@ class _ClassicScreenState extends State<ClassicScreen> {
                 _header(context),
                 AlertBanner(round: round),
                 Expanded(child: _ledger(context)),
-                if (round.matchComplete || round.inOvertime) EndOfRoundBar(round: round),
+                if (round.matchComplete || round.inOvertime)
+                  EndOfRoundBar(round: round),
                 ScoringConsole(round: round),
                 LiveBottomBar(round: round),
               ],
@@ -100,9 +101,7 @@ class _ClassicScreenState extends State<ClassicScreen> {
                 fontSize: 22,
                 fontWeight: FontWeight.w900,
                 color: scheme.onPrimaryContainer,
-                fontFeatures: const <FontFeature>[
-                  FontFeature.tabularFigures(),
-                ],
+                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
               ),
             ),
           ),
@@ -233,12 +232,13 @@ class _ClassicScreenState extends State<ClassicScreen> {
         ),
         Text(
           'SCORE ${round.scoreOf(side)}',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            color: sideInk,
+          ),
         ),
-        SizedBox(
-          width: _kTotalWidth,
-          child: Container(),
-        ),
+        SizedBox(width: _kTotalWidth, child: Container()),
       ],
     );
   }
@@ -349,7 +349,10 @@ class _ClassicScreenState extends State<ClassicScreen> {
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: scheme.outlineVariant),
       ),
-      child: Text(text, style: TextStyle(fontSize: 13, fontWeight: weight, color: color)),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 13, fontWeight: weight, color: color),
+      ),
     );
     if (contested || interrupted) {
       cell = Container(
@@ -386,7 +389,11 @@ class _ClassicScreenState extends State<ClassicScreen> {
             width: _kLabelWidth,
             child: Text(
               'RUNNING',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: sideInkMuted,
+              ),
             ),
           ),
           for (final n in _visibleQuestions)
@@ -419,7 +426,11 @@ class _ClassicScreenState extends State<ClassicScreen> {
             child: Center(
               child: Text(
                 '${round.scoreOf(side)}',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: sideInk,
+                ),
               ),
             ),
           ),
@@ -432,7 +443,7 @@ class _ClassicScreenState extends State<ClassicScreen> {
     final scheme = Theme.of(context).colorScheme;
     Widget railButton(Side side) {
       final taken = round.teamOf(side).timeOuts;
-      final limit = round.ruleset.limits.timeOutsPerTeam;
+      final limit = round.timeOutDisplayCap(side);
       return Column(
         children: [
           Text(
@@ -440,7 +451,7 @@ class _ClassicScreenState extends State<ClassicScreen> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w800,
-              color: sideColor(side),
+              color: sideAccent(side, scheme),
             ),
           ),
           for (var i = 1; i <= limit; i++)
@@ -456,12 +467,12 @@ class _ClassicScreenState extends State<ClassicScreen> {
                     // text; an unused one stays an outline. Unmistakable at a
                     // glance from across the table.
                     side: BorderSide(
-                      color: sideColor(side),
+                      color: sideAccent(side, scheme),
                       width: i <= taken ? 2 : 1.5,
                     ),
                     foregroundColor: i <= taken
                         ? Colors.white
-                        : sideColor(side),
+                        : sideAccent(side, scheme),
                     backgroundColor: i <= taken ? sideColor(side) : null,
                     textStyle: TextStyle(
                       fontWeight: i <= taken

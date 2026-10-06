@@ -64,6 +64,17 @@
       and Summary, choice persisted per device
 - [ ] Polish pass: UI design, usability, intuitiveness, UI logic (button prominence,
       placement, alert placement)
+      - [x] Dark-mode text contrast in the live views: fixed-light team tints now
+            use the fixed dark `sideInk`/`sideInkMuted`, and the deep red/green
+            accents swap to lightened variants (`sideAccent`) on dark surfaces
+      - [x] Notifications fire once: quiz/strike/foul-out and limit warnings no
+            longer re-announce on every later ruling (`RoundController._announced`)
+      - [x] Notifications re-arm on undo: an undone-out quizzer's later re-out
+            announces again (substitution-safe); resume settles settled history
+      - [x] Time-outs cap at the team allotment (3/3); a 4th request is denied
+            and the keeper is prompted to assign the team foul (never automatic)
+      - [x] Overtime time-outs per rulebook: TBQ voids remaining (none in OT);
+            JBQ carries remaining + 1 extra (cap 4), announced at OT start
 - [ ] Guardrail logic pass: block impossible entries (same quizzer scoring twice
       on one question, two quizzers on the same team both scoring on one question)
       in the real engine as `RuleViolation`s with UI surfacing per the interaction

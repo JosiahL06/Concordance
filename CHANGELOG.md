@@ -114,6 +114,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ink (`sideInk` / `sideInkMuted` in `views/common/live_chrome.dart`), applied
   to the summary cards, the summary winner banner, and the tinted text in the
   Modern and Classic live views. A dark-mode contrast test guards it.
+- **Live views still had dark-mode contrast gaps.** Two opposite mistakes
+  remained in `ModernScreen` / `ClassicScreen`:
+  - Side labels and buttons that draw on *dark* theme surfaces (the Modern team
+    header name, the Classic time-out rail caption and unused `TO` buttons, and
+    the shared `RED TO` / `GREEN TO` bottom-bar buttons) used the fixed deep
+    red/green, which is dark-on-dark and nearly invisible. They now use
+    `sideAccent(side, scheme)`, which keeps the same deep accent in light mode
+    and swaps to a lightened variant (`redAccentDark` / `greenAccentDark`) in
+    dark mode (≥4.5:1 against the dark surfaces).
+  - Ledger text that sits on the *fixed light* team tints (the Classic `SCORE`
+    totals, `RUNNING` label and per-team totals) inherited the theme's
+    `onSurface` and so rendered near-white on pale tints. It now uses the fixed
+    dark `sideInk` / `sideInkMuted`, matching the summary fix.
+  - `test/views/live_contrast_test.dart` asserts both directions in dark mode
+    (the bugs are invisible in light mode) plus the light-mode accent identity.
+- **Notifications repeated on every later ruling.** A quizzer's quiz-out (or
+  strike-out / foul-out) was re-announced on each subsequent answer by any
+  quizzer, because `RoundController` re-derived the alert from the engine's
+  *currently active* notices (`collectNotices`), which stay true for the rest
+  of the round. The controller now remembers which notices it has already
+  surfaced (`_announced`, keyed by code + message) and only shows each one
+  once, so dismissing the banner no longer brings it back and later rulings
+  stay quiet. The 4th time-out notice had the same defect through a second,
+  duplicated code path in `takeTimeOut`; that path now flows through the same
+  once-per-message gate, so the engine's notice is the single source.
+  Regression tests: `test/app/round_controller_test.dart` ("notices do not
+  repeat" group).
+- **A quizzer's out was never announced again after it was undone.** The
+  once-per-notice gate remembered a notice forever, so after undoing the answer
+  that made a quizzer quiz out (or strike/foul out) and later re-scoring them
+  out at another question, no banner appeared. The controller now re-arms a
+  notice whenever its condition stops holding (`_reconcileAnnounced`), so it
+  fires again the next time it happens — which matters once quizzer
+  substitutions are in play. The resume path also settles already-journaled
+  outs (`markCurrentNoticesSeen`), so a resumed round does not replay settled
+  history.
+- **Time-outs could be taken past the team allotment (4/3, 5/3, …).** Both
+  rulebooks cap a team at 3, with a 4th *request* denied and penalized as a
+  team foul. `TimeOutEvent` is now rejected at the cap in the engine (never
+  journaled, so undo/persistence are unaffected); `RoundController.takeTimeOut`
+  returns false and prompts the keeper to assign the team foul through the
+  normal foul path. The app deliberately does **not** auto-assess the foul.
+  `docs/design/interaction.md` and `docs/ruleset-schema.md` updated; the
+  golden/controller tests rewritten to the cap semantics.
+- **Overtime time-outs now follow each rulebook** (`LimitsConfig.timeOutCap`).
+  TBQ Time-outs §4 voids any remaining time-outs in overtime, so no team
+  time-out may be taken (`overtimeTimeOutsCarry` false, `overtimeExtraTimeOuts`
+  0 — both already in the preset). JBQ Time-outs §§4–5 carry remaining
+  time-outs over *and* grant one extra, so the overtime cap is 3 + 1 = 4
+  (`carry` true, `extra` 1 — already in the preset). The engine resolves the
+  cap from whether overtime questions have been appended; the live counters
+  display `taken/displayCap` (never below what was taken, so a TBQ team that
+  used two reads "2/2"), and the overtime announcement states the rule. The
+  free one-minute overtime time-out both books declare is the Quizmaster's, not
+  a team time-out, so it is not counted.
 
 <!-- Version link references (e.g. [0.1.0]: <repo>/compare/v0.0.1...v0.1.0)
      are added here at the first release, once the canonical repo URL exists. -->

@@ -33,6 +33,12 @@ List<Notice> collectNotices(Ruleset ruleset, RoundState state) {
         notices.add(Notice('foul-out', '$name ${q.label} fouled out'));
       }
     }
+    // Scorekeeper duty: notify on the team's `notifyTimeOutRequest`-th
+    // request. Time-outs are capped at `timeOutsPerTeam` (see `reducer.dart`),
+    // so when `notifyTimeOutRequest` exceeds the cap a denied over-cap request
+    // never increments the count — the controller raises that notification
+    // itself at the moment of the denied attempt (it is an *attempt*, not a
+    // state, so this state-derived notice cannot represent it).
     if (team.timeOuts >= ruleset.limits.notifyTimeOutRequest) {
       notices.add(
         Notice(

@@ -179,6 +179,26 @@ class LimitsConfig {
   final int? challengesPerQuestionPerTeam;
   final int? challengeAllotmentPerTeam;
 
+  /// Team time-outs allowed, given whether the match has reached overtime.
+  ///
+  /// Regulation grants [timeOutsPerTeam] (Time-outs §2 both books). In
+  /// overtime the rulebooks diverge:
+  /// - TBQ Time-outs §4: "Remaining team time-outs may not be used in
+  ///   overtime" and no extra is granted → **no** team time-out may be taken
+  ///   (`overtimeTimeOutsCarry` false, `overtimeExtraTimeOuts` 0).
+  /// - JBQ Time-outs §§4–5: remaining time-outs carry over *and* each team is
+  ///   granted [overtimeExtraTimeOuts] more → cap = [timeOutsPerTeam] +
+  ///   [overtimeExtraTimeOuts].
+  ///
+  /// Both books also declare a free one-minute time-out at the start of
+  /// overtime; that is the Quizmaster's declaration, not a team time-out, so
+  /// it is not counted here.
+  int timeOutCap({required bool inOvertime}) {
+    if (!inOvertime) return timeOutsPerTeam;
+    return (overtimeTimeOutsCarry ? timeOutsPerTeam : 0) +
+        overtimeExtraTimeOuts;
+  }
+
   factory LimitsConfig.fromJson(Map<String, Object?> json) {
     final challengeLimit = json['challengeLimit'] as Map<String, Object?>;
     return LimitsConfig(
