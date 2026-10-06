@@ -30,6 +30,29 @@ RoundController wideTbq() => RoundController(
   greenSeats: const ['Green 1', 'Green 2', 'Green 3', 'Green 4'],
 );
 
+/// Plays a legal route to a 145-145 tie with the keeper on deck at Q20: Red
+/// answers Q1..Q9 correctly (+150); Green answers Q10..Q17 correctly and
+/// misses Q18 (10pt) and Q19 (20pt) for 145. Under the D10 guardrails each
+/// question carries exactly one answer, so the old "both teams score every
+/// question" tie is no longer reachable. A Red miss on Q20 (10pt, -5) then
+/// forces the tie.
+void playToTie(RoundController c) {
+  for (var n = 1; n <= 9; n++) {
+    c.jumpToQuestion(n);
+    c.select(Side.red, (n - 1) % 4);
+    expect(c.markCorrect(), isTrue);
+  }
+  for (var n = 10; n <= 19; n++) {
+    c.jumpToQuestion(n);
+    c.select(Side.green, (n - 1) % 4);
+    if (n <= 17) {
+      expect(c.markCorrect(), isTrue);
+    } else {
+      expect(c.markIncorrect(), isTrue);
+    }
+  }
+}
+
 RoundController freshJbq() => RoundController(
   ruleset: loadPreset('jbq-2026'),
   redName: 'Red',
@@ -269,9 +292,12 @@ void main() {
       c.markCurrentNoticesSeen();
       expect(c.lastAlert, isNull);
 
-      // A later ruling must not replay the settled quiz-out.
+      // A later ruling on a *fresh* question must not replay the settled
+      // quiz-out. (Q1 already carries Red 1's answer, so the D10 guardrails
+      // would block a second answer there — jump on first.)
+      c.jumpToQuestion(6);
       c.select(Side.green, 0);
-      c.markCorrect();
+      expect(c.markCorrect(), isTrue);
       expect(c.lastAlert, isNull);
     });
   });
@@ -279,18 +305,8 @@ void main() {
   group('overtime (deterministic, no button)', () {
     test('regulation tie opens overtime automatically', () {
       final c = wideTbq();
-      // Green answers Q1 wrong: red leads by 5 (half of a 10-pointer).
-      c.select(Side.green, 0);
-      expect(c.markIncorrect(), isTrue);
-      // Q2..Q19 both teams identical.
-      for (var n = 2; n <= 19; n++) {
-        c.jumpToQuestion(n);
-        c.select(Side.red, (n - 1) % 4);
-        expect(c.markCorrect(), isTrue);
-        c.jumpToQuestion(n);
-        c.select(Side.green, (n - 1) % 4);
-        expect(c.markCorrect(), isTrue);
-      }
+      playToTie(c);
+      // Red carries a 5-point lead into the final question.
       expect(c.scoreOf(Side.red) - c.scoreOf(Side.green), 5);
 
       // Q20 is worth 10: red answers wrong, erasing the 5-point lead.
@@ -330,16 +346,7 @@ void main() {
 
     test('one undo reverts the OT question and the answer that forced it', () {
       final c = wideTbq();
-      c.select(Side.green, 0);
-      c.markIncorrect();
-      for (var n = 2; n <= 19; n++) {
-        c.jumpToQuestion(n);
-        c.select(Side.red, (n - 1) % 4);
-        c.markCorrect();
-        c.jumpToQuestion(n);
-        c.select(Side.green, (n - 1) % 4);
-        c.markCorrect();
-      }
+      playToTie(c);
       c.jumpToQuestion(20);
       c.select(Side.red, 3);
       c.markIncorrect();
@@ -359,16 +366,7 @@ void main() {
 
     test('undo keeps undoing after overtime was opened', () {
       final c = wideTbq();
-      c.select(Side.green, 0);
-      c.markIncorrect();
-      for (var n = 2; n <= 19; n++) {
-        c.jumpToQuestion(n);
-        c.select(Side.red, (n - 1) % 4);
-        c.markCorrect();
-        c.jumpToQuestion(n);
-        c.select(Side.green, (n - 1) % 4);
-        c.markCorrect();
-      }
+      playToTie(c);
       c.jumpToQuestion(20);
       c.select(Side.red, 3);
       c.markIncorrect();

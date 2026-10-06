@@ -206,4 +206,30 @@ void main() {
     expect(hasPrimaryBorder(), isTrue,
         reason: 'Red 1 x Q1 intersect should highlight');
   });
+
+  testWidgets('console blocks and explains a guarded answer (D10)', (
+    WidgetTester tester,
+  ) async {
+    final round = freshRound();
+    // Red 1 answers Q1 correctly (advances to Q2), then the keeper looks back
+    // at Q1 and selects the teammate: the team already answered, so the
+    // console must disable CORRECT/INCORRECT and say why.
+    round.select(Side.red, 0);
+    round.markCorrect();
+    round.jumpToQuestion(1);
+    round.select(Side.red, 1);
+    await pumpClassic(tester, round);
+
+    expect(find.textContaining('BLOCKED'), findsOneWidget);
+    final correct = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'CORRECT  +10'),
+    );
+    expect(correct.onPressed, isNull, reason: 'guarded answer is disabled');
+
+    // FOUL stays live — fouls are not answer-guarded.
+    final foul = tester.widget<OutlinedButton>(
+      find.widgetWithText(OutlinedButton, 'FOUL'),
+    );
+    expect(foul.onPressed, isNotNull);
+  });
 }

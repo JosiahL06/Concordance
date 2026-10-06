@@ -103,10 +103,25 @@
             stays put with a notice)
       - [x] Delete saved rounds from the home "Resume round" list, guarded by a
             confirmation dialog (`RoundStore.deleteRound`)
-- [ ] Guardrail logic pass: block impossible entries (same quizzer scoring twice
-      on one question, two quizzers on the same team both scoring on one question)
-      in the real engine as `RuleViolation`s with UI surfacing per the interaction
-      spec (prototype has a first cut: `canScore`/`scoreBlockedReason`)
+- [x] Guardrail logic pass: block impossible answers in the real engine as
+      `RuleViolation`s (D10), surfaced by the scoring console
+      (`canScore`/`scoreBlockedReason` prototype → `answerGuardrail`/
+      `answerBlockedReason`)
+      - [x] A quizzer cannot answer a question twice (`answer-quizzer-twice`)
+      - [x] Once a teammate has answered, the team cannot answer again
+            (`answer-team-twice`)
+      - [x] One correct answer per question; a correct answer closes the
+            question to both teams (`answer-question-closed`), so the only
+            legal two-answer orders are wrong+right / wrong+wrong
+      - [x] Console disables CORRECT/INCORRECT and shows the reason when the
+            selected quizzer is guarded (FOUL stays live); voiding a question
+            clears its answer ledger (substitute reads fresh, D4)
+- [ ] Void point-retraction (D3): `VoidQuestionEvent` marks the slot void and
+      resets its guardrail ledger, but does not retract points already scored
+      on it (or clear its cell mark) — verified: a 10-pt correct answer on a
+      slot keeps +10 after the slot is voided. Implement retraction so a
+      voided-then-replaced question scores cleanly (edge case; the common void
+      is a mis-read question with no answers yet).
 - [ ] Touch verification pass (emulator now, real tablet later)
 - [ ] Accessibility (Semantics) + haptics pass
 - [ ] CI workflow: build APK + Windows installer + Linux on tag (`.github/workflows/`)

@@ -65,7 +65,14 @@ class ScoringConsole extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final sel = round.selected;
-    final enabled = sel != null && !round.matchComplete;
+    final blocked = sel == null
+        ? null
+        : round.scoreBlockedReason(sel.$1, sel.$2, round.questionNumber);
+    // A quizzer must be selected for any ruling; a guarded answer additionally
+    // disables CORRECT/INCORRECT. FOUL is never answer-guarded, so it stays
+    // live whenever a quizzer is selected.
+    final selected = sel != null && !round.matchComplete;
+    final canAnswer = selected && blocked == null;
     return Container(
       color: scheme.surfaceContainerLow,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -75,13 +82,15 @@ class ScoringConsole extends StatelessWidget {
             sel == null
                 ? 'TAP A QUIZZER, THEN RECORD THE RULING — CORRECT / '
                       'INCORRECT ADVANCE; FOUL STAYS'
+                : blocked != null
+                ? 'BLOCKED — $blocked'
                 : '${sideName(round, sel.$1).toUpperCase()} '
                       '${round.view.teamOf(sel.$1).quizzers[sel.$2].label.split(' ').last} '
                       'ON Q${round.questionNumber} — RECORD THE RULING',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: scheme.onSurface,
+              color: blocked != null ? scheme.error : scheme.onSurface,
             ),
           ),
           const SizedBox(height: 6),
@@ -96,7 +105,7 @@ class ScoringConsole extends StatelessWidget {
                     backgroundColor: correctColor,
                     foregroundColor: Colors.white,
                   ),
-                  onPressed: enabled ? round.markCorrect : null,
+                  onPressed: canAnswer ? round.markCorrect : null,
                   child: Text(
                     'CORRECT  +${round.currentValue(round.questionNumber)}',
                   ),
@@ -111,7 +120,7 @@ class ScoringConsole extends StatelessWidget {
                     backgroundColor: incorrectColor,
                     foregroundColor: Colors.white,
                   ),
-                  onPressed: enabled ? round.markIncorrect : null,
+                  onPressed: canAnswer ? round.markIncorrect : null,
                   child: Text(
                     'INCORRECT  −${round.currentValue(round.questionNumber) ~/ 2}',
                   ),
@@ -122,7 +131,7 @@ class ScoringConsole extends StatelessWidget {
                 height: 68,
                 width: 220,
                 child: OutlinedButton(
-                  onPressed: enabled ? () => _recordFoul(context) : null,
+                  onPressed: selected ? () => _recordFoul(context) : null,
                   child: const Text('FOUL'),
                 ),
               ),

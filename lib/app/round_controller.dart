@@ -69,6 +69,12 @@ class RoundController extends ChangeNotifier {
       view.cellHasFoul(side, index, n);
   int teamDelta(Side side, int n) => view.teamDelta(side, n);
 
+  /// Reason the selected quizzer cannot score on question [n] under the
+  /// answer guardrails (D10), or null when scoring is allowed. The scoring
+  /// console disables CORRECT/INCORRECT on a non-null reason and shows it.
+  String? scoreBlockedReason(Side side, int index, int n) =>
+      view.answerBlockedReason(side, index, n);
+
   List<QuizzerRef> get redRoster => _roster(Side.red);
   List<QuizzerRef> get greenRoster => _roster(Side.green);
 

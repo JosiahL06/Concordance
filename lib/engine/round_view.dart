@@ -185,6 +185,13 @@ class RoundView {
       ),
   ];
 
+  /// Human-readable reason an answer by ([side], [quizzerIndex]) on question
+  /// [n] would be rejected by the answer guardrails (D10), or null when the
+  /// answer is allowed. The console disables CORRECT/INCORRECT on a non-null
+  /// reason and shows it, so the keeper sees why before tapping.
+  String? answerBlockedReason(Side side, int quizzerIndex, int n) =>
+      answerGuardrail(state, n, side, quizzerIndex)?.message;
+
   // ── Classic-only ledger reads ──
 
   /// Signed point delta for [side] on question [n] (RUNNING row).

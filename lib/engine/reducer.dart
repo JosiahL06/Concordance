@@ -84,7 +84,15 @@ FoldResult applyEvent(Ruleset ruleset, RoundState state, RoundEvent event) {
     case VoidQuestionEvent():
       final range = inRange(state, event.questionNumber);
       if (!range.ok) return range;
-      state.question(event.questionNumber).voided = true;
+      final q = state.question(event.questionNumber);
+      q.voided = true;
+      // The guardrail ledger resets so a substitute read (D4) starts fresh.
+      // NOTE: D3's point-retraction for an already-answered slot is NOT yet
+      // implemented (tracked in TODO.md) — voiding currently keeps any points
+      // already scored on the slot.
+      q.answered[Side.red]!.clear();
+      q.answered[Side.green]!.clear();
+      q.answeredCorrect = false;
       return FoldResult.ok(state);
     case SubstituteQuestionEvent():
       return substituteQuestionFold(state, event.questionNumber, event.value);
@@ -108,6 +116,44 @@ FoldResult inRange(RoundState state, int n) {
     );
   }
   return FoldResult.ok(state);
+}
+
+/// Answer guardrails (schema decision D10). A question slot admits at most
+/// one answer per quizzer, one answer per team, and one *correct* answer
+/// overall — a correct answer closes the question to both teams. Because an
+/// incorrectly answered question is re-read to the opposing team, the only
+/// legal two-answer sequences are wrong+right or wrong+wrong, so "at most two
+/// answers, at most one of them correct" falls out of these checks. Returns
+/// the violation for a disallowed answer, or null when the answer is allowed.
+///
+/// Both shipped rulebooks share these mechanics, so this is fixed engine
+/// behaviour (like `inRange`), not ruleset config.
+RuleViolation? answerGuardrail(
+  RoundState state,
+  int n,
+  Side side,
+  int quizzerIndex,
+) {
+  final q = state.questions[n];
+  if (q == null) return null; // untouched slot: nothing recorded yet
+  final teamName = side == Side.red ? 'Red' : 'Green';
+  if (q.answered[side]!.contains(quizzerIndex)) {
+    final label = state.teams[side]!.quizzers[quizzerIndex].label;
+    return RuleViolation('answer-quizzer-twice', '$label already answered Q$n');
+  }
+  if (q.answered[side]!.isNotEmpty) {
+    return RuleViolation(
+      'answer-team-twice',
+      '$teamName already answered Q$n — one answer per team',
+    );
+  }
+  if (q.answeredCorrect) {
+    return RuleViolation(
+      'answer-question-closed',
+      'Q$n already has a correct answer',
+    );
+  }
+  return null;
 }
 
 FoldResult answerFold(
@@ -141,6 +187,8 @@ FoldResult answerFold(
       RuleViolation('quizzer-inactive', 'quizzer cannot answer'),
     );
   }
+  final guardrail = answerGuardrail(state, n, side, quizzerIndex);
+  if (guardrail != null) return FoldResult.rejected(guardrail);
   final scoring = ruleset.scoring;
   final value = q.substituteValue ?? state.valueOf(n);
   if (correct) {
@@ -159,6 +207,9 @@ FoldResult answerFold(
       if (scoring.quizOutLeavesMatch) quizzer.leftMatch = true;
     }
   }
+  // Record the answer so later answers on this slot are guarded (D10).
+  q.answered[side]!.add(quizzerIndex);
+  if (correct) q.answeredCorrect = true;
   return FoldResult.ok(state);
 }
 

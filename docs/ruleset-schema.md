@@ -40,6 +40,18 @@ never engine forks.
   Null-question fouls count toward the team total only; they are NOT
   attributed to any ledger cell (a ledger cell requires an explicit
   `questionNumber`).
+- **D10 — answer guardrails are engine mechanics, not ruleset data.** A
+  question slot admits at most one answer per quizzer, one answer per team,
+  and one *correct* answer overall; a correct answer closes the question to
+  both teams. Because an incorrectly answered question is re-read to the
+  opposing team (TBQ Reading §13 / JBQ Reading §12; overtime TBQ OT §4 /
+  JBQ OT §4), the only legal two-answer sequences are wrong+right or
+  wrong+wrong — "at most two answers, at most one of them correct" falls out
+  of those three checks. Both shipped books share these mechanics, so they
+  live in the fold (`answerGuardrail`) like `inRange`, not in the ruleset
+  JSON. A blocked answer is rejected (never journaled) and surfaced by the
+  scoring console (disabled CORRECT/INCORRECT + reason). Voiding a question
+  clears its answer ledger so the substitute reads fresh (D4).
 
 
 ## Schema fields
@@ -101,7 +113,7 @@ quizmaster may override reality — the journal records what was recorded).
 
 | Event | Fields | Validates against |
 |---|---|---|
-| `answer` | q, team, quizzer, correct | quizzer active; q not voided w/o substitute; q in range |
+| `answer` | q, team, quizzer, correct | quizzer active; q not voided w/o substitute; q in range; answer guardrails (D10: at most one answer per quizzer, one per team, one correct per question — a correct answer closes the slot) |
 | `foul` | q?, team, quizzer? (null = team foul) | team/quizzer exists; foul-out derived, not blocked |
 | `timeOut` | team | capped by `timeOutCap` (3 regulation; overtime: TBQ none, JBQ remaining +1); an over-cap request is rejected (not journaled) and the keeper assigns the resulting team foul themselves |
 | `interruption` | q | q in range (marks only) |

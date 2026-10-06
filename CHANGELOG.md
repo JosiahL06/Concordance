@@ -71,6 +71,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     and show on the cells, so the header counts team fouls only.
 - Home "Resume round" list: delete a saved round via `RoundStore.deleteRound`,
   guarded by a confirmation dialog so a mis-tap cannot silently lose a round.
+- Answer guardrails (schema decision D10), enforced in the pure engine
+  (`answerGuardrail`) and surfaced by the scoring console: a question admits
+  at most one answer per quizzer, one answer per team, and one correct answer
+  — a correct answer closes the question to both teams, so the only legal
+  two-answer orders are wrong+right / wrong+wrong. A guarded answer is
+  rejected (never journaled); the console disables CORRECT/INCORRECT and
+  shows `BLOCKED — <reason>` (FOUL stays live). Voiding a question clears its
+  answer ledger so the substitute reads fresh (D4).
 
 ### Changed
 

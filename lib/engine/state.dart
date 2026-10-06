@@ -70,6 +70,19 @@ class QuestionState {
 
   bool voided = false;
   int? substituteValue;
+
+  /// Answer ledger for this slot: quizzer indexes that have answered, per
+  /// team. Rebuilt from the journal on re-fold and cleared when the question
+  /// is voided (the substitute reads fresh, D4). Drives the answer guardrails
+  /// (D10).
+  final Map<Side, Set<int>> answered = <Side, Set<int>>{
+    Side.red: <int>{},
+    Side.green: <int>{},
+  };
+
+  /// Whether a correct answer has been recorded on this slot. A correct
+  /// answer closes the question to both teams (D10).
+  bool answeredCorrect = false;
 }
 
 /// Whole-round derived state.
