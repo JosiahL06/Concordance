@@ -26,7 +26,26 @@ flutter test             # MUST pass before any "done" claim
 flutter build apk --debug        # PRIMARY target (Fire HD 10) — works here
 flutter build linux --debug      # desktop dev loop; needs clang (installed)
 flutter build windows            # only builds on Windows CI, not this machine
+flutter build macos              # only builds on a Mac with Xcode, NOT this machine
 ```
+
+### macOS build requires a Mac (Xcode)
+`flutter build macos` **cannot run on this Linux machine** — it needs macOS with
+Xcode and CocoaPods. The `macos/` Xcode runner IS committed and configured
+(bundle id `org.concordance.app`, app name "Concordance", landscape-tablet
+default window, sandboxed no-network entitlements), so a Mac can build it with
+no source changes. On a Mac:
+
+```sh
+flutter build macos              # -> build/macos/Build/Products/Release/Concordance.app
+```
+
+The plain output is a `.app` bundle (an executable), **not** an installer. A
+`.dmg` (drag-to-Applications) or `.pkg` must be created separately
+(`hdiutil create` / `create-dmg` / `pkgbuild`). Unsigned apps are blocked by
+Gatekeeper but openable via right-click → Open (or
+`xattr -dr com.apple.quarantine Concordance.app`); a clean install needs
+Developer ID signing + notarization ($99/yr Apple Developer Program).
 
 ### Linux desktop build needs clang
 Flutter's `build_linux.dart` **unconditionally** sets `CC=clang, CXX=clang++`

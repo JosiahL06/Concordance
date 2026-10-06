@@ -16,6 +16,12 @@ Built-in presets ship for the Assemblies of God **Teen Bible Quiz (TBQ)** and
   sideloaded APK (enable *Apps from Unknown Sources* on the tablet).
 - **Windows** — secondary target (touchscreen-friendly)
 - **Linux** — day-to-day development and testing
+- **macOS** — secondary desktop target. The Xcode project is committed, but
+  `flutter build macos` **only runs on a Mac with Xcode** (see below).
+
+> **Note:** macOS builds cannot be produced on Linux. The `macos/` runner is
+> scaffolded and configured here so the code is build-ready; the actual build
+> happens on a Mac (see the development rules for details).
 
 ## Development
 
@@ -28,6 +34,7 @@ flutter test         # unit + widget tests
 flutter build apk    # Android release build
 flutter build windows
 flutter build linux
+flutter build macos  # macOS desktop (only builds on a Mac with Xcode)
 ```
 
 Primary test emulator: `fire_hd_10` — API 30 AOSP image (no Google APIs), sized

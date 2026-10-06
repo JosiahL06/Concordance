@@ -5,7 +5,13 @@
   1920×1200 landscape, sideloaded APK (no Google Play services — keep deps GMS-free).
   Test AVD: `fire_hd_10` (API 30 AOSP image, no Google APIs). Flutter default
   `minSdk = 24` covers it with room to spare (also Fire OS 7 / Android 9).
-- Secondary: Windows laptops (touchscreen), generic Android tablets.
+- Secondary: Windows laptops (touchscreen), generic Android tablets, Linux
+  (day-to-day dev/testing), and **macOS desktop** (Xcode project scaffolded and
+  build-ready; `flutter build macos` requires a Mac with Xcode).
+- **iPadOS is explicitly post-v1**: the Flutter code targets it trivially, but
+  Apple's toolchain (Mac + Xcode required to build) and distribution model
+  (App Store $99/yr + review, and the AGPL-3.0-only vs. App Store ToS conflict)
+  are the real gates — not the app code.
 
 ## Phase 0 — Toolchain & scaffold
 - [x] Flutter 3.47.6 + JDK 17 + Android SDK installed (user-level, `~/sdk/`)
@@ -157,6 +163,14 @@
 - [ ] Touch verification pass (emulator now, real tablet later)
 - [ ] Accessibility (Semantics) + haptics pass
 - [ ] CI workflow: build APK + Windows installer + Linux on tag (`.github/workflows/`)
+- [x] macOS desktop scaffolding (`macos/` Xcode runner): bundle id
+      `org.concordance.app`, app name "Concordance", landscape-tablet default
+      window (1280×800, min 1024×700), sandboxed no-network entitlements,
+      AGPL-3.0-only copyright. Build-ready; the actual `flutter build macos`
+      and `.dmg` packaging require a Mac with Xcode
+- [ ] macOS distribution pass (on a Mac): `flutter build macos` → wrap the
+      `.app` in a `.dmg`; optionally Developer ID sign + notarize for a clean
+      Gatekeeper experience (unsigned works via right-click-Open)
 
 ## Post-v1
 - [ ] Global edit/undo dialogue: selective journal edit (change/delete any

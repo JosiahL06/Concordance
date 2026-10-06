@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **macOS desktop target** — `macos/` runner scaffolded and configured for the
+  secondary desktop story: bundle id `org.concordance.app`, app name
+  "Concordance", AGPL-3.0-only copyright string, and a landscape-tablet default
+  window (1280×800, minimum 1024×700). Entitlements stay sandboxed with no
+  network access, matching the offline-only policy. Build-ready in the repo, but
+  `flutter build macos` requires a Mac with Xcode.
 - Initial Flutter project scaffold (v3.47.6 / Dart 3.13.5) with Android,
   Windows, and Linux targets.
 - Android package `org.concordance.app` with launcher label "Concordance".

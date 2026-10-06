@@ -19,11 +19,11 @@ An open-source, **offline, touch-first scorekeeper for Bible Quiz matches** — 
 
 ## Platform targets
 - **Primary: Amazon Fire HD 10 (2023, 13th gen)** — Fire OS 8 = Android 11, API 30, 1920×1200, landscape. Fire tablets have **no Google Play services** → the app and ALL its dependencies MUST remain GMS-free. Distribution = sideloaded APK.
-- Secondary: Windows (touchscreen laptops), Linux (day-to-day dev/testing).
+- Secondary: Windows (touchscreen laptops), Linux (day-to-day dev/testing), macOS (desktop; `macos/` runner scaffolded — `flutter build macos` requires a Mac with Xcode).
 - **Landscape tablet-first** layout; MUST remain usable at 1280×800 logical dp.
 
 ## Identity & licensing
-- App name **Concordance**; Android package id `org.concordance.app`; launcher label `Concordance`.
+- App name **Concordance**; Android package id `org.concordance.app`; launcher label `Concordance`. macOS bundle id is also `org.concordance.app`.
 - License: **AGPL-3.0-only** (NOT "or-later"). New files SHOULD NOT carry license headers, but any licensing statement MUST say AGPL-3.0-only.
 
 ## Working agreement
