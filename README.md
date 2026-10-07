@@ -1,134 +1,149 @@
 # Concordance
 
-A modern, touch-first **scorekeeper for Bible Quiz matches** — built to be clean,
-intuitive, and usable within seconds of handing it to a volunteer scorekeeper.
+An offline, touch-first **scorekeeper for Bible Quiz matches** — a clean,
+modern replacement for the official app, built to be intuitive and usable
+within seconds of picking it up.
 
-Concordance tracks a single round offline (no accounts, no server), with the
-scoring rules expressed as **pluggable rulesets** rather than hard-coded logic.
-Built-in presets ship for the Assemblies of God **Teen Bible Quiz (TBQ)** and
-**Junior Bible Quiz (JBQ)** rulebooks.
+Concordance runs **one round** of scoring on a tablet, completely offline, 
+with built-in presets for the Assemblies of God **Teen Bible Quiz (TBQ)** 
+and **Junior Bible Quiz (JBQ)** rulebooks.
 
-## Platforms
+Currently working and tested on: Android / Fire tablet · Windows · Linux · macOS
 
-- **Amazon Fire HD 10 (2023, 13th gen)** — **primary target**. Fire OS 8
-  (Android 11, API 30), 1920×1200 landscape-first touch UI. Fire tablets have
-  **no Google Play services**, so the app stays fully GMS-free and ships as a
-  sideloaded APK (enable *Apps from Unknown Sources* on the tablet).
-- **Windows** — secondary target (touchscreen-friendly)
-- **Linux** — day-to-day development and testing
-- **macOS** — secondary desktop target. The Xcode project is committed, but
-  `flutter build macos` **only runs on a Mac with Xcode** (see below).
+## Contents
 
-> **Note:** macOS builds cannot be produced on Linux. The `macos/` runner is
-> scaffolded and configured here so the code is build-ready; the actual build
-> happens on a Mac (see the development rules for details).
+- [What is this?](#what-is-this)
+- [Screenshots](#screenshots)
+- [Features](#features)
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Configuring rulesets](#configuring-rulesets)
+- [Development](#development)
+- [Contributing](#contributing)
+- [Bug Reports/Feature Requests](#bug-reportsfeature-requests)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
+
+## What is this?
+
+A **Bible Quiz match** has two teams of quizzers seated at a quiz box. The
+quizmaster reads questions of varying point values; quizzers buzz in and answer.
+Points are awarded for correct answers and deducted for incorrect ones, and
+individual quizzers can "quiz out," "strike out," or "foul out." Somebody has to
+keep score — accurately, live, and fast.
+
+That somebody is usually a volunteer, and the existing digital tools are clunky
+enough that most people wish they just had the familiar paper scoresheet instead.
+Concordance is built for that person: **big buttons, one-tap scoring, an obvious undo**,
+and everything the paper scoresheet records (interruptions, contests, time-outs, fouls)
+captured digitally. It's designed to be handed off to a volunteer scorekeeper
+and used without any training, making scorekeeping **easier**, not harder.
+
+The app never makes a sound, works with no internet, and saves every entry,
+so a tablet crash, dead battery, or Wi-Fi outage mid-match will never
+lose the game.
+
+## Screenshots
+
+| Setup | Live scoring — Modern | Live scoring — Classic | Summary |
+| :-: | :-: | :-: | :-: |
+| ![Setup screen](docs/screenshots/setup.png) | ![Modern live view](docs/screenshots/modern.png) | ![Classic live view](docs/screenshots/classic.png) | ![Summary screen](docs/screenshots/summary.png) |
+
+## Features
+
+- **One-tap scoring** — large (≥48dp) targets, no hidden gestures, a prominent
+  undo for every mis-tap.
+- **Two live-scoring views** — *Modern* (a split-field layout) and *Classic* (a
+  recognizable scoresheet ledger). Pick per device or per round.
+- **Automatic alerts** — quiz-out, strike-out, and foul-out notify you so you
+   never have to track them manually.
+- **Rulesets for everyone** — TBQ and JBQ ship as built-in presets.
+- **Autosave & resume** — every action is written to disk immediately; a round
+  survives an app kill or reboot, mid-match.
+- **PDF/CSV export** — a readable round summary you can save or share.
+- **Offline & silent** — no network, no accounts, no telemetry; the app plays no
+  audio (haptics are opt-in and off by default), so it never distracts a match.
+- **Light and dark mode** — follows the system theme; light red/green tints keep the
+  two teams distinguishable at a glance regardless.
+
+## Install
+
+### Android / Fire tablet (recommended)
+
+The recommended device is an **Amazon Fire HD 10**, which has **no Google Play
+services** — so Concordance ships as a sideloaded, GMS-free APK.
+
+1. Download the latest `app-release.apk` from the project [Releases](https://github.com/JosiahL06/Concordance/releases) page.
+2. On the tablet, enable **Settings → Security → Apps from Unknown Sources**
+   (or *Install unknown apps* for your file manager).
+3. Open the downloaded APK and install.
+
+### Windows · Linux · macOS
+
+Download the matching build from the [Releases](https://github.com/JosiahL06/Concordance/releases)
+page (Windows `.zip`, Linux
+`tar.gz`, macOS zip folder). These desktop builds are currently **unsigned**, so
+Windows and macOS will show a trust warning on first launch — right-click →
+*Open* on macOS, and *More info → Run anyway* on Windows. Signed and verified
+builds are planned for a future release.
+
+## Quick start
+
+1. **Start a new round.** On the home screen, tap **Start a new round**.
+2. **Pick a ruleset.** Choose the **TBQ** or **JBQ** tab; the details card shows
+   the question count, point values, and quiz/strike/foul-out limits.
+3. **Set up teams & quizzers.** Enter team names (default Red/Green) and name
+   each seated and bench quizzer. Choose **Modern** or **Classic** live view.
+4. **Keep score.** As each question is read, set its point value, then tap
+   **Correct** or **Incorrect** for the answering quizzer. Fouls, time-outs,
+   interruptions, and contests have their own buttons. Made a mistake? Tap
+   **Undo**.
+5. **Finish & export.** The end-of-round **Summary** shows final scores and
+   announcements; export it as **PDF** or **CSV** to save or share if you like.
+
+You can leave a round at any time — it's saved automatically and appears under
+**Resume round** on the home screen.
+
+## Configuring rulesets
+
+Everything that varies between rulebooks — question count and point values,
+correct/incorrect multipliers, quiz-out thresholds and bonuses, notification limits
+— lives in the ruleset config files.
+TBQ and JBQ rulesets for 2026 ship as built-in presets:
+
+```
+assets/rulesets/tbq-25-26.json
+assets/rulesets/jbq-2026.json
+```
+
+Future rulesets will be added as they are released; previous rulesets will never be deleted.
+
+To support a custom ruleset, add a new JSON file — **no code changes**.
+The full schema and the decisions behind it are documented in
+[`docs/ruleset-schema.md`](docs/ruleset-schema.md).
 
 ## Development
 
-Built with [Flutter](https://flutter.dev) (stable 3.47.x).
+Built with [Flutter](https://flutter.dev) (stable); see
+[CONTRIBUTING.md](CONTRIBUTING.md) for the full toolchain, build, test, and
+release-signing details.
 
-```sh
-flutter pub get
-flutter run          # run on a connected device/emulator
-flutter test         # unit + widget tests
-flutter build apk    # Android release build
-flutter build windows
-flutter build linux
-flutter build macos  # macOS desktop (only builds on a Mac with Xcode)
-```
+## Contributing
 
-Primary test emulator: `fire_hd_10` — API 30 AOSP image (no Google APIs), sized
-1920×1200 @ 240 dpi to mirror the Fire HD 10. Launch it with:
+Concordance is still in active development so contributions are welcome! Please read
+[CONTRIBUTING.md](CONTRIBUTING.md) for the development environment, testing standard,
+and release process.
 
-```sh
-flutter emulators --launch fire_hd_10
-```
-
-Project-local SDK setup lives in `~/sdk/env.sh` (Flutter, Android SDK, JDK 17)
-and is sourced from `~/.bashrc`.
-
-## Repository notes
-
-- The official rulebook PDFs are **not** committed — they are copyrighted by
-  My Healthy Church and licensed for local church use only (`docs/*.pdf` is
-  gitignored). Scoring rules are encoded as app configuration instead.
-- CI workflows live under `.github/workflows/` (GitHub Actions; the layout is
-  also valid for Gitea Actions).
-
-## Continuous integration
-
-Workflows live under `.github/workflows/`:
-
-- **`ci.yml`** — `flutter analyze` + `flutter test` on every push to `main` and
-  on pull requests. Fast gate, no build.
-- **`build.yml`** — full four-platform release build on `v*` tags and via manual
-  dispatch (*Actions → Build → Run workflow*): Android APK, Linux bundle,
-  Windows zip, and macOS `.app` zip. Tag builds attach the artifacts to a GitHub
-  Release.
-
-Both workflows gate their jobs to GitHub (`github.server_url ==
-'https://github.com'`), so if the repo is mirrored to your Gitea `origin`, those
-jobs are **skipped** rather than failing — Gitea Actions cannot provide
-macOS/Windows runners or the GitHub API that `subosito/flutter-action` relies on.
-
-To cut a release build:
-
-```sh
-git tag v1.0.0
-git push origin-github v1.0.0   # 'origin-github' is the GitHub remote
-```
-
-All desktop artifacts are **unsigned/unnotarized** and will show platform trust
-warnings until Windows and macOS signing land (below). The Android APK **is**
-release-signed when the keystore secrets are configured, and debug-signed only
-as a fallback.
-
-## Release signing & distribution trust
-
-### Android
-
-CI signs the release APK with a release keystore supplied as GitHub secrets.
-When the secret is absent the build falls back to the debug key, so a local
-`flutter build apk --release` keeps working with no setup.
-
-Create the keystore once, then add these repo secrets
-(**Settings → Secrets and variables → Actions**):
-
-| Secret | Value |
-| --- | --- |
-| `ANDROID_KEYSTORE_BASE64` | `base64 -w0 release.keystore` |
-| `ANDROID_KEYSTORE_PASSWORD` | keystore password |
-| `ANDROID_KEY_ALIAS` | key alias |
-| `ANDROID_KEY_PASSWORD` | key password |
-
-```sh
-keytool -genkeypair -v -keystore release.keystore -alias concordance \
-  -keyalg RSA -keysize 2048 -validity 10000 \
-  -dname "CN=Concordance, O=Concordance"
-base64 -w0 release.keystore   # paste into ANDROID_KEYSTORE_BASE64
-```
-
-Keep the keystore **backed up outside this repo** — losing it means you can no
-longer ship updates over an installed copy.
-
-### Checksums
-
-Every release includes a `SHA256SUMS` file, so anyone can verify a download
-matches what CI built:
-
-```sh
-sha256sum -c SHA256SUMS
-```
-
-### Windows & macOS (not yet signed)
-
-- **Windows** — Authenticode signing via **SignPath Foundation** (free for open
-  source, OV-level), planned for when the repository goes public.
-- **macOS** — Gatekeeper requires the **Apple Developer Program ($99/yr)** +
-  Developer ID cert + hardened runtime + notarization; planned separately.
-- Until then both will show trust warnings, which is expected for sideloaded
-  builds.
+## Bug Reports/Feature Requests
+Encountered a bug or an issue? Have a recommendation or request for a new feature?
+Open an [issue](https://github.com/JosiahL06/Concordance/issues/new) in the Github repository.
 
 ## License
 
-[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only).
+[GNU Affero General Public License v3.0](LICENSE).
+
+## Acknowledgements
+
+- The scoring rules encoded in the built-in presets are derived from the
+  Assemblies of God **Teen Bible Quiz** and **Junior Bible Quiz** rulebooks,
+  © My Healthy Church.

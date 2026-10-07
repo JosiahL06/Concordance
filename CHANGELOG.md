@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Docs: README rewritten for newcomers.** The README is now an end-user-first
+  welcome (what the app is, screenshots, features, install, quick start,
+  ruleset configuration) instead of a development roadmap. All developer, CI,
+  and release-signing/trust content moved to a new `CONTRIBUTING.md`; added
+  `docs/screenshots/` (setup, Modern + Classic live views, summary) captured on
+  the `fire_hd_10` emulator. No code changes.
+
+## [1.0.0-beta]
+
 ### Added
 
 - **Question-set value guardrails** (schema decision **D12**) — advisory, never
@@ -182,6 +193,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Docs: README rewritten for newcomers.** The README is now an end-user-first
+  welcome (what the app is, screenshots, features, install, quick start,
+  ruleset configuration) instead of a development roadmap. All developer, CI,
+  and release-signing/trust content moved to a new `CONTRIBUTING.md`; added
+  `docs/screenshots/` (setup, Modern + Classic live views, summary) captured on
+  the `fire_hd_10` emulator. No code changes.
 - Desktop identity metadata now reads "Concordance" everywhere: Windows
   `VERSIONINFO` `CompanyName` / `FileDescription` / `ProductName` (previously
   lowercase "concordance" / "org.concordance"), and `LegalCopyright` corrected
