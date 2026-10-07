@@ -29,6 +29,10 @@ or `DirectionBScreen` → `SummaryScreen(round)`.
 scoring entry point; Classic ledger cells navigate, never score;
 undo rewinds the screen position; static banners only (no animation);
 red/green light tints (`#FCE8E6` / `#E6F4EA`); tabular figures for scores.
+Silent by default: the app never plays audio (all Material
+`enableFeedback` paths are disabled) and haptics are opt-in/off-by-default,
+so a fresh install cannot distract an official match; live screens also cap
+OS text scaling at 1.3× to protect the no-scroll layout.
 
 ## 3. Setup flow (`setup_screen.dart`)
 

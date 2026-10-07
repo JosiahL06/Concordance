@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'app/haptics.dart';
 import 'app/settings.dart';
 import 'app/theme.dart';
 import 'data/round_store.dart';
@@ -39,16 +40,19 @@ class ConcordanceApp extends StatefulWidget {
 
 class _ConcordanceAppState extends State<ConcordanceApp> {
   late final ThemeController _theme;
+  late final HapticsController _haptics;
 
   @override
   void initState() {
     super.initState();
     _theme = ThemeController(widget.prefs);
+    _haptics = HapticsController(widget.prefs);
   }
 
   @override
   void dispose() {
     _theme.dispose();
+    _haptics.dispose();
     super.dispose();
   }
 
@@ -56,19 +60,22 @@ class _ConcordanceAppState extends State<ConcordanceApp> {
   Widget build(BuildContext context) {
     return ThemeScope(
       notifier: _theme,
-      child: ListenableBuilder(
-        listenable: _theme,
-        builder: (context, _) => MaterialApp(
-          title: 'Concordance',
-          debugShowCheckedModeBanner: false,
-          theme: buildTheme(Brightness.light),
-          darkTheme: buildTheme(Brightness.dark),
-          themeMode: _theme.mode,
-          home: HomeScreen(
-            prefs: widget.prefs,
-            store: widget.store,
-            presets: widget.presets,
-            storeOpener: widget.storeOpener,
+      child: HapticsScope(
+        notifier: _haptics,
+        child: ListenableBuilder(
+          listenable: _theme,
+          builder: (context, _) => MaterialApp(
+            title: 'Concordance',
+            debugShowCheckedModeBanner: false,
+            theme: buildTheme(Brightness.light),
+            darkTheme: buildTheme(Brightness.dark),
+            themeMode: _theme.mode,
+            home: HomeScreen(
+              prefs: widget.prefs,
+              store: widget.store,
+              presets: widget.presets,
+              storeOpener: widget.storeOpener,
+            ),
           ),
         ),
       ),

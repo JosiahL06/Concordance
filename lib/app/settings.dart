@@ -14,6 +14,7 @@ class ViewPreference {
 
   static const key = 'scoreboard_view';
   static const themeKey = 'theme_mode';
+  static const hapticsKey = 'haptics_enabled';
 
   static Future<ViewPreference> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -39,4 +40,10 @@ class ViewPreference {
 
   Future<void> setThemeMode(ThemeMode mode) =>
       _prefs.setString(themeKey, mode.name);
+
+  /// Opt-in haptic tick for scoring taps; OFF on a fresh install so an
+  /// official match is never buzzed at by default.
+  bool get hapticsOn => _prefs.getBool(hapticsKey) ?? false;
+
+  Future<void> setHaptics(bool on) => _prefs.setBool(hapticsKey, on);
 }

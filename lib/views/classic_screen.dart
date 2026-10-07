@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../app/haptics.dart';
 import '../app/round_controller.dart';
 import '../engine/events.dart';
 import 'common/live_chrome.dart';
+import 'common/haptics_toggle.dart';
 import 'common/theme_toggle.dart';
 
 /// Classic live-scoring view: paper-style scoresheet ledger over
@@ -28,21 +30,28 @@ class _ClassicScreenState extends State<ClassicScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // No-scroll contract (interaction spec): the live layout is fixed, so
+    // OS text scaling is capped here to keep large accessibility sizes from
+    // breaking the fit. Home/Setup/Summary scroll and scale without a cap.
+    final mq = MediaQuery.of(context);
     return Scaffold(
-      body: SafeArea(
-        child: ListenableBuilder(
-          listenable: round,
-          builder: (context, _) {
-            return Column(
-              children: [
-                _header(context),
-                Expanded(child: _ledger(context)),
-                NoticeSlot(round: round),
-                ScoringConsole(round: round),
-                LiveBottomBar(round: round),
-              ],
-            );
-          },
+      body: MediaQuery(
+        data: mq.copyWith(textScaler: mq.textScaler.clamp(maxScaleFactor: 1.3)),
+        child: SafeArea(
+          child: ListenableBuilder(
+            listenable: round,
+            builder: (context, _) {
+              return Column(
+                children: [
+                  _header(context),
+                  Expanded(child: _ledger(context)),
+                  NoticeSlot(round: round),
+                  ScoringConsole(round: round),
+                  LiveBottomBar(round: round),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -58,28 +67,33 @@ class _ClassicScreenState extends State<ClassicScreen> {
         children: [
           const LiveBackButton(),
           const SizedBox(width: 4),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'CONCORDANCE',
-                style: TextStyle(
-                  fontSize: 13,
-                  letterSpacing: 2,
-                  fontWeight: FontWeight.w800,
-                  color: scheme.outline,
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'CONCORDANCE',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.w800,
+                    color: scheme.outline,
+                  ),
                 ),
-              ),
-              Text(
-                '${rulesetTitle(round.ruleset)} \u00b7 scoresheet ledger',
-                style: TextStyle(fontSize: 13, color: scheme.outline),
-              ),
-            ],
+                Text(
+                  '${rulesetTitle(round.ruleset)} \u00b7 scoresheet ledger',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: scheme.outline),
+                ),
+              ],
+            ),
           ),
-          const Spacer(),
           Text(
             'QUESTION ${round.questionNumber} OF ${round.questionCount}',
+            softWrap: false,
+            overflow: TextOverflow.fade,
             style: TextStyle(
               fontSize: 14,
               letterSpacing: 1.5,
@@ -105,6 +119,7 @@ class _ClassicScreenState extends State<ClassicScreen> {
             ),
           ),
           const ThemeToggleButton(),
+          const HapticsToggleButton(),
         ],
       ),
     );
@@ -292,12 +307,16 @@ class _ClassicScreenState extends State<ClassicScreen> {
         ),
         TeamHeaderButtons(round: round, side: side),
         const Spacer(),
-        Text(
-          'SCORE ${round.scoreOf(side)}',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            color: sideInkFor(scheme),
+        Semantics(
+          label: '${sideName(round, side)} score ${round.scoreOf(side)}',
+          excludeSemantics: true,
+          child: Text(
+            'SCORE ${round.scoreOf(side)}',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: sideInkFor(scheme),
+            ),
           ),
         ),
         SizedBox(width: _kTotalWidth, child: Container()),
@@ -309,42 +328,59 @@ class _ClassicScreenState extends State<ClassicScreen> {
     final quizzer = round.teamOf(side).roster[index];
     final selected = round.selected == (side, index);
     final scheme = Theme.of(context).colorScheme;
+    // One merged utterance: name + status with selection state. The score
+    // lives in the TOTAL column and gets its own label below.
+    final spoken = <String>[quizzer.label];
+    if (quizzer.status.isNotEmpty) spoken.add(quizzer.status.toLowerCase());
     final label = Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        onTap: quizzer.active ? () => round.select(side, index) : null,
-        child: Container(
-          width: _kLabelWidth,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: selected ? scheme.primary : scheme.outlineVariant,
-              width: selected ? 3 : 1,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                quizzer.label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                ),
+        enableFeedback: false,
+        onTap: quizzer.active
+            ? () {
+                hapticTick(context);
+                round.select(side, index);
+              }
+            : null,
+        child: Semantics(
+          button: quizzer.active,
+          enabled: quizzer.active,
+          selected: selected,
+          label: spoken.join(', '),
+          excludeSemantics: true,
+          child: Container(
+            width: _kLabelWidth,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: selected ? scheme.primary : scheme.outlineVariant,
+                width: selected ? 3 : 1,
               ),
-              if (quizzer.status.isNotEmpty)
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  quizzer.status,
-                  style: TextStyle(
-                    fontSize: 10,
+                  quizzer.label,
+                  style: const TextStyle(
+                    fontSize: 13,
                     fontWeight: FontWeight.w800,
-                    color: scheme.primary,
                   ),
                 ),
-            ],
+                if (quizzer.status.isNotEmpty)
+                  Text(
+                    quizzer.status,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: scheme.primary,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -360,12 +396,16 @@ class _ClassicScreenState extends State<ClassicScreen> {
           SizedBox(
             width: _kTotalWidth,
             child: Center(
-              child: Text(
-                '${quizzer.score}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
+              child: Semantics(
+                label: '${quizzer.label} total, ${quizzer.score} points',
+                excludeSemantics: true,
+                child: Text(
+                  '${quizzer.score}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
+                  ),
                 ),
               ),
             ),
@@ -463,14 +503,35 @@ class _ClassicScreenState extends State<ClassicScreen> {
         child: cell,
       );
     }
+    // Spell out what the cell's styling conveys (delta, F, ring) so a
+    // screen reader gets the same information sighted keepers see.
+    final spoken = <String>['Question $n', quizzer.label];
+    if (mark == 'correct') {
+      spoken.add('correct, plus ${round.currentValue(n)}');
+    } else if (mark == 'incorrect') {
+      spoken.add('incorrect, minus ${round.currentValue(n) ~/ 2}');
+    }
+    if (hasFoul) spoken.add('foul');
+    if (interrupted) spoken.add('interrupted');
+    if (contested) spoken.add('contested');
+    if (n == round.questionNumber) spoken.add('current question');
     return InkWell(
+      enableFeedback: false,
       onTap: quizzer.active
           ? () {
+              hapticTick(context);
               round.jumpToQuestion(n);
               round.select(side, index);
             }
           : null,
-      child: cell,
+      child: Semantics(
+        button: quizzer.active,
+        enabled: quizzer.active,
+        selected: isTarget,
+        label: spoken.join(', '),
+        excludeSemantics: true,
+        child: cell,
+      ),
     );
   }
 
@@ -516,7 +577,10 @@ class _ClassicScreenState extends State<ClassicScreen> {
                           : FontWeight.w600,
                     ),
                   ),
-                  onPressed: () => round.takeTimeOut(side),
+                  onPressed: () {
+                    hapticTick(context);
+                    round.takeTimeOut(side);
+                  },
                   child: Text('TO $i'),
                 ),
               ),

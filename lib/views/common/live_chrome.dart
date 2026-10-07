@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../app/haptics.dart';
 import '../../app/round_controller.dart';
 import '../../engine/events.dart';
 import '../../engine/ruleset.dart';
 import '../summary_screen.dart';
 import 'common_bits.dart';
+import 'quiet_controls.dart';
 
 /// Fixed red/green identity: sides come from the physical quiz box.
 const redColor = Color(0xFFC62828);
@@ -114,6 +116,13 @@ class ScoringConsole extends StatelessWidget {
     // live whenever a quizzer is selected.
     final selected = sel != null && !round.matchComplete;
     final canAnswer = selected && blocked == null;
+    // Semantic hint on the disabled ruling buttons: TalkBack reads it with
+    // the label so a screen-reader user learns *why* a button is dimmed.
+    final answerHint = round.matchComplete
+        ? 'Match complete'
+        : blocked ?? (sel == null ? 'Select a quizzer first' : null);
+    final value = round.currentValue(round.questionNumber);
+    final sideSuffix = sel == null ? '' : ' to ${sideName(round, sel.$1)}';
     return Container(
       color: scheme.surfaceContainerLow,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -146,9 +155,17 @@ class ScoringConsole extends StatelessWidget {
                     backgroundColor: correctColor,
                     foregroundColor: Colors.white,
                   ),
-                  onPressed: canAnswer ? round.markCorrect : null,
-                  child: Text(
-                    'CORRECT  +${round.currentValue(round.questionNumber)}',
+                  onPressed: canAnswer
+                      ? () {
+                          hapticTick(context);
+                          round.markCorrect();
+                        }
+                      : null,
+                  child: Semantics(
+                    label: 'Correct answer, adds $value points$sideSuffix',
+                    hint: answerHint,
+                    excludeSemantics: true,
+                    child: Text('CORRECT  +$value'),
                   ),
                 ),
               ),
@@ -161,9 +178,19 @@ class ScoringConsole extends StatelessWidget {
                     backgroundColor: incorrectColor,
                     foregroundColor: Colors.white,
                   ),
-                  onPressed: canAnswer ? round.markIncorrect : null,
-                  child: Text(
-                    'INCORRECT  −${round.currentValue(round.questionNumber) ~/ 2}',
+                  onPressed: canAnswer
+                      ? () {
+                          hapticTick(context);
+                          round.markIncorrect();
+                        }
+                      : null,
+                  child: Semantics(
+                    label:
+                        'Incorrect answer, subtracts ${value ~/ 2} points'
+                        '$sideSuffix',
+                    hint: answerHint,
+                    excludeSemantics: true,
+                    child: Text('INCORRECT  \u2212${value ~/ 2}'),
                   ),
                 ),
               ),
@@ -172,8 +199,21 @@ class ScoringConsole extends StatelessWidget {
                 height: 68,
                 width: 220,
                 child: OutlinedButton(
-                  onPressed: selected ? () => _recordFoul(context) : null,
-                  child: const Text('FOUL'),
+                  onPressed: selected
+                      ? () {
+                          hapticTick(context);
+                          _recordFoul(context);
+                        }
+                      : null,
+                  child: Semantics(
+                    label:
+                        'Foul, subtracts '
+                        '${round.ruleset.scoring.foulDeduction} points'
+                        '$sideSuffix',
+                    hint: answerHint,
+                    excludeSemantics: true,
+                    child: const Text('FOUL'),
+                  ),
                 ),
               ),
             ],
@@ -191,7 +231,7 @@ class ScoringConsole extends StatelessWidget {
       builder: (context) => SimpleDialog(
         title: const Text('Record foul'),
         children: [
-          SimpleDialogOption(
+          QuietDialogOption(
             onPressed: () => Navigator.pop(context, 'quizzer'),
             child: const SizedBox(
               height: 48,
@@ -201,7 +241,7 @@ class ScoringConsole extends StatelessWidget {
               ),
             ),
           ),
-          SimpleDialogOption(
+          QuietDialogOption(
             onPressed: () => Navigator.pop(context, 'team'),
             child: const SizedBox(
               height: 48,
@@ -243,7 +283,12 @@ class LiveBottomBar extends StatelessWidget {
             child: SizedBox(
               height: 48,
               child: FilledButton.tonalIcon(
-                onPressed: round.canUndo ? round.undo : null,
+                onPressed: round.canUndo
+                    ? () {
+                        hapticTick(context);
+                        round.undo();
+                      }
+                    : null,
                 icon: const Icon(Icons.undo),
                 label: Text(
                   round.canUndo ? 'UNDO — ${round.undoLabel}' : 'Undo',
@@ -257,7 +302,10 @@ class LiveBottomBar extends StatelessWidget {
           SizedBox(
             height: 48,
             child: OutlinedButton.icon(
-              onPressed: round.toggleInterruption,
+              onPressed: () {
+                hapticTick(context);
+                round.toggleInterruption();
+              },
               icon: const Icon(Icons.radio_button_checked),
               label: const Text('Interruption'),
             ),
@@ -267,6 +315,7 @@ class LiveBottomBar extends StatelessWidget {
             height: 48,
             child: PopupMenuButton<String>(
               tooltip: 'More actions',
+              enableFeedback: false,
               onSelected: (v) => _more(context, v),
               itemBuilder: (context) {
                 final marks = round.view.questionMarks;
@@ -275,7 +324,7 @@ class LiveBottomBar extends StatelessWidget {
                     marks[round.questionNumber - 1].voided;
                 final anyVoided = marks.any((m) => m.voided);
                 return [
-                  PopupMenuItem(
+                  QuietMenuItem(
                     value: 'void',
                     enabled: !voided,
                     child: Text(
@@ -284,7 +333,7 @@ class LiveBottomBar extends StatelessWidget {
                           : 'Void question',
                     ),
                   ),
-                  PopupMenuItem(
+                  QuietMenuItem(
                     value: 'sub-question',
                     // The engine rejects a substitute without a voided slot.
                     enabled: anyVoided,
@@ -294,7 +343,7 @@ class LiveBottomBar extends StatelessWidget {
                           : 'Read substitute question (void a question first)',
                     ),
                   ),
-                  const PopupMenuItem(
+                  const QuietMenuItem(
                     value: 'sub-quizzer',
                     child: Text('Substitute quizzer'),
                   ),
@@ -355,7 +404,7 @@ class LiveBottomBar extends StatelessWidget {
         title: const Text('Substitute question value'),
         children: [
           for (final value in const <int>[10, 20, 30])
-            SimpleDialogOption(
+            QuietDialogOption(
               onPressed: () => Navigator.pop(context, value),
               child: SizedBox(
                 height: 48,
@@ -405,7 +454,7 @@ class LiveBottomBar extends StatelessWidget {
         title: const Text('Substitute out which quizzer?'),
         children: [
           for (var i = 0; i < slots.length; i++)
-            SimpleDialogOption(
+            QuietDialogOption(
               onPressed: () => Navigator.pop(context, i),
               child: SizedBox(
                 height: 48,
@@ -437,7 +486,7 @@ class LiveBottomBar extends StatelessWidget {
         title: Text('Substitute in — ${sideName(round, slot.$1)} bench'),
         children: [
           for (var i = 0; i < bench.length; i++)
-            SimpleDialogOption(
+            QuietDialogOption(
               onPressed: () => Navigator.pop(context, i),
               child: SizedBox(
                 height: 48,
@@ -497,8 +546,17 @@ class TeamHeaderButtons extends StatelessWidget {
             style: style,
             onPressed: round.matchComplete
                 ? null
-                : () => round.addTeamFoul(side),
-            child: Text('TEAM FOUL ${team.teamFouls}'),
+                : () {
+                    hapticTick(context);
+                    round.addTeamFoul(side);
+                  },
+            child: Semantics(
+              label:
+                  'Team foul for ${sideName(round, side)}, subtracts '
+                  '${round.ruleset.scoring.foulDeduction} points',
+              excludeSemantics: true,
+              child: Text('TEAM FOUL ${team.teamFouls}'),
+            ),
           ),
         ),
         const SizedBox(width: 6),
@@ -508,8 +566,17 @@ class TeamHeaderButtons extends StatelessWidget {
             style: style,
             onPressed: round.matchComplete
                 ? null
-                : () => _recordChallenge(context),
-            child: Text('${round.challengeLabel.toUpperCase()} $challenges'),
+                : () {
+                    hapticTick(context);
+                    _recordChallenge(context);
+                  },
+            child: Semantics(
+              label:
+                  '${round.challengeLabel} for ${sideName(round, side)} '
+                  '($challenges)',
+              excludeSemantics: true,
+              child: Text('${round.challengeLabel.toUpperCase()} $challenges'),
+            ),
           ),
         ),
       ],
@@ -525,7 +592,7 @@ class TeamHeaderButtons extends StatelessWidget {
         ),
         children: [
           for (final s in const <bool>[true, false])
-            SimpleDialogOption(
+            QuietDialogOption(
               onPressed: () => Navigator.pop(context, s),
               child: SizedBox(
                 height: 48,

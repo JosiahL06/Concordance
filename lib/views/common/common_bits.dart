@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/haptics.dart';
 import '../../app/round_controller.dart';
 
 /// The paper scoresheet's marks, rendered as a compact 20-cell navigator:
@@ -87,7 +88,18 @@ class QuestionNavigator extends StatelessWidget {
         child: cell,
       );
     }
-    return cell;
+    // The marks are carried by styling (ring, C, strikethrough), so spell
+    // them out for screen readers: "Question 7, current, interrupted".
+    final spoken = <String>['Question $n'];
+    if (current) spoken.add('current');
+    if (mark?.interrupted == true) spoken.add('interrupted');
+    if (mark?.contested == true) spoken.add('contested');
+    if (mark?.voided == true) spoken.add('voided');
+    return Semantics(
+      label: spoken.join(', '),
+      excludeSemantics: true,
+      child: cell,
+    );
   }
 }
 
@@ -102,28 +114,38 @@ class AlertBanner extends StatelessWidget {
     final alert = round.lastAlert;
     if (alert == null) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      color: scheme.errorContainer,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline, color: scheme.onErrorContainer),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              alert,
-              style: TextStyle(
-                color: scheme.onErrorContainer,
-                fontWeight: FontWeight.w700,
+    // liveRegion: TalkBack announces quiz-out / strike-out / limit alerts
+    // once, when they appear — matching the engine's fire-once behavior.
+    // The app itself never makes a sound doing so.
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Container(
+        color: scheme.errorContainer,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, color: scheme.onErrorContainer),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                alert,
+                style: TextStyle(
+                  color: scheme.onErrorContainer,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-          ),
-          IconButton(
-            onPressed: round.clearAlert,
-            icon: Icon(Icons.close, color: scheme.onErrorContainer),
-            tooltip: 'Dismiss',
-          ),
-        ],
+            IconButton(
+              onPressed: () {
+                hapticTick(context);
+                round.clearAlert();
+              },
+              icon: Icon(Icons.close, color: scheme.onErrorContainer),
+              tooltip: 'Dismiss',
+            ),
+          ],
+        ),
       ),
     );
   }

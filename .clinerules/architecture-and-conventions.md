@@ -25,7 +25,7 @@ Flutter (stable channel) → Dart. Material 3. Local persistence via SQLite (pac
 
 ## UI principles (the product's whole point)
 - Usable in seconds by a trained-up volunteer: **large touch targets (≥48dp)**, one-tap scoring actions, **prominent undo**, no hidden gestures, no long-press-only affordances.
-- Landscape tablet first (Fire HD 10: 1280×800 logical dp); Material 3 with automatic dark/light; haptic feedback on scoring taps; alerts auto-fire when a quizzer hits quiz-out/strike-out/foul-out.
+- Landscape tablet first (Fire HD 10: 1280×800 logical dp); Material 3 with automatic dark/light; haptic feedback on scoring taps is **opt-in and off by default** (per-device toggle next to the theme switch); **the app never plays audio** — all Material `enableFeedback` paths are disabled app-wide (`buildTheme` + silent `QuietDialogOption`/`QuietMenuItem` + silent InkWells), so an official match is never distracted by tablet noises. Only TalkBack's own speech (when the OS enables it) can make sound; alerts auto-fire when a quizzer hits quiz-out/strike-out/foul-out.
 - The paper score sheet's marks (circled interruptions, contest slashes, F fouls) have digital equivalents in the question navigator.
 - **Readability beats aesthetic flair** (user directive): this is a data-display tool — no fancy animations or decorative motion, Material defaults only; bold, legible typography for scores.
 - **Red team vs. green team** is decided by the physical quiz box: quizzers are Red 1, Red 2, Green 1, Green 2, … Use *light* color coding (tints + accents, not garish fills) so officials can tell the sides at a glance.

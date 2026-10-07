@@ -4,6 +4,7 @@ import '../app/presets.dart';
 import '../app/round_controller.dart';
 import '../app/settings.dart';
 import '../engine/ruleset.dart';
+import 'common/haptics_toggle.dart';
 import 'common/theme_toggle.dart';
 
 /// Result of setup: the ready-to-run round plus the view the keeper picked
@@ -181,7 +182,7 @@ class _SetupScreenState extends State<SetupScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('New round'),
-        actions: const [ThemeToggleButton()],
+        actions: const [ThemeToggleButton(), HapticsToggleButton()],
       ),
       body: Center(
         child: ConstrainedBox(
@@ -571,6 +572,7 @@ class _SetupScreenState extends State<SetupScreen> {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
+        enableFeedback: false,
         onTap: () => setState(() => _view = mode),
         child: Padding(
           padding: const EdgeInsets.all(16),

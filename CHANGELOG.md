@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Accessibility + haptics pass** — haptics are now **opt-in and off by
+  default** (`HapticsController`/`HapticsScope`, persisted per device, toggle
+  button beside the theme switch on every screen), so a fresh install can
+  never buzz or click during an official match. The app's own tap audio is
+  silenced app-wide (Material `enableFeedback` disabled in `buildTheme`,
+  silent `QuietDialogOption`/`QuietMenuItem` replacements, silent custom
+  InkWells) — the only feedback channels are the opt-in vibration tick and
+  TalkBack's speech when the OS enables it. Screen-reader labels cover the
+  scoring console (with blocked-reason hints), quizzer cards/cells, navigator
+  and ledger cell marks, and team scores; the alert banner is a live region.
+  Live-screen text scaling is capped at 1.3× to protect the no-scroll layout
+  (audited at 1.5/2.0; headers made ellipsis-safe).
+
 - **CI workflows** (`.github/workflows/`): `ci.yml` runs `flutter analyze` +
   `flutter test` on pushes to `main` and pull requests; `build.yml` builds all
   four targets (Android APK, Linux bundle, Windows zip, macOS `.app` zip) on

@@ -11,6 +11,7 @@ import '../engine/ruleset.dart';
 import 'classic_screen.dart';
 import 'modern_screen.dart';
 import 'setup_screen.dart';
+import 'common/haptics_toggle.dart';
 import 'common/theme_toggle.dart';
 
 /// Production home: start a new round, resume an autosaved round, or switch
@@ -95,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Concordance'),
-        actions: const [ThemeToggleButton()],
+        actions: const [ThemeToggleButton(), HapticsToggleButton()],
       ),
       body: Center(
         child: ConstrainedBox(

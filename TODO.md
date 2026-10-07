@@ -161,7 +161,12 @@
       - [x] Update summary page for announcements: 1st/2nd place team and the
             top two individual scorers across the whole match
 - [ ] Touch verification pass (emulator now, real tablet later)
-- [ ] Accessibility (Semantics) + haptics pass
+- [x] Accessibility (Semantics) + haptics pass: opt-in haptics (off by
+      default; `HapticsController`/`HapticsScope` + header toggle), audio
+      silenced app-wide (Material `enableFeedback` off in `buildTheme`,
+      silent `QuietDialogOption`/`QuietMenuItem`, custom InkWells off),
+      semantic labels for console/quizzers/marks/scores, live-region alert
+      banner, live-screen text scale capped at 1.3× (audited at 1.5/2.0)
 - [x] CI workflows (`.github/workflows/`): `ci.yml` (analyze + test on
       push/PR) and `build.yml` (Android APK + Linux + Windows + macOS on `v*`
       tags and manual dispatch, artifacts attached to a GitHub Release)
@@ -170,9 +175,6 @@
       window (1280×800, min 1024×700), sandboxed no-network entitlements,
       AGPL-3.0-only copyright. Build-ready; the actual `flutter build macos`
       and `.dmg` packaging require a Mac with Xcode
-- [ ] macOS distribution pass (on a Mac): `flutter build macos` → wrap the
-      `.app` in a `.dmg`; optionally Developer ID sign + notarize for a clean
-      Gatekeeper experience (unsigned works via right-click-Open)
 
 ## Phase 5 — Distribution trust (raised platform warnings)
 
@@ -184,21 +186,24 @@
 - [x] Desktop identity metadata unified to "Concordance" (Windows `VERSIONINFO`,
       Windows/Linux window titles, AGPL-3.0-only copyright)
 
-### Deferred (requires accounts / public repo)
-- [ ] **Windows Authenticode** via SignPath Foundation (free, OV-level) — apply
-      once the GitHub repo goes public; sign the PE files then the package.
-      Alternative: Azure Artifact Signing (~$9.99/mo). Note: EV certs no longer
-      bypass SmartScreen (removed 2024), so OV is sufficient.
-- [ ] **macOS notarization** — Apple Developer Program ($99/yr) + Developer ID
-      Application cert + `ENABLE_HARDENED_RUNTIME = YES` (currently ad-hoc
-      `CODE_SIGN_IDENTITY = "-"`), then `codesign` → `notarytool submit --wait`
-      → `stapler staple` in CI (App Store Connect API key as secrets)
-- [ ] Optional: GitHub artifact attestations (free for public repos only)
-- [ ] Submit release binaries to AV vendors for false-positive whitelisting
-
 ## Post-v1
 - [ ] Global edit/undo dialogue: selective journal edit (change/delete any
       entry + refold) — needs new `RoundView` API + persistence + conflict
       surface; single-step undo + `undoLabel` covers v1 mis-taps
 - [ ] Add settings page accessible from inside a live-game: change rule set, change theme/color,
       etc
+
+### Deferred (requires accounts / public repo)
+- [ ] **Windows Authenticode** via SignPath Foundation (free, OV-level) — apply
+      once the GitHub repo goes public; sign the PE files then the package.
+      Alternative: Azure Artifact Signing (~$9.99/mo). Note: EV certs no longer
+      bypass SmartScreen (removed 2024), so OV is sufficient.
+- [ ] macOS distribution pass (on a Mac): `flutter build macos` → wrap the
+      `.app` in a `.dmg`; optionally Developer ID sign + notarize for a clean
+      Gatekeeper experience (unsigned works via right-click-Open)
+- [ ] **macOS notarization** — Apple Developer Program ($99/yr) + Developer ID
+      Application cert + `ENABLE_HARDENED_RUNTIME = YES` (currently ad-hoc
+      `CODE_SIGN_IDENTITY = "-"`), then `codesign` → `notarytool submit --wait`
+      → `stapler staple` in CI (App Store Connect API key as secrets)
+- [ ] Optional: GitHub artifact attestations (free for public repos only)
+- [ ] Submit release binaries to AV vendors for false-positive whitelisting

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../app/haptics.dart';
 import '../app/round_controller.dart';
 import '../engine/events.dart';
 import 'common/common_bits.dart';
 import 'common/live_chrome.dart';
+import 'common/haptics_toggle.dart';
 import 'common/theme_toggle.dart';
 
 /// Modern live-scoring view: split-field spatial layout over RoundController.
@@ -23,30 +25,37 @@ class _ModernScreenState extends State<ModernScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // No-scroll contract (interaction spec): the live layout is fixed, so
+    // OS text scaling is capped here to keep large accessibility sizes from
+    // breaking the fit. Home/Setup/Summary scroll and scale without a cap.
+    final mq = MediaQuery.of(context);
     return Scaffold(
-      body: SafeArea(
-        child: ListenableBuilder(
-          listenable: round,
-          builder: (context, _) {
-            return Column(
-              children: [
-                _header(context),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(child: _teamHalf(context, Side.red)),
-                      const VerticalDivider(width: 2, thickness: 2),
-                      Expanded(child: _teamHalf(context, Side.green)),
-                    ],
+      body: MediaQuery(
+        data: mq.copyWith(textScaler: mq.textScaler.clamp(maxScaleFactor: 1.3)),
+        child: SafeArea(
+          child: ListenableBuilder(
+            listenable: round,
+            builder: (context, _) {
+              return Column(
+                children: [
+                  _header(context),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(child: _teamHalf(context, Side.red)),
+                        const VerticalDivider(width: 2, thickness: 2),
+                        Expanded(child: _teamHalf(context, Side.green)),
+                      ],
+                    ),
                   ),
-                ),
-                NoticeSlot(round: round),
-                ScoringConsole(round: round),
-                QuestionNavigator(round: round),
-                LiveBottomBar(round: round),
-              ],
-            );
-          },
+                  NoticeSlot(round: round),
+                  ScoringConsole(round: round),
+                  QuestionNavigator(round: round),
+                  LiveBottomBar(round: round),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -62,28 +71,33 @@ class _ModernScreenState extends State<ModernScreen> {
         children: [
           const LiveBackButton(),
           const SizedBox(width: 4),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'CONCORDANCE',
-                style: TextStyle(
-                  fontSize: 13,
-                  letterSpacing: 2,
-                  fontWeight: FontWeight.w800,
-                  color: scheme.outline,
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'CONCORDANCE',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.w800,
+                    color: scheme.outline,
+                  ),
                 ),
-              ),
-              Text(
-                rulesetTitle(round.ruleset),
-                style: TextStyle(fontSize: 13, color: scheme.outline),
-              ),
-            ],
+                Text(
+                  rulesetTitle(round.ruleset),
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: scheme.outline),
+                ),
+              ],
+            ),
           ),
-          const Spacer(),
           Text(
             'QUESTION ${round.questionNumber} OF ${round.questionCount}',
+            softWrap: false,
+            overflow: TextOverflow.fade,
             style: TextStyle(
               fontSize: 14,
               letterSpacing: 1.5,
@@ -109,6 +123,7 @@ class _ModernScreenState extends State<ModernScreen> {
             ),
           ),
           const ThemeToggleButton(),
+          const HapticsToggleButton(),
         ],
       ),
     );
@@ -142,12 +157,18 @@ class _ModernScreenState extends State<ModernScreen> {
                   ),
                 ),
                 const Spacer(),
-                Text(
-                  '${round.scoreOf(side)}',
-                  style: const TextStyle(
-                    fontSize: 44,
-                    fontWeight: FontWeight.w900,
-                    fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
+                Semantics(
+                  label:
+                      '${sideName(round, side)} score '
+                      '${round.scoreOf(side)}',
+                  excludeSemantics: true,
+                  child: Text(
+                    '${round.scoreOf(side)}',
+                    style: const TextStyle(
+                      fontSize: 44,
+                      fontWeight: FontWeight.w900,
+                      fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
+                    ),
                   ),
                 ),
               ],
@@ -165,7 +186,10 @@ class _ModernScreenState extends State<ModernScreen> {
               ),
               onPressed: round.matchComplete
                   ? null
-                  : () => round.takeTimeOut(side),
+                  : () {
+                      hapticTick(context);
+                      round.takeTimeOut(side);
+                    },
               child: Text(
                 'TIME-OUT  ${team.timeOuts}/${round.timeOutDisplayCap(side)}',
               ),
@@ -234,73 +258,94 @@ class _ModernScreenState extends State<ModernScreen> {
     final scheme = Theme.of(context).colorScheme;
     final q = round.teamOf(side).roster[index];
     final selected = round.selected == (side, index);
+    // One merged utterance for screen readers: name, status, tallies, score
+    // — instead of TalkBack hopping between six fragment nodes.
+    final spoken = <String>[q.label];
+    if (q.status.isNotEmpty) spoken.add(q.status.toLowerCase());
+    spoken.add('${q.score} points');
+    spoken.add('${q.correct} correct');
+    spoken.add('${q.incorrect} incorrect');
+    spoken.add('${q.fouls} fouls');
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: q.active ? () => round.select(side, index) : null,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 3),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: selected ? scheme.primary : scheme.outlineVariant,
-              width: selected ? 3 : 1.5,
+        enableFeedback: false,
+        onTap: q.active
+            ? () {
+                hapticTick(context);
+                round.select(side, index);
+              }
+            : null,
+        child: Semantics(
+          button: q.active,
+          enabled: q.active,
+          selected: selected,
+          label: spoken.join(', '),
+          excludeSemantics: true,
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: selected ? scheme.primary : scheme.outlineVariant,
+                width: selected ? 3 : 1.5,
+              ),
             ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      q.label,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        q.label,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    if (q.status.isNotEmpty)
-                      Container(
-                        margin: const EdgeInsets.only(top: 2),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: scheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          q.status,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            color: scheme.onPrimaryContainer,
+                      if (q.status.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(top: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: scheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            q.status,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: scheme.onPrimaryContainer,
+                            ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              _stat('C ${q.correct}', scheme.primary),
-              const SizedBox(width: 10),
-              _stat('I ${q.incorrect}', scheme.error),
-              const SizedBox(width: 10),
-              _stat('F ${q.fouls}', scheme.tertiary),
-              const SizedBox(width: 10),
-              Text(
-                '${q.score}',
-                style: const TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900,
-                  fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
+                _stat('C ${q.correct}', scheme.primary),
+                const SizedBox(width: 10),
+                _stat('I ${q.incorrect}', scheme.error),
+                const SizedBox(width: 10),
+                _stat('F ${q.fouls}', scheme.tertiary),
+                const SizedBox(width: 10),
+                Text(
+                  '${q.score}',
+                  style: const TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
+                    fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

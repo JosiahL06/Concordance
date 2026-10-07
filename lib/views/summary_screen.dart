@@ -4,6 +4,7 @@ import '../app/round_controller.dart';
 import '../data/export.dart';
 import '../engine/events.dart';
 import 'common/live_chrome.dart';
+import 'common/haptics_toggle.dart';
 import 'common/theme_toggle.dart';
 
 /// Round summary: final result, team/individual tallies, question-by-question
@@ -26,7 +27,7 @@ class SummaryScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Round summary'),
-        actions: const [ThemeToggleButton()],
+        actions: const [ThemeToggleButton(), HapticsToggleButton()],
       ),
       body: Center(
         child: ConstrainedBox(
