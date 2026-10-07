@@ -1,12 +1,21 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "jbq-2026",
   "displayName": "Junior Bible Quiz",
   "season": "2026",
   "challengeKind": "appeal",
   "match": {
     "regulationQuestions": 20,
-    "pointValues": [10, 10, 20, 10, 20, 30, 10, 20, 10, 10, 20, 10, 30, 20, 10, 10, 20, 30, 10, 20],
+    "answerValues": [10, 20, 30],
+    "valueCounts": { "10": 10, "20": 7, "30": 3 },
+    "valueRules": {
+      "noValueAtEnds": [30],
+      "noConsecutiveValues": [30],
+      "halfMinimums": [
+        { "value": 20, "count": 3 },
+        { "value": 30, "count": 1 }
+      ]
+    },
     "minActivePerTeam": 1,
     "maxActivePerTeam": 4,
     "teamsPerMatch": 2,

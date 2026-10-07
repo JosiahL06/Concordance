@@ -106,22 +106,8 @@ class _ModernScreenState extends State<ModernScreen> {
             ),
           ),
           const SizedBox(width: 24),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: scheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '${round.currentValue(round.questionNumber)} PTS',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: scheme.onPrimaryContainer,
-                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-              ),
-            ),
-          ),
+          CurrentValueButton(round: round),
+          const SizedBox(width: 8),
           const ThemeToggleButton(),
           const HapticsToggleButton(),
         ],

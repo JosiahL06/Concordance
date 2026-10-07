@@ -165,8 +165,11 @@ class SlotFoul {
 class RoundState {
   RoundState({required this.values});
 
-  /// Point value per question slot (regulation + appended overtime).
-  final List<int> values;
+  /// Point value per question slot (regulation + appended overtime), or null
+  /// when the keeper has not yet set it (D11: the rulebooks fix no per-question
+  /// order, so a regulation question starts unset and cannot be scored until a
+  /// value is assigned). Overtime slots are appended with their fixed value.
+  final List<int?> values;
 
   final Map<Side, TeamState> teams = <Side, TeamState>{};
 
@@ -175,5 +178,5 @@ class RoundState {
 
   QuestionState question(int n) => questions.putIfAbsent(n, QuestionState.new);
 
-  int valueOf(int n) => values[n - 1];
+  int? valueOf(int n) => values[n - 1];
 }

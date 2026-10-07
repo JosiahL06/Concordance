@@ -22,12 +22,14 @@ class RoundController extends ChangeNotifier {
     required List<String> greenSeats,
     List<String> redBench = const <String>[],
     List<String> greenBench = const <String>[],
+    List<int?>? questionValues,
   }) : view = RoundView(
          ruleset: ruleset,
          redLabels: redSeats,
          greenLabels: greenSeats,
          redBench: redBench,
          greenBench: greenBench,
+         questionValues: questionValues,
        );
 
   final Ruleset ruleset;
@@ -53,7 +55,17 @@ class RoundController extends ChangeNotifier {
 
   int get questionNumber => questionIndex + 1;
   int get questionCount => view.questionValues.length;
-  int currentValue(int n) => view.questionValues[n - 1];
+
+  /// Current point value of question [n], or null while unset (D11).
+  int? currentValue(int n) => view.questionValues[n - 1];
+
+  /// The per-question point values the ruleset allows (the value-picker
+  /// options).
+  List<int> get valueOptions => ruleset.match.answerValues;
+
+  /// Whether question [n]'s value can be (re)set now (a regulation, unvoided,
+  /// unanswered slot).
+  bool questionValueEditable(int n) => view.questionValueEditable(n) && !matchComplete;
 
   bool get canUndo => view.journal.isNotEmpty;
 
@@ -302,6 +314,25 @@ class RoundController extends ChangeNotifier {
     return true;
   }
 
+  /// Assigns the keeper-entered point [value] to question [n] (schema decision
+  /// D11). Returns false (with a reason in [lastAlert]) when the engine rejects
+  /// — an overtime slot (fixed by rule), a voided slot, a slot already
+  /// answered, or a value the ruleset does not allow.
+  bool setQuestionValue(int n, int value) {
+    if (matchComplete) return false;
+    final violation = view.apply(
+      QuestionValueEvent(questionNumber: n, value: value),
+    );
+    if (violation != null) {
+      lastAlert = violation.message;
+      notifyListeners();
+      return false;
+    }
+    lastAlert = _notices();
+    _saved();
+    return true;
+  }
+
   /// Substitutes the bench quizzer at [benchIndex] in for the out quizzer at
   /// ([side], [outIndex]). Points already scored under the slot are preserved
   /// (schema decision D7). Returns false when the engine rejects it.
@@ -521,6 +552,7 @@ class RoundController extends ChangeNotifier {
     InterruptionEvent() => 'interruption mark',
     ChallengeEvent() => challengeLabel.toLowerCase(),
     VoidQuestionEvent() => 'void',
+    QuestionValueEvent() => 'question value',
     SubstituteQuestionEvent() => 'substitute question',
     SubstituteQuizzerEvent() => 'quizzer substitution',
     OvertimeQuestionEvent() => 'overtime question',

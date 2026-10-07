@@ -14,6 +14,17 @@ Ruleset loadPreset(String id) {
   return Ruleset.fromJson(json.decode(raw) as Map<String, Object?>);
 }
 
+/// Representative value lists so the controller exercises real scoring (the
+/// engine has no built-in order — D11).
+const kTbqValues = <int>[
+  10, 20, 10, 20, 30, 10, 20, 10, 20, 20, //
+  30, 20, 10, 20, 10, 20, 30, 10, 20, 10,
+];
+const kJbqValues = <int>[
+  10, 10, 20, 10, 20, 30, 10, 20, 10, 10, //
+  20, 10, 30, 20, 10, 10, 20, 30, 10, 20,
+];
+
 RoundController freshTbq() => RoundController(
   ruleset: loadPreset('tbq-25-26'),
   redName: 'Red',
@@ -22,6 +33,7 @@ RoundController freshTbq() => RoundController(
   greenSeats: const ['Green 1', 'Green 2'],
   redBench: const ['Red 3', 'Red 4'],
   greenBench: const ['Green 3', 'Green 4'],
+  questionValues: kTbqValues,
 );
 
 RoundController wideTbq() => RoundController(
@@ -30,6 +42,7 @@ RoundController wideTbq() => RoundController(
   greenName: 'Green',
   redSeats: const ['Red 1', 'Red 2', 'Red 3', 'Red 4'],
   greenSeats: const ['Green 1', 'Green 2', 'Green 3', 'Green 4'],
+  questionValues: kTbqValues,
 );
 
 /// Plays a legal route to a 145-145 tie with the keeper on deck at Q20: Red
@@ -61,6 +74,7 @@ RoundController freshJbq() => RoundController(
   greenName: 'Green',
   redSeats: const ['Red 1', 'Red 2', 'Red 3'],
   greenSeats: const ['Green 1', 'Green 2', 'Green 3'],
+  questionValues: kJbqValues,
 );
 
 void main() {
@@ -450,6 +464,31 @@ void main() {
       expect(c.teamOf(Side.red).timeOuts, 1);
       expect(c.lastAlert, contains('overtime'));
       expect(c.lastAlert, contains('team foul'));
+    });
+  });
+
+  group('question-value guardrails (D12)', () {
+    test('a rulebook stipulation surfaces as a notice (never blocks)', () {
+      final c = freshJbq(); // JBQ set stipulations are loaded
+      // A match must not start with a 30-point question — recorded, but flagged.
+      expect(c.setQuestionValue(1, 30), isTrue);
+      expect(c.currentValue(1), 30);
+      expect(c.lastAlert, isNotNull);
+      expect(c.lastAlert, contains('must not start'));
+    });
+
+    test('an unremarkable value stays quiet', () {
+      // A fresh JBQ round: every regulation value unset.
+      final c = RoundController(
+        ruleset: loadPreset('jbq-2026'),
+        redName: 'Red',
+        greenName: 'Green',
+        redSeats: const ['Red 1'],
+        greenSeats: const ['Green 1'],
+      );
+      expect(c.setQuestionValue(1, 10), isTrue);
+      expect(c.currentValue(1), 10);
+      expect(c.lastAlert, isNull);
     });
   });
 }

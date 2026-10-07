@@ -79,6 +79,18 @@ class VoidQuestionEvent extends RoundEvent {
   final int questionNumber;
 }
 
+/// The keeper assigned [value] to regulation question [questionNumber]
+/// (schema decision D11). No per-question order is built in: the value is set
+/// live as the question is read, before it is answered. Rejected for an
+/// overtime slot (fixed by the rulebook), a voided slot (its value comes from
+/// the substitute), or a slot already answered (the value locks once scored).
+class QuestionValueEvent extends RoundEvent {
+  const QuestionValueEvent({required this.questionNumber, required this.value});
+
+  final int questionNumber;
+  final int value;
+}
+
 /// A substitute question of [value] replaces voided [questionNumber]
 /// (same slot, schema decision D4).
 class SubstituteQuestionEvent extends RoundEvent {

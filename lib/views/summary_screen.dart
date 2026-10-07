@@ -414,7 +414,7 @@ class SummaryScreen extends StatelessWidget {
                     SizedBox(
                       width: 44,
                       child: Text(
-                        '${controller.currentValue(n)}',
+                        '${controller.currentValue(n) ?? '—'}',
                         style: TextStyle(color: scheme.outline),
                       ),
                     ),
@@ -449,9 +449,9 @@ class SummaryScreen extends StatelessWidget {
         final label = q.label;
         switch (mark) {
           case 'correct':
-            parts.add('$label +${controller.currentValue(n)}');
+            parts.add('$label +${controller.currentValue(n) ?? 0}');
           case 'incorrect':
-            parts.add('$label -${controller.currentValue(n) ~/ 2}');
+            parts.add('$label -${(controller.currentValue(n) ?? 0) ~/ 2}');
           case null:
             break;
         }

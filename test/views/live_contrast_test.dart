@@ -25,12 +25,19 @@ Ruleset loadPreset(String id) => Ruleset.fromJson(
       as Map<String, Object?>,
 );
 
+/// Representative value list (no built-in order — D11).
+const kValues = <int>[
+  10, 20, 10, 20, 30, 10, 20, 10, 20, 20, //
+  30, 20, 10, 20, 10, 20, 30, 10, 20, 10,
+];
+
 RoundController freshRound() => RoundController(
   ruleset: loadPreset('tbq-25-26'),
   redName: 'Red',
   greenName: 'Green',
   redSeats: const ['Red 1', 'Red 2'],
   greenSeats: const ['Green 1', 'Green 2'],
+  questionValues: kValues,
 );
 
 Future<void> pumpBrightness(

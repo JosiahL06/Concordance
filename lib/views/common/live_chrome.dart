@@ -123,6 +123,19 @@ class ScoringConsole extends StatelessWidget {
         : blocked ?? (sel == null ? 'Select a quizzer first' : null);
     final value = round.currentValue(round.questionNumber);
     final sideSuffix = sel == null ? '' : ' to ${sideName(round, sel.$1)}';
+    // A question with no value assigned yet (D11) cannot be scored — the
+    // guardrail blocks it above — so the buttons drop the point delta and the
+    // status line carries the reason.
+    final correctLabel = value == null ? 'CORRECT' : 'CORRECT  +$value';
+    final incorrectLabel = value == null
+        ? 'INCORRECT'
+        : 'INCORRECT  \u2212${value ~/ 2}';
+    final correctSpoken = value == null
+        ? 'Correct answer$sideSuffix'
+        : 'Correct answer, adds $value points$sideSuffix';
+    final incorrectSpoken = value == null
+        ? 'Incorrect answer$sideSuffix'
+        : 'Incorrect answer, subtracts ${value ~/ 2} points$sideSuffix';
     return Container(
       color: scheme.surfaceContainerLow,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -162,10 +175,10 @@ class ScoringConsole extends StatelessWidget {
                         }
                       : null,
                   child: Semantics(
-                    label: 'Correct answer, adds $value points$sideSuffix',
+                    label: correctSpoken,
                     hint: answerHint,
                     excludeSemantics: true,
-                    child: Text('CORRECT  +$value'),
+                    child: Text(correctLabel),
                   ),
                 ),
               ),
@@ -185,12 +198,10 @@ class ScoringConsole extends StatelessWidget {
                         }
                       : null,
                   child: Semantics(
-                    label:
-                        'Incorrect answer, subtracts ${value ~/ 2} points'
-                        '$sideSuffix',
+                    label: incorrectSpoken,
                     hint: answerHint,
                     excludeSemantics: true,
-                    child: Text('INCORRECT  \u2212${value ~/ 2}'),
+                    child: Text(incorrectLabel),
                   ),
                 ),
               ),
@@ -626,7 +637,7 @@ class EndOfRoundBar extends StatelessWidget {
         ? '${(red > green ? round.redName : round.greenName).toUpperCase()} '
               'WINS $red\u2013$green'
         : 'OVERTIME \u00b7 Q${round.questionNumber} \u00b7 '
-              '${round.currentValue(round.questionNumber)} PTS \u00b7 '
+              '${round.currentValue(round.questionNumber) ?? 0} PTS \u00b7 '
               '$red\u2013$green';
     return Container(
       color: scheme.primaryContainer,
@@ -658,6 +669,67 @@ class EndOfRoundBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The current question's point value, shown in both live headers (D11).
+/// Tappable to set it (an anchored popup menu); overtime slots and a completed
+/// match render as a read-out. A prominent "SET VALUE" (error tint) when the
+/// current question has no value yet, so the keeper can see scoring is
+/// blocked until it is set.
+class CurrentValueButton extends StatelessWidget {
+  const CurrentValueButton({super.key, required this.round});
+
+  final RoundController round;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final n = round.questionNumber;
+    final value = round.currentValue(n);
+    final editable = round.questionValueEditable(n);
+
+    final box = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        color: value == null ? scheme.errorContainer : scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: value == null ? scheme.error : scheme.primary,
+          width: 2,
+        ),
+      ),
+      child: Text(
+        value == null ? 'SET VALUE' : '$value PTS',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w900,
+          color: value == null
+              ? scheme.onErrorContainer
+              : scheme.onPrimaryContainer,
+          fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+        ),
+      ),
+    );
+
+    if (!editable) {
+      return Semantics(
+        label: 'Question $n point value ${value == null ? 'unset' : '$value'}',
+        excludeSemantics: true,
+        child: box,
+      );
+    }
+    return PopupMenuButton<int>(
+      tooltip: 'Set the current question point value',
+      enableFeedback: false,
+      padding: EdgeInsets.zero,
+      onSelected: (v) => round.setQuestionValue(n, v),
+      itemBuilder: (context) => [
+        for (final v in round.valueOptions)
+          QuietMenuItem<int>(value: v, child: Text('$v points')),
+      ],
+      child: box,
     );
   }
 }

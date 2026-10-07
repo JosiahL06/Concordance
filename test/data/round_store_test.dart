@@ -15,10 +15,17 @@ Ruleset loadTbq() {
   return Ruleset.fromJson(json.decode(raw) as Map<String, Object?>);
 }
 
+/// Representative value list (no built-in order — D11).
+const kTbqValues = <int>[
+  10, 20, 10, 20, 30, 10, 20, 10, 20, 20, //
+  30, 20, 10, 20, 10, 20, 30, 10, 20, 10,
+];
+
 RoundView freshView() => RoundView(
   ruleset: loadTbq(),
   redLabels: const ['Red 1', 'Red 2'],
   greenLabels: const ['Green 1', 'Green 2'],
+  questionValues: kTbqValues,
 );
 
 void main() {
@@ -42,6 +49,7 @@ void main() {
       const FoulEvent(questionNumber: 2, side: Side.green, quizzerIndex: 0),
       const TimeOutEvent(side: Side.red),
       const InterruptionEvent(questionNumber: 1),
+      const QuestionValueEvent(questionNumber: 7, value: 30),
       const ChallengeEvent(
         questionNumber: 3,
         side: Side.red,
@@ -79,6 +87,7 @@ void main() {
     expect(view.teamOf(Side.red).timeOuts, 1);
     expect(view.questionMarks[0].interrupted, isTrue);
     expect(view.questionMarks[3].voided, isTrue);
+    expect(view.questionValues[6], 30); // QuestionValueEvent round-tripped
     expect(view.questionValues.length, 21); // 20 regulation + overtime
   });
 
@@ -121,6 +130,7 @@ void main() {
       greenLabels: const ['Green 1', 'Green 2'],
       redBench: const ['Red 3'],
       greenBench: const ['Green 3'],
+      questionValues: kTbqValues,
     );
     for (final e in store.loadJournal(id)) {
       expect(view.apply(e), isNull, reason: 'replay rejected $e');

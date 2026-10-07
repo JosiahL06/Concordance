@@ -15,11 +15,20 @@ Ruleset loadTbq() {
   return Ruleset.fromJson(json.decode(raw) as Map<String, Object?>);
 }
 
+/// A representative TBQ regulation value list for the goldens. The engine has
+/// no built-in per-question order any more (D11); tests that care about a
+/// question's value pass it explicitly, and this default stands in for the
+/// scorekeeper having set each question.
+const kTbqValues = <int>[
+  10, 20, 10, 20, 30, 10, 20, 10, 20, 20, //
+  30, 20, 10, 20, 10, 20, 30, 10, 20, 10,
+];
+
 RoundView freshTbq({List<int>? values}) => RoundView(
   ruleset: loadTbq(),
   redLabels: const ['Red 1', 'Red 2', 'Red 3'],
   greenLabels: const ['Green 1', 'Green 2', 'Green 3'],
-  questionValues: values,
+  questionValues: values ?? kTbqValues,
 );
 
 void main() {
@@ -28,12 +37,11 @@ void main() {
       final ruleset = loadTbq();
       expect(ruleset.id, 'tbq-25-26');
       expect(ruleset.match.regulationQuestions, 20);
-      final tens = ruleset.match.pointValues.where((v) => v == 10).length;
-      final twenties = ruleset.match.pointValues.where((v) => v == 20).length;
-      final thirties = ruleset.match.pointValues.where((v) => v == 30).length;
-      expect(tens, 8); // Scoring §1
-      expect(twenties, 9);
-      expect(thirties, 3);
+      expect(ruleset.match.answerValues, [10, 20, 30]);
+      final counts = ruleset.match.valueCounts;
+      expect(counts[10], 8); // Scoring §1
+      expect(counts[20], 9);
+      expect(counts[30], 3);
       expect(ruleset.scoring.quizOutCorrect, 5); // Scoring §2
       expect(ruleset.scoring.quizOutBonus, 20);
       expect(ruleset.scoring.strikeOutIncorrect, 3); // Scoring §3

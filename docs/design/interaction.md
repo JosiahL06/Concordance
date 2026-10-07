@@ -38,7 +38,7 @@ OS text scaling at 1.3× to protect the no-scroll layout.
 
 - Ruleset tabs in the AppBar load the REAL presets
   (`assets/rulesets/tbq-25-26.json`, `jbq-2026.json`); tab switch updates
-  the details card: N questions + value sequence, quiz/strike/foul-out
+  the details card: N questions + value distribution, quiz/strike/foul-out
   chips, time-out + contest/appeal limits. Load failure shows an error
   state with Retry (Start disabled until presets load).
 - Ruleset pick is an ordinary in-body settings row (segmented control),
@@ -85,12 +85,23 @@ a foul is not an answer). This includes a miss on a non-interrupted
 question, which is not reread and therefore closes the question to the
 opposing team; only an interrupted miss reopens it.
 
+The same blocked path covers D11: until the current question's point value is
+set, CORRECT/INCORRECT are disabled and the status line reads `BLOCKED — Set
+the point value for Qn first`.
+
 ## 5. Modern specifics (`direction_a_screen.dart`)
 
 Split field: red left / green right, team band (live total) + quizzer
 cards (score, C/I/F counts, status chip) + TAP TO SCORE affordance on the
 selected card. `QuestionNavigator` strip below the console is position
-display with paper marks (interruption ring, contest "C", void strike).
+display with paper marks (interruption ring, contest "C", void strike), with
+a **point-value sub-row** beneath the numbers (D11): each value cell is an
+anchored popup menu — tap it to set that question's 10/20/30 value. A
+regulation question starts unset ("set") and cannot be scored until a value is
+assigned; the value locks once the question is answered, and overtime/voided
+slots read out only. The live header's `CurrentValueButton` (`N PTS` / a
+prominent `SET VALUE` while unset) opens the same picker for the current
+question.
 `matchComplete` swaps the console for: result text + "Add overtime
 question" (tie only) + "View summary".
 
@@ -103,7 +114,10 @@ and contest/appeal header buttons with tallies (unsuccessful/used challenges
 showing `+value` / `−half` (personal fouls add an `F` badge beside the mark,
 never replacing it; foul-only cells show a bare `F`) with contest/interruption rings;
 interrupted questions also ring the column header; selected quizzer × current
-question intersect highlights. A one-line **BENCH** strip lists a team's
+question intersect highlights. Each **column header** carries the question's
+point value under its number (D11) and is itself an anchored popup menu, so a
+question's value is set from the sheet's own header row (overtime/voided/
+answered slots read out only). A one-line **BENCH** strip lists a team's
 bench quizzers below its rows, each with their running total. Vertical TIME
 OUT 1/2/3 rail per team. The
 ledger sizes its rows to the screen (no scrolling mid-game). Same console +
@@ -114,7 +128,11 @@ guards void/substitute state).
 
 - `AlertBanner` shows `lastAlert` until dismissed (dismiss is view state,
   not journaled). Fired by: quiz/strike/foul-out, 4th time-out request,
-  3rd unsuccessful contest (TBQ), appeals exhausted (JBQ), tie after Q20.
+  3rd unsuccessful contest (TBQ), appeals exhausted (JBQ), tie after Q20,
+  and a broken question-set value stipulation (D12: value totals, a 30 at an
+  end, consecutive 30s, or a half short of its 20/30 minimum — JBQ). A value
+  notice fires once when the offending value is entered and re-arms on undo;
+  nothing is ever blocked.
 - After Q20: leader → match complete; tie → overtime question is appended
   automatically (TBQ: 10-pt sudden death; JBQ: 10/20/30 then 20s) with a
   notice and scoring re-opens.

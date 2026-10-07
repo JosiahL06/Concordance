@@ -28,12 +28,28 @@ Ruleset loadPreset(String id) => Ruleset.fromJson(
 
 List<Ruleset> presets() => [loadPreset('tbq-25-26'), loadPreset('jbq-2026')];
 
+/// D11: set the current question's point value via the header badge ("SET
+/// VALUE" while unset) and its anchored popup menu.
+Future<void> _setValue(WidgetTester tester, int points) async {
+  await tester.tap(find.text('SET VALUE'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('$points points'));
+  await tester.pumpAndSettle();
+}
+
+/// Representative value list (no built-in order — D11).
+const kValues = <int>[
+  10, 20, 10, 20, 30, 10, 20, 10, 20, 20, //
+  30, 20, 10, 20, 10, 20, 30, 10, 20, 10,
+];
+
 RoundController freshRound() => RoundController(
   ruleset: loadPreset('tbq-25-26'),
   redName: 'Red',
   greenName: 'Green',
   redSeats: const ['Red 1', 'Red 2'],
   greenSeats: const ['Green 1', 'Green 2'],
+  questionValues: kValues,
 );
 
 /// Pumps a live screen inside the same scopes the app mounts, optionally
@@ -275,6 +291,7 @@ void main() {
     await tester.tap(find.text('START ROUND'));
     await tester.pumpAndSettle();
 
+    await _setValue(tester, 20); // D11: set Q1's value before scoring
     await tester.tap(find.text('Red 1'));
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('CORRECT  +'));
@@ -288,6 +305,7 @@ void main() {
     // Toggled off mid-match: the next ruling stays still.
     await tester.tap(find.byTooltip('Haptics: on - tap to turn off'));
     await tester.pumpAndSettle();
+    await _setValue(tester, 20); // Q2's value
     await tester.tap(find.text('Green 1'));
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('CORRECT  +'));

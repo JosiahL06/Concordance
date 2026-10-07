@@ -172,6 +172,10 @@ class RoundStore {
       'successful': ok,
     },
     VoidQuestionEvent(questionNumber: var q) => {'q': q},
+    QuestionValueEvent(questionNumber: var q, value: var v) => {
+      'q': q,
+      'value': v,
+    },
     SubstituteQuestionEvent(questionNumber: var q, value: var v) => {
       'q': q,
       'value': v,
@@ -206,6 +210,10 @@ class RoundStore {
         successful: m['successful'] as bool,
       ),
       'VoidQuestionEvent' => VoidQuestionEvent(questionNumber: m['q'] as int),
+      'QuestionValueEvent' => QuestionValueEvent(
+        questionNumber: m['q'] as int,
+        value: m['value'] as int,
+      ),
       'SubstituteQuestionEvent' => SubstituteQuestionEvent(
         questionNumber: m['q'] as int,
         value: m['value'] as int,

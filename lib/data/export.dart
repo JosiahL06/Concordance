@@ -72,7 +72,7 @@ Future<void> exportPdf(RoundController c, BuildContext context) async {
             headers: const ['Q', 'Value', 'Outcome'],
             data: [
               for (var n = 1; n <= c.questionCount; n++)
-                ['$n', '${c.currentValue(n)}', _notes(c, n)],
+                ['$n', c.currentValue(n)?.toString() ?? '-', _notes(c, n)],
             ],
           ),
         ],
@@ -114,7 +114,7 @@ Future<void> exportCsv(RoundController c, BuildContext context) async {
     const [],
     const ['question', 'value', 'outcome'],
     for (var n = 1; n <= c.questionCount; n++)
-      [n, c.currentValue(n), _notes(c, n)],
+      [n, c.currentValue(n) ?? '-', _notes(c, n)],
   ];
   final dir = await getTemporaryDirectory();
   final file = File('${dir.path}/concordance-round.csv');

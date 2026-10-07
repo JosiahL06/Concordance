@@ -101,7 +101,7 @@ class QuestionView {
   });
 
   final int number;
-  final int value;
+  final int? value;
   final bool interrupted;
   final bool contested;
   final bool voided;
@@ -115,14 +115,23 @@ class RoundView {
     required List<String> greenLabels,
     List<String> redBench = const <String>[],
     List<String> greenBench = const <String>[],
-    List<int>? questionValues,
+    List<int?>? questionValues,
   }) : _redLabels = List<String>.unmodifiable(redLabels),
        _greenLabels = List<String>.unmodifiable(greenLabels),
        _redBench = List<String>.unmodifiable(redBench),
        _greenBench = List<String>.unmodifiable(greenBench),
-       _baseValues = List<int>.of(questionValues ?? ruleset.match.pointValues),
+       // No built-in per-question order (D11): regulation slots start unset
+       // (null) and are assigned live. A caller (tests, a future pre-loaded
+       // set) may supply explicit values instead.
+       _baseValues = List<int?>.of(
+         questionValues ??
+             List<int?>.filled(ruleset.match.regulationQuestions, null),
+       ),
        state = RoundState(
-         values: List<int>.of(questionValues ?? ruleset.match.pointValues),
+         values: List<int?>.of(
+           questionValues ??
+               List<int?>.filled(ruleset.match.regulationQuestions, null),
+         ),
        ) {
     state.teams[Side.red] = TeamState(
       Side.red,
@@ -147,7 +156,7 @@ class RoundView {
   final List<String> _greenLabels;
   final List<String> _redBench;
   final List<String> _greenBench;
-  final List<int> _baseValues;
+  final List<int?> _baseValues;
 
   /// Applies [event], journaling it on success. Returns the violation when
   /// rejected (views decide how to surface; override = record anyway).
@@ -190,9 +199,22 @@ class RoundView {
 
   // ── shared reads ──
 
-  List<int> get questionValues => List.unmodifiable(state.values);
+  List<int?> get questionValues => List.unmodifiable(state.values);
 
   int scoreOf(Side side) => state.teams[side]!.score;
+
+  /// Whether question [n]'s value may be (re)set by the keeper (D11): only a
+  /// *regulation* slot that is neither voided (its value comes from the
+  /// substitute) nor already answered (the value locks once scored). Overtime
+  /// slots are fixed by the rulebook and never editable.
+  bool questionValueEditable(int n) {
+    if (n < 1 || n > state.values.length) return false;
+    if (n > ruleset.match.regulationQuestions) return false;
+    final q = state.questions[n];
+    if (q == null) return true;
+    if (q.voided || q.answers.isNotEmpty) return false;
+    return true;
+  }
 
   TeamView teamOf(Side side) {
     final team = state.teams[side]!;

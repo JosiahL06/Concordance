@@ -1,12 +1,13 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "tbq-25-26",
   "displayName": "Teen Bible Quiz",
   "season": "2025-26",
   "challengeKind": "contest",
   "match": {
     "regulationQuestions": 20,
-    "pointValues": [10, 20, 10, 20, 30, 10, 20, 10, 20, 20, 30, 20, 10, 20, 10, 20, 30, 10, 20, 10],
+    "answerValues": [10, 20, 30],
+    "valueCounts": { "10": 8, "20": 9, "30": 3 },
     "minActivePerTeam": 1,
     "maxActivePerTeam": 3,
     "teamsPerMatch": 2,

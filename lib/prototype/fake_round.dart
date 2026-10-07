@@ -117,9 +117,20 @@ class FakeRound extends ChangeNotifier {
       config.greenSeats,
     );
     teams = <Team>[red, green];
-    values = List<int>.of(ruleset.match.pointValues);
+    // Prototype-only demo order (the production engine has no built-in
+    // per-question order — D11). Repeated/truncated to the question count.
+    values = List<int>.generate(
+      ruleset.match.regulationQuestions,
+      (i) => _demoValues[i % _demoValues.length],
+    );
     if (config.demo) _seed();
   }
+
+  /// A representative regulation value list for the prototype demo.
+  static const List<int> _demoValues = [
+    10, 20, 10, 20, 30, 10, 20, 10, 20, 20, //
+    30, 20, 10, 20, 10, 20, 30, 10, 20, 10,
+  ];
 
   final RoundConfig config;
   final Ruleset ruleset;

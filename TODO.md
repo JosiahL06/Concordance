@@ -160,7 +160,27 @@
             time-out rail all size to the screen)
       - [x] Update summary page for announcements: 1st/2nd place team and the
             top two individual scorers across the whole match
-- [ ] Touch verification pass (emulator now, real tablet later)
+- [x] Live question values (D11): the rulebooks fix a value *distribution* but
+      no per-question order, so a regulation question now starts **unset** and
+      the keeper sets its 10/20/30 value as the question is read. Entry points:
+      the Modern navigator's value sub-row, the Classic column headers, and the
+      live header's `N PTS` / `SET VALUE` badge — all anchored popup menus over
+      the ruleset's `answerValues`. A question cannot be scored until its value
+      is set (console shows `BLOCKED — Set the point value for Qn first`); the
+      value locks once answered (`question-value-locked`); overtime slots keep
+      their rule value and are read-only; a voided slot takes its value from the
+      substitute. Presets drop the built-in sequence for `answerValues` +
+      `valueCounts` and bump to schema v2; the change journals as
+      `QuestionValueEvent` (autosave / undo / refold)
+- [x] Question-set value guardrails (D12), advisory (never blocks a value the
+      keeper enters): `collectNotices` raises a one-time notice when the entered
+      set breaks a rulebook stipulation — the value distribution (both books)
+      plus, for JBQ, the arrangement rules (≥3 twenties and ≥1 thirty per half,
+      no 30 first/last, no consecutive 30s). Constraints live in
+      `match.valueRules` (ruleset-as-data; absent ⇒ none), read regulation slots
+      only (overtime exempt), and judge the per-half minimums only once a half
+      is fully assigned. Fired from `setQuestionValue` through the existing
+      fire-once / undo-resume notice machinery
 - [x] Accessibility (Semantics) + haptics pass: opt-in haptics (off by
       default; `HapticsController`/`HapticsScope` + header toggle), audio
       silenced app-wide (Material `enableFeedback` off in `buildTheme`,
@@ -185,6 +205,11 @@
 - [x] Release `SHA256SUMS` published with every release (all four artifacts)
 - [x] Desktop identity metadata unified to "Concordance" (Windows `VERSIONINFO`,
       Windows/Linux window titles, AGPL-3.0-only copyright)
+
+## Phase 6 — Final verification and v1 release
+- [ ] Installation, setup, and touch verification pass on a real tablet
+- [ ] Live match test; verify that a new user can keep up with a live game and scorekeep accurately
+- [ ] Public release of v1.0.0
 
 ## Post-v1
 - [ ] Global edit/undo dialogue: selective journal edit (change/delete any

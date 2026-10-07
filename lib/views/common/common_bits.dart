@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../app/haptics.dart';
 import '../../app/round_controller.dart';
+import 'quiet_controls.dart';
 
-/// The paper scoresheet's marks, rendered as a compact 20-cell navigator:
-/// current question highlighted, interruption = ring around the number,
-/// contest = "C" mark, void = strike-through.
+/// The paper scoresheet's marks, rendered as a compact navigator: a row of
+/// question numbers (current highlighted, interruption = ring, contest = "C",
+/// void = strike-through) with a **point-value row** directly beneath it (D11).
+/// Each value cell is an anchored popup menu — tap it to set the question's
+/// 10/20/30-point value (overtime and already-answered slots are read-only).
 class QuestionNavigator extends StatelessWidget {
-  const QuestionNavigator({super.key, required this.round, this.height = 56});
+  const QuestionNavigator({super.key, required this.round, this.height = 100});
 
   final RoundController round;
   final double height;
@@ -18,19 +21,35 @@ class QuestionNavigator extends StatelessWidget {
       height: height,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        // Equal-width cells: the whole 20-question strip (plus any overtime
-        // slots) always fits the width, so the navigator never scrolls.
-        child: Row(
+        child: Column(
           children: [
-            for (var i = 0; i < round.questionCount; i++) ...[
-              if (i > 0) const SizedBox(width: 6),
-              Expanded(child: _cell(context, i + 1)),
-            ],
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: _cells((n) => _cell(context, n)),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: _cells((n) => _valueCell(context, n)),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+
+  /// Equal-width cells: the whole strip (plus any overtime slots) always fits
+  /// the width, so the navigator never scrolls.
+  List<Widget> _cells(Widget Function(int) build) => [
+    for (var i = 0; i < round.questionCount; i++) ...[
+      if (i > 0) const SizedBox(width: 6),
+      Expanded(child: build(i + 1)),
+    ],
+  ];
 
   Widget _cell(BuildContext context, int n) {
     final scheme = Theme.of(context).colorScheme;
@@ -98,6 +117,63 @@ class QuestionNavigator extends StatelessWidget {
     return Semantics(
       label: spoken.join(', '),
       excludeSemantics: true,
+      child: cell,
+    );
+  }
+
+  /// One point-value cell (D11). Editable regulation slots open an anchored
+  /// popup menu; overtime / already-answered / voided slots read out only.
+  Widget _valueCell(BuildContext context, int n) {
+    final scheme = Theme.of(context).colorScheme;
+    final value = round.view.questionValues[n - 1];
+    final current = n - 1 == round.questionIndex;
+    final editable = round.questionValueEditable(n);
+    final unset = value == null;
+
+    final bg = current ? scheme.primaryContainer : scheme.surfaceContainerHigh;
+    final textColor = current
+        ? scheme.onPrimaryContainer
+        : unset
+        ? scheme.outline
+        : scheme.onSurfaceVariant;
+
+    final cell = Container(
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: current ? scheme.primary : Colors.transparent,
+          width: 2,
+        ),
+      ),
+      child: Text(
+        unset ? 'set' : '$value',
+        style: TextStyle(
+          fontSize: unset ? 12 : 14,
+          fontWeight: current ? FontWeight.w900 : FontWeight.w700,
+          color: textColor,
+        ),
+      ),
+    );
+
+    if (!editable) {
+      return Semantics(
+        label: 'Question $n value ${unset ? 'unset' : '$value'}',
+        excludeSemantics: true,
+        child: cell,
+      );
+    }
+    // Anchored floating menu (Option 2): the ruleset's allowed values.
+    return PopupMenuButton<int>(
+      tooltip: 'Set question $n point value',
+      enableFeedback: false,
+      padding: EdgeInsets.zero,
+      onSelected: (v) => round.setQuestionValue(n, v),
+      itemBuilder: (context) => [
+        for (final v in round.valueOptions)
+          QuietMenuItem<int>(value: v, child: Text('$v points')),
+      ],
       child: cell,
     );
   }

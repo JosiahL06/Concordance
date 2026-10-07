@@ -13,13 +13,20 @@ Ruleset loadJbq() {
   return Ruleset.fromJson(json.decode(raw) as Map<String, Object?>);
 }
 
+/// A representative JBQ regulation value list for the goldens (no built-in
+/// per-question order — D11).
+const kJbqValues = <int>[
+  10, 10, 20, 10, 20, 30, 10, 20, 10, 10, //
+  20, 10, 30, 20, 10, 10, 20, 30, 10, 20,
+];
+
 RoundView freshJbq({List<int>? values}) => RoundView(
   ruleset: loadJbq(),
   redLabels: const ['Red 1', 'Red 2', 'Red 3', 'Red 4'],
   greenLabels: const ['Green 1', 'Green 2', 'Green 3', 'Green 4'],
   redBench: const ['Red 5', 'Red 6'],
   greenBench: const ['Green 5'],
-  questionValues: values,
+  questionValues: values ?? kJbqValues,
 );
 
 void main() {
@@ -27,12 +34,11 @@ void main() {
     test('schema parses and values match the book distribution', () {
       final ruleset = loadJbq();
       expect(ruleset.id, 'jbq-2026');
-      final tens = ruleset.match.pointValues.where((v) => v == 10).length;
-      final twenties = ruleset.match.pointValues.where((v) => v == 20).length;
-      final thirties = ruleset.match.pointValues.where((v) => v == 30).length;
-      expect(tens, 10); // Q-sets §2
-      expect(twenties, 7);
-      expect(thirties, 3);
+      expect(ruleset.match.answerValues, [10, 20, 30]);
+      final counts = ruleset.match.valueCounts;
+      expect(counts[10], 10); // Q-sets §2
+      expect(counts[20], 7);
+      expect(counts[30], 3);
       expect(ruleset.scoring.quizOutCorrect, 6); // Scoring §1
       expect(ruleset.scoring.quizOutBonus, 10);
       expect(ruleset.scoring.quizOutLeavesMatch, isTrue); // must leave

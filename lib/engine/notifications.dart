@@ -18,6 +18,7 @@ class Notice {
 /// Collects all currently active notifications.
 List<Notice> collectNotices(Ruleset ruleset, RoundState state) {
   final notices = <Notice>[];
+  _collectValueNotices(ruleset, state, notices);
   for (final side in Side.values) {
     final team = state.teams[side];
     if (team == null) continue;
@@ -64,4 +65,97 @@ List<Notice> collectNotices(Ruleset ruleset, RoundState state) {
     }
   }
   return notices;
+}
+
+/// Question-set value notices (schema decision D12). Advisory only — the engine
+/// never blocks a value, but a rulebook stipulation broken by the values the
+/// keeper has entered raises a one-time notice. Every check reads regulation
+/// slots (overtime is exempt) and is derived from state, so undo/resume
+/// reconcile it like any other notice.
+void _collectValueNotices(Ruleset ruleset, RoundState state, List<Notice> out) {
+  final regulation = ruleset.match.regulationQuestions;
+  final values = state.values;
+  if (values.length < regulation) return;
+  final rules = ruleset.match.valueRules;
+
+  // Assigned counts over the regulation slots.
+  final counts = <int, int>{};
+  for (var i = 0; i < regulation; i++) {
+    final v = values[i];
+    if (v != null) counts[v] = (counts[v] ?? 0) + 1;
+  }
+
+  // More of a value than the set contains (catches any mismatch, since the
+  // totals sum to the question count).
+  ruleset.match.valueCounts.forEach((value, allowed) {
+    final have = counts[value] ?? 0;
+    if (have > allowed) {
+      out.add(
+        Notice(
+          'value-count',
+          '$have $value-point questions set, but the set allows only '
+              '$allowed.',
+        ),
+      );
+    }
+  });
+
+  // A forbidden value at either end of regulation (start / conclusion).
+  for (final v in rules.noValueAtEnds) {
+    if (values.first == v || values[regulation - 1] == v) {
+      out.add(
+        Notice(
+          'value-at-end',
+          'A match must not start or end with a $v-point question.',
+        ),
+      );
+      break;
+    }
+  }
+
+  // Two consecutive forbidden-value questions.
+  for (final v in rules.noConsecutiveValues) {
+    for (var i = 0; i < regulation - 1; i++) {
+      if (values[i] == v && values[i + 1] == v) {
+        out.add(
+          Notice(
+            'value-consecutive',
+            '$v-point questions must not be consecutive '
+                '(Q${i + 1} and Q${i + 2}).',
+          ),
+        );
+        break;
+      }
+    }
+  }
+
+  // Per-half minimums — only judged once every slot in the half is assigned.
+  final halfSize = regulation ~/ 2;
+  for (var h = 0; h < 2; h++) {
+    final start = h * halfSize;
+    final end = h == 1 ? regulation : start + halfSize;
+    var complete = true;
+    final halfCounts = <int, int>{};
+    for (var i = start; i < end; i++) {
+      final v = values[i];
+      if (v == null) {
+        complete = false;
+        break;
+      }
+      halfCounts[v] = (halfCounts[v] ?? 0) + 1;
+    }
+    if (!complete) continue;
+    for (final m in rules.halfMinimums) {
+      if ((halfCounts[m.value] ?? 0) < m.count) {
+        out.add(
+          Notice(
+            'value-half-minimum',
+            'The ${h == 0 ? 'first' : 'second'} half needs at least '
+                '${m.count} ${m.value}-point '
+                'question${m.count == 1 ? '' : 's'}.',
+          ),
+        );
+      }
+    }
+  }
 }

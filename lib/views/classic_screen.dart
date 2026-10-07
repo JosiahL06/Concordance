@@ -5,6 +5,7 @@ import '../app/round_controller.dart';
 import '../engine/events.dart';
 import 'common/live_chrome.dart';
 import 'common/haptics_toggle.dart';
+import 'common/quiet_controls.dart';
 import 'common/theme_toggle.dart';
 
 /// Classic live-scoring view: paper-style scoresheet ledger over
@@ -102,22 +103,8 @@ class _ClassicScreenState extends State<ClassicScreen> {
             ),
           ),
           const SizedBox(width: 24),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            decoration: BoxDecoration(
-              color: scheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '${round.currentValue(round.questionNumber)} PTS',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: scheme.onPrimaryContainer,
-                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-              ),
-            ),
-          ),
+          CurrentValueButton(round: round),
+          const SizedBox(width: 8),
           const ThemeToggleButton(),
           const HapticsToggleButton(),
         ],
@@ -159,55 +146,11 @@ class _ClassicScreenState extends State<ClassicScreen> {
 
   Widget _columnHeaders(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final marks = round.view.questionMarks;
     return Row(
       children: [
         const SizedBox(width: _kLabelWidth),
         for (final n in _visibleQuestions)
-          Expanded(
-            child: Builder(
-              builder: (context) {
-                final interrupted =
-                    n <= marks.length && marks[n - 1].interrupted;
-                Widget cell = Container(
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  decoration: BoxDecoration(
-                    color: n == round.questionNumber
-                        ? scheme.primary
-                        : scheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '$n',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: n == round.questionNumber
-                          ? scheme.onPrimary
-                          : scheme.onSurface,
-                    ),
-                  ),
-                );
-                if (interrupted) {
-                  // Paper sheet circles the interrupted question number —
-                  // same orange ring as QuestionNavigator.
-                  cell = Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: const Color(0xFFEF6C00),
-                        width: 2,
-                      ),
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                    child: cell,
-                  );
-                }
-                return cell;
-              },
-            ),
-          ),
+          Expanded(child: _headerCell(context, n)),
         Container(
           width: _kTotalWidth,
           alignment: Alignment.center,
@@ -222,6 +165,83 @@ class _ClassicScreenState extends State<ClassicScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  /// One question column header: the number with an interruption ring (paper
+  /// circle) and the question's point value underneath (D11). Tapping an
+  /// editable header opens the value picker (anchored menu); overtime and
+  /// answered slots read out only.
+  Widget _headerCell(BuildContext context, int n) {
+    final scheme = Theme.of(context).colorScheme;
+    final marks = round.view.questionMarks;
+    final interrupted = n <= marks.length && marks[n - 1].interrupted;
+    final current = n == round.questionNumber;
+    final value = round.view.questionValues[n - 1];
+    final editable = round.questionValueEditable(n);
+
+    Widget cell = Container(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      decoration: BoxDecoration(
+        color: current ? scheme.primary : scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$n',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: current ? scheme.onPrimary : scheme.onSurface,
+            ),
+          ),
+          Text(
+            value == null ? 'set' : '$value',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: current
+                  ? scheme.onPrimary
+                  : value == null
+                  ? scheme.error
+                  : scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+    if (interrupted) {
+      // Paper sheet circles the interrupted question number — same orange
+      // ring as QuestionNavigator.
+      cell = Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFEF6C00), width: 2),
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: cell,
+      );
+    }
+
+    if (!editable) {
+      return Semantics(
+        label: 'Question $n value ${value == null ? 'unset' : '$value'}',
+        excludeSemantics: true,
+        child: cell,
+      );
+    }
+    return PopupMenuButton<int>(
+      tooltip: 'Set question $n point value',
+      enableFeedback: false,
+      padding: EdgeInsets.zero,
+      onSelected: (v) => round.setQuestionValue(n, v),
+      itemBuilder: (context) => [
+        for (final v in round.valueOptions)
+          QuietMenuItem<int>(value: v, child: Text('$v points')),
+      ],
+      child: cell,
     );
   }
 
@@ -424,11 +444,11 @@ class _ClassicScreenState extends State<ClassicScreen> {
     var color = scheme.outline;
     var weight = FontWeight.w500;
     if (mark == 'correct') {
-      text = '+${round.currentValue(n)}';
+      text = '+${round.currentValue(n) ?? 0}';
       color = scheme.primary;
       weight = FontWeight.w800;
     } else if (mark == 'incorrect') {
-      text = '\u2212${round.currentValue(n) ~/ 2}';
+      text = '\u2212${(round.currentValue(n) ?? 0) ~/ 2}';
       color = scheme.error;
       weight = FontWeight.w800;
     } else if (hasFoul) {
@@ -507,9 +527,9 @@ class _ClassicScreenState extends State<ClassicScreen> {
     // screen reader gets the same information sighted keepers see.
     final spoken = <String>['Question $n', quizzer.label];
     if (mark == 'correct') {
-      spoken.add('correct, plus ${round.currentValue(n)}');
+      spoken.add('correct, plus ${round.currentValue(n) ?? 0}');
     } else if (mark == 'incorrect') {
-      spoken.add('incorrect, minus ${round.currentValue(n) ~/ 2}');
+      spoken.add('incorrect, minus ${(round.currentValue(n) ?? 0) ~/ 2}');
     }
     if (hasFoul) spoken.add('foul');
     if (interrupted) spoken.add('interrupted');

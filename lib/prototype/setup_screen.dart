@@ -242,10 +242,11 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   Widget _rulesetCard(Ruleset r) {
-    final vals = r.match.pointValues;
-    final tens = vals.where((v) => v == 10).length;
-    final twenties = vals.where((v) => v == 20).length;
-    final thirties = vals.where((v) => v == 30).length;
+    final vals = r.match.answerValues;
+    final counts = r.match.valueCounts;
+    final tens = counts[10] ?? 0;
+    final twenties = counts[20] ?? 0;
+    final thirties = counts[30] ?? 0;
     final challenge = r.challengeKind == ChallengeKind.contest
         ? 'Contests'
         : "Coach's Appeals";
@@ -266,7 +267,7 @@ class _SetupScreenState extends State<SetupScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              '${vals.length} questions · $tens×10 · '
+              '${r.match.regulationQuestions} questions · $tens×10 · '
               '$twenties×20 · $thirties×30',
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),

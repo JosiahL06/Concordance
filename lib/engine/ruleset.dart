@@ -58,7 +58,7 @@ class Ruleset {
     }
 
     final schemaVersion = req<num>('schemaVersion').toInt();
-    if (schemaVersion != 1) {
+    if (schemaVersion != 2) {
       throw FormatException('unsupported schemaVersion $schemaVersion');
     }
     return Ruleset(
@@ -79,7 +79,9 @@ class Ruleset {
 class MatchConfig {
   const MatchConfig({
     required this.regulationQuestions,
-    required this.pointValues,
+    required this.answerValues,
+    required this.valueCounts,
+    required this.valueRules,
     required this.minActivePerTeam,
     required this.maxActivePerTeam,
     required this.teamsPerMatch,
@@ -87,7 +89,19 @@ class MatchConfig {
   });
 
   final int regulationQuestions;
-  final List<int> pointValues;
+
+  /// The point values a question may be scored at (sorted, distinct). Drives
+  /// the live value picker and the `question-value-not-allowed` guardrail.
+  /// The rulebooks no longer fix a per-question order: the keeper sets each
+  /// question's value live as it is read (schema decision D11), so this is a
+  /// *set*, not a sequence.
+  final List<int> answerValues;
+
+  /// The book's question-value distribution (e.g. TBQ eight 10s, nine 20s,
+  /// three 30s). Informational: shown on the setup card and asserted by the
+  /// golden tests against the rulebook. Never used to pre-set a question.
+  final Map<int, int> valueCounts;
+
   final int minActivePerTeam;
   final int maxActivePerTeam;
   final int teamsPerMatch;
@@ -97,27 +111,86 @@ class MatchConfig {
   /// fix the seated count (1–3 active), so its roster is uncapped here.
   final int? maxRosterPerTeam;
 
+  /// Advisory per-question value constraints (schema decision D12). Never
+  /// blocks a value — violations are surfaced as scorekeeper notices.
+  final ValueRules valueRules;
+
   /// Bench capacity for a team with [seated] quizzers: the roster cap beyond
   /// the table, or null when the roster is uncapped.
   int? benchCapacity(int seated) =>
       maxRosterPerTeam == null ? null : maxRosterPerTeam! - seated;
 
   factory MatchConfig.fromJson(Map<String, Object?> json) {
-    final values = (json['pointValues'] as List).cast<num>();
+    final values = (json['answerValues'] as List).cast<num>();
     for (final v in values) {
       if (v % 2 != 0) {
         throw FormatException('point value $v is not even (D5)');
       }
     }
+    final counts = (json['valueCounts'] as Map).cast<String, Object?>();
     return MatchConfig(
       regulationQuestions: json['regulationQuestions'] as int,
-      pointValues: [for (final v in values) v.toInt()],
+      answerValues: ([for (final v in values) v.toInt()]..sort()),
+      valueCounts: {
+        for (final e in counts.entries) int.parse(e.key): (e.value as num).toInt(),
+      },
+      valueRules: json['valueRules'] == null
+          ? const ValueRules()
+          : ValueRules.fromJson(
+              (json['valueRules'] as Map).cast<String, Object?>(),
+            ),
       minActivePerTeam: json['minActivePerTeam'] as int,
       maxActivePerTeam: json['maxActivePerTeam'] as int,
       teamsPerMatch: json['teamsPerMatch'] as int,
       maxRosterPerTeam: json['maxRosterPerTeam'] as int?,
     );
   }
+}
+
+/// Per-question value constraints for the constructed set (schema decision
+/// D12). Everything here is **advisory**: the engine journals whatever value
+/// the keeper enters, but a violation raises a scorekeeper notice so a
+/// mis-transcribed set is caught. Absent in a ruleset ⇒ no constraints.
+class ValueRules {
+  const ValueRules({
+    this.noValueAtEnds = const <int>{},
+    this.noConsecutiveValues = const <int>{},
+    this.halfMinimums = const <HalfMinimum>[],
+  });
+
+  /// Values that may not be the first or the last regulation question.
+  final Set<int> noValueAtEnds;
+
+  /// Values that may not be asked on two consecutive questions.
+  final Set<int> noConsecutiveValues;
+
+  /// Minimum count of a value required in *each* half of the match.
+  final List<HalfMinimum> halfMinimums;
+
+  factory ValueRules.fromJson(Map<String, Object?> json) => ValueRules(
+    noValueAtEnds: _intSet(json['noValueAtEnds']),
+    noConsecutiveValues: _intSet(json['noConsecutiveValues']),
+    halfMinimums: [
+      for (final m in (json['halfMinimums'] as List? ?? const <Object?>[]))
+        HalfMinimum(
+          value: ((m as Map)['value'] as num).toInt(),
+          count: (m['count'] as num).toInt(),
+        ),
+    ],
+  );
+
+  static Set<int> _intSet(Object? raw) => {
+    for (final v in (raw as List? ?? const <Object?>[])) (v as num).toInt(),
+  };
+}
+
+/// One per-half minimum: each half must contain at least [count] questions of
+/// [value].
+class HalfMinimum {
+  const HalfMinimum({required this.value, required this.count});
+
+  final int value;
+  final int count;
 }
 
 /// Scoring numbers.

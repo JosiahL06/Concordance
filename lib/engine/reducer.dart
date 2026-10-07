@@ -118,6 +118,8 @@ FoldResult applyEvent(Ruleset ruleset, RoundState state, RoundEvent event) {
       }
       q.answers.clear();
       return FoldResult.ok(state);
+    case QuestionValueEvent():
+      return questionValueFold(ruleset, state, event.questionNumber, event.value);
     case SubstituteQuestionEvent():
       return substituteQuestionFold(state, event.questionNumber, event.value);
     case SubstituteQuizzerEvent():
@@ -158,6 +160,16 @@ RuleViolation? answerGuardrail(
   Side side,
   int quizzerIndex,
 ) {
+  // A question with no value assigned cannot be scored (D11): the rulebooks
+  // fix no per-question order, so the keeper sets the value as the question is
+  // read. Surfaces to the console as a blocked reason before the keeper taps.
+  final slotValue = state.questions[n]?.substituteValue ?? state.valueOf(n);
+  if (slotValue == null) {
+    return RuleViolation(
+      'question-value-unset',
+      'Set the point value for Q$n first',
+    );
+  }
   final q = state.questions[n];
   if (q == null || q.answers.isEmpty) return null; // nothing recorded yet
   final teamName = side == Side.red ? 'Red' : 'Green';
@@ -223,7 +235,8 @@ FoldResult answerFold(
   final guardrail = answerGuardrail(state, n, side, quizzerIndex);
   if (guardrail != null) return FoldResult.rejected(guardrail);
   final scoring = ruleset.scoring;
-  final value = q.substituteValue ?? state.valueOf(n);
+  // The guardrail above guarantees a value is present (unset is rejected).
+  final value = (q.substituteValue ?? state.valueOf(n))!;
   var bonus = 0;
   late final int delta;
   if (correct) {
@@ -363,6 +376,54 @@ FoldResult challengeFold(
   }
   q.appeals += 1;
   team.challengesUsed += 1;
+  return FoldResult.ok(state);
+}
+
+/// Assigns the keeper-entered point [value] to regulation question [n]
+/// (schema decision D11). The rulesets fix no per-question order, so regulation
+/// slots start unset and are assigned live as each question is read.
+FoldResult questionValueFold(
+  Ruleset ruleset,
+  RoundState state,
+  int n,
+  int value,
+) {
+  final range = inRange(state, n);
+  if (!range.ok) return range;
+  if (n > ruleset.match.regulationQuestions) {
+    return const FoldResult.rejected(
+      RuleViolation(
+        'question-value-overtime-fixed',
+        'overtime questions have a fixed point value',
+      ),
+    );
+  }
+  if (!ruleset.match.answerValues.contains(value)) {
+    return const FoldResult.rejected(
+      RuleViolation(
+        'question-value-not-allowed',
+        'that point value is not allowed by this ruleset',
+      ),
+    );
+  }
+  final q = state.question(n);
+  if (q.voided) {
+    return const FoldResult.rejected(
+      RuleViolation(
+        'question-value-voided',
+        'read a substitute question to set its value',
+      ),
+    );
+  }
+  if (q.answers.isNotEmpty) {
+    return FoldResult.rejected(
+      RuleViolation(
+        'question-value-locked',
+        'Q$n is already answered — undo to change its value',
+      ),
+    );
+  }
+  state.values[n - 1] = value;
   return FoldResult.ok(state);
 }
 

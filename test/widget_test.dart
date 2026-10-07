@@ -61,7 +61,8 @@ void main() {
   ) async {
     await _startClassic(tester);
 
-    // Q1 is worth 10 in TBQ; Red 1 answers correctly.
+    // D11: the keeper sets each question's value as it is read. Q1 to 10.
+    await _setValue(tester, 10);
     await tester.tap(find.text('Red 1'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('CORRECT  +10'));
@@ -69,7 +70,9 @@ void main() {
 
     expect(find.text('QUESTION 2 OF 20'), findsOneWidget);
     expect(find.text('SCORE 10'), findsOneWidget);
-    expect(find.textContaining('CORRECT  +20'), findsOneWidget); // Q2 is 20pt
+    // The next question starts unset until its value is set; set Q2 to 20.
+    await _setValue(tester, 20);
+    expect(find.textContaining('CORRECT  +20'), findsOneWidget);
   });
 
   testWidgets('Classic: incorrect answer deducts half the value', (
@@ -77,6 +80,7 @@ void main() {
   ) async {
     await _startClassic(tester);
 
+    await _setValue(tester, 10);
     await tester.tap(find.text('Green 1'));
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('INCORRECT'));
@@ -91,6 +95,7 @@ void main() {
   ) async {
     await _startClassic(tester);
 
+    await _setValue(tester, 10);
     await tester.tap(find.text('Red 1'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('CORRECT  +10'));
@@ -108,6 +113,7 @@ void main() {
     await _start(tester, classic: false);
 
     expect(find.text('QUESTION 1 OF 20'), findsOneWidget);
+    await _setValue(tester, 10); // D11: set Q1's value before scoring
     await tester.tap(find.text('Red 1'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('CORRECT  +10'));
@@ -265,3 +271,12 @@ Future<void> _start(WidgetTester tester, {required bool classic}) async {
 
 Future<void> _startClassic(WidgetTester tester) =>
     _start(tester, classic: true);
+
+/// D11: set the current question's point value through the header badge
+/// ("SET VALUE" while unset) and its anchored popup menu.
+Future<void> _setValue(WidgetTester tester, int points) async {
+  await tester.tap(find.text('SET VALUE'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('$points points'));
+  await tester.pumpAndSettle();
+}

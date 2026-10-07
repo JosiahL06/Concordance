@@ -342,9 +342,13 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   Widget _rulesCard(Ruleset r) {
-    final tens = r.match.pointValues.where((v) => v == 10).length;
-    final twenties = r.match.pointValues.where((v) => v == 20).length;
-    final thirties = r.match.pointValues.where((v) => v == 30).length;
+    // No built-in per-question order (D11): show the book's value distribution
+    // so the keeper knows what to expect, but each question's value is set
+    // live during the round.
+    final dist = (r.match.valueCounts.entries.toList()
+          ..sort((a, b) => a.key.compareTo(b.key)))
+        .map((e) => '${e.value}\u00d7${e.key}')
+        .join(', ');
     final challenge = r.challengeKind == ChallengeKind.contest
         ? 'Contests'
         : "Coach's Appeals";
@@ -365,8 +369,7 @@ class _SetupScreenState extends State<SetupScreen> {
               children: [
                 _ruleRow(
                   'Questions',
-                  '${r.match.regulationQuestions} '
-                      '($tens/10s $twenties/20s $thirties/30s)',
+                  '${r.match.regulationQuestions} (${dist.isEmpty ? '10/20/30' : dist})',
                 ),
                 _ruleRow(
                   'Quiz-out',

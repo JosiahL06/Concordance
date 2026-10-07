@@ -60,17 +60,52 @@ never engine forks.
   surfaced by the scoring console (disabled CORRECT/INCORRECT + reason).
   Voiding a question retracts its answer points and clears its ledger so the
   substitute reads fresh (D3/D4).
+- **D11 — the point value of a question is set live, not pre-ordered.** The
+  rulebooks fix a value *distribution* but no per-question order, so a
+  regulation question starts with **no value** (`RoundState.values` is
+  `List<int?>`) and cannot be answered until the keeper assigns one (as the
+  question is read); an unset answer is rejected `question-value-unset` and the
+  console shows the reason. The value is set by `QuestionValueEvent` and
+  **locks once the question is answered** (`question-value-locked`) so a
+  recorded `SlotAnswer.delta` always matches the value the ledger shows (a late
+  correction is Undo → set → re-score). The value must be one of
+  `match.answerValues` (`question-value-not-allowed`). Overtime slots are
+  **fixed by the rulebook** (`question-value-overtime-fixed`, never editable),
+  and a voided slot takes its value from the substitute
+  (`question-value-voided`). The value row / header badge is the picker; it is
+  an anchored popup menu over the ruleset's allowed values.
+- **D12 — question-set value guardrails are advisory notices, never blocks.**
+  The rulebooks fix the value distribution (both books) and, for JBQ, how the
+  set may be *arranged*: ≥3 twenties and ≥1 thirty in each half, no 30 first or
+  last, no consecutive 30s (JBQ Match Guidelines §3a–d). The engine still
+  journals whatever value the keeper enters (the quizmaster may overrule
+  reality), but `collectNotices` returns a one-time `value-count` /
+  `value-at-end` / `value-consecutive` / `value-half-minimum` notice when the
+  entered values break a stipulation, so a mis-transcribed set is caught. The
+  constraints are ruleset-as-data (`match.valueRules`, absent ⇒ none), the
+  checks read regulation slots only (overtime is exempt), and the per-half
+  minimums are judged only once a half is fully assigned. Fired from
+  `RoundController.setQuestionValue` via the existing fire-once/undo/resume
+  notice machinery.
 
 
 ## Schema fields
 
-- `schemaVersion` (int, = 1), `id` (e.g. `tbq-25-26`), `displayName`,
+- `schemaVersion` (int, = 2), `id` (e.g. `tbq-25-26`), `displayName`,
   `season`, `challengeKind`: `contest` (TBQ) | `appeal` (JBQ).
 - `match.regulationQuestions` = 20 (both books).
-  `match.pointValues`: full 20-slot sequence; session may supply its own.
-  TBQ Scoring §1: eight 10s, nine 20s, three 30s.
-  JBQ Q-sets §2: ten 10s, seven 20s, three 30s (+ distribution rules
-  §3a-d, validated at session setup, not per event).
+  `match.answerValues`: the point values a question may be scored at (sorted
+  set — `[10,20,30]`), the value picker's options and the `answer`/`questionValue`
+  guardrail. `match.valueCounts`: the book's distribution (`{10:8,20:9,30:3}`
+  TBQ Scoring §1; `{10:10,20:7,30:3}` JBQ Q-sets §2), shown on the setup card
+  and enforced as the D12 count notice.
+  `match.valueRules` (D12, optional): `noValueAtEnds` (values barred from the
+  first/last regulation question), `noConsecutiveValues` (values barred from
+  adjacent questions), and `halfMinimums` (`[{value,count}]` required in each
+  half). Present only for JBQ (Match Guidelines §3a–d); absent ⇒ no
+  arrangement constraints.
+  **There is no per-question order** (D11): the keeper sets each question's
+  value live.
   `match.minActivePerTeam` / `maxActivePerTeam`:
   TBQ Team §4: 1–3; JBQ Team §5: 2–4 (1 with approval — v1: min 1).
   `match.maxRosterPerTeam`: whole-team cap (seated + bench), null when the
@@ -123,11 +158,12 @@ quizmaster may override reality — the journal records what was recorded).
 
 | Event | Fields | Validates against |
 |---|---|---|
-| `answer` | q, team, quizzer, correct | quizzer active; q not voided w/o substitute; q in range; answer guardrails (D10: at most one answer per quizzer, one per team, one correct per question — a correct answer closes the slot) |
+| `answer` | q, team, quizzer, correct | quizzer active; q not voided w/o substitute; q in range; **q has a value (D11: an unset question is rejected `question-value-unset`)**; answer guardrails (D10: at most one answer per quizzer, one per team, one correct per question — a correct answer closes the slot) |
 | `foul` | q?, team, quizzer? (null = team foul) | team/quizzer exists; foul-out derived, not blocked |
 | `timeOut` | team | capped by `timeOutCap` (3 regulation; overtime: TBQ none, JBQ remaining +1); an over-cap request is rejected (not journaled) and the keeper assigns the resulting team foul themselves |
 | `interruption` | q | q in range (marks only) |
 | `challenge` | q, team, successful | per-question cap (TBQ) / allotment (JBQ) → violation, still recordable on override |
+| `questionValue` | q, value | q is a **regulation** slot (`question-value-overtime-fixed` beyond it); value ∈ `match.answerValues` (`question-value-not-allowed`); q not voided (`question-value-voided`); q not yet answered (`question-value-locked`). Sets the slot's value (D11) |
 | `voidQuestion` | q | q in range (retracts answer points per D3) |
 | `substituteQuestion` | q, value | q voided first (D4) |
 | `substituteQuizzer` | team, outIndex, benchIndex | swaps a SEATED quizzer (`outIndex`) with a BENCH quizzer (`benchIndex`) — during or after a time-out, and **no one need be out**. The entrant takes the outgoing quizzer's **seat**, so the seated order (Red 1, Red 2, …) is preserved with the replacement in place. Both keep their points; the roster order is stable so every recorded answer stays attributed to its quizzer (D7). Rejected when `outIndex` is on the bench, `benchIndex` is seated, or the entrant is out. `benchIndex` is a roster index. |
@@ -135,7 +171,9 @@ quizmaster may override reality — the journal records what was recorded).
 
 ## View-model (`RoundView`, serves Modern + Classic)
 
-Shared reads: `questionValues`, `scoreOf(team)`, per-quizzer
+Shared reads: `questionValues` (`List<int?>`, null = unset), `questionValueEditable(n)`
+(a regulation, unvoided, unanswered slot — the value picker enables on it),
+`scoreOf(team)`, per-quizzer
 `score/correct/incorrect/fouls/status/active`, `selected` (view-local),
 `canUndo/undoLabel`, notifications (quiz-out/strike-out/foul-out,
 time-out/challenge limit warnings), per-question marks, timeouts taken,

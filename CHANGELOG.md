@@ -9,6 +9,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Question-set value guardrails** (schema decision **D12**) — advisory, never
+  blocking. The rulebooks fix the value distribution (TBQ eight 10s/nine
+  20s/three 30s; JBQ ten/seven/three) and, for JBQ, how the set may be arranged
+  (≥3 twenties and ≥1 thirty in each half, no 30 first or last, no consecutive
+  30s — JBQ Match Guidelines §3a–d). The keeper can still enter any value, but
+  `collectNotices` now raises a one-time notice (`value-count`, `value-at-end`,
+  `value-consecutive`, `value-half-minimum`) when the entered set breaks a
+  stipulation, surfaced through the normal fire-once / undo / resume machinery
+  from `RoundController.setQuestionValue`.
+  - Constraints are ruleset-as-data: new `match.valueRules`
+    (`noValueAtEnds`, `noConsecutiveValues`, `halfMinimums`), present for
+    `jbq-2026`, absent for `tbq-25-26` (counts only). Checks read regulation
+    slots only (overtime is exempt) and judge the per-half minimums only once a
+    half is fully assigned.
+
+- **Live per-question point values** (schema decision **D11**). The rulebooks
+  fix a value *distribution* (TBQ eight 10s/nine 20s/three 30s; JBQ
+  ten/seven/three) but **no per-question order**, so the built-in 20-slot
+  `pointValues` sequence is gone. A regulation question now starts **unset**
+  and the keeper sets its value as the question is read:
+  - New journaled `QuestionValueEvent` (autosave / undo / refold); the engine
+    rejects an answer on an unset question (`question-value-unset`), locks the
+    value once the question is answered (`question-value-locked`), and only
+    accepts a value in the ruleset's `answerValues`
+    (`question-value-not-allowed`). Overtime slots keep their rule value and
+    are read-only (`question-value-overtime-fixed`); a voided slot takes its
+    value from the substitute (`question-value-voided`).
+  - `RoundView.questionValues` is now `List<int?>` (null = unset) with a new
+    `questionValueEditable(n)` read; `RoundController.setQuestionValue(n, v)`
+    surfaces rejections as an alert.
+  - **UI:** the Modern navigator gains a point-value sub-row and the Classic
+    ledger column headers carry each question's value; both (and the live
+    header's `N PTS` / `SET VALUE` badge) open the same **anchored popup menu**
+    over the ruleset's allowed values. Unset questions are visibly `set`; the
+    scoring console reads `BLOCKED — Set the point value for Qn first` until a
+    value is assigned.
+  - **Ruleset schema v2:** `match.pointValues` (sequence) → `match.answerValues`
+    (allowed set) + `match.valueCounts` (distribution, shown on the setup
+    card). Both built-in presets (`tbq-25-26`, `jbq-2026`) updated; the
+    per-question order is no longer encoded. Saved rounds are unaffected (the
+    journal carries no point values).
+
 - **Accessibility + haptics pass** — haptics are now **opt-in and off by
   default** (`HapticsController`/`HapticsScope`, persisted per device, toggle
   button beside the theme switch on every screen), so a fresh install can

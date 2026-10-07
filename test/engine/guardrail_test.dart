@@ -16,11 +16,19 @@ Ruleset loadTbq() => Ruleset.fromJson(
       as Map<String, Object?>,
 );
 
+/// A representative TBQ value list so the D10 guardrail checks are reached
+/// before the D11 "value unset" check (tests that need a specific value pass
+/// one).
+const kTbqValues = <int>[
+  10, 20, 10, 20, 30, 10, 20, 10, 20, 20, //
+  30, 20, 10, 20, 10, 20, 30, 10, 20, 10,
+];
+
 RoundView fresh({List<int>? values}) => RoundView(
   ruleset: loadTbq(),
   redLabels: const ['Red 1', 'Red 2'],
   greenLabels: const ['Green 1', 'Green 2'],
-  questionValues: values,
+  questionValues: values ?? kTbqValues,
 );
 
 AnswerEvent ans(Side side, int qi, {required bool correct, int q = 1}) =>
