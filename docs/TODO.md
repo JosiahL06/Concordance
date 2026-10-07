@@ -206,7 +206,16 @@
 - [x] Desktop identity metadata unified to "Concordance" (Windows `VERSIONINFO`,
       Windows/Linux window titles, AGPL-3.0-only copyright)
 
-## Phase 6 — Final verification and v1 release
+## Phase 6 — Beta release prep
+- [x] Branded app launcher icons (Android/Windows/macOS) via flutter_launcher_icons
+- [x] Linux `.desktop` entry + hicolor icon (installed via `linux/CMakeLists.txt`)
+- [x] In-app About dialog (version + AGPL-3.0-only notice + license list)
+- [x] Community health files (SECURITY.md, CODE_OF_CONDUCT.md, issue/PR templates)
+- [x] README disclaimer (unaffiliated; not for official matches yet)
+- [x] Removed dead `lib/prototype/`; reframed `docs/design/interaction.md`
+- [x] `.clinerules/` untracked (kept local only; gitignored)
+- [x] Version set to `1.0.0-beta`; CHANGELOG `[1.0.0-beta]` cut
+- [ ] Publish the `v1.0.0-beta` GitHub Release (signed APK + desktop bundles + SHA256SUMS)
 - [ ] Installation, setup, and touch verification pass on a real tablet
 - [ ] Live match test; verify that a new user can keep up with a live game and scorekeep accurately
 - [ ] Public release of v1.0.0
@@ -215,8 +224,8 @@
 - [ ] Global edit/undo dialogue: selective journal edit (change/delete any
       entry + refold) — needs new `RoundView` API + persistence + conflict
       surface; single-step undo + `undoLabel` covers v1 mis-taps
-- [ ] Add settings page accessible from inside a live-game: change rule set, change theme/color,
-      etc
+- [ ] Add settings page accessible from inside a live-game: change rule 
+      set, change theme/color, etc
 
 ### Deferred (requires accounts / public repo)
 - [ ] **Windows Authenticode** via SignPath Foundation (free, OV-level) — apply
@@ -230,5 +239,5 @@
       Application cert + `ENABLE_HARDENED_RUNTIME = YES` (currently ad-hoc
       `CODE_SIGN_IDENTITY = "-"`), then `codesign` → `notarytool submit --wait`
       → `stapler staple` in CI (App Store Connect API key as secrets)
-- [ ] Optional: GitHub artifact attestations (free for public repos only)
+- [ ] GitHub artifact attestations (free for public repos only)
 - [ ] Submit release binaries to AV vendors for false-positive whitelisting

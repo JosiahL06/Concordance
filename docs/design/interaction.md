@@ -1,27 +1,23 @@
-# Concordance — Interaction Spec (Phase 1 → Phase 3 contract)
+# Concordance — Screens & Interaction Spec
 
-Tap-flow contract for the live-scoring prototype. Describes what the
-built screens DO (verified against `lib/prototype/`); Phase 3 replaces
-`FakeRound` with the engine + `RoundView` without changing these flows.
+Tap-flow contract for the shipped app (`lib/views/`). Describes what each
+screen does; the live views are thin layouts over the shared engine view-model
+(`RoundView`), so the flows below are the same for both.
 
 ## 1. Navigation graph
 
-`PrototypeHome` → `SetupScreen(demo: false|true)` → `DirectionAScreen`
-or `DirectionBScreen` → `SummaryScreen(round)`.
+`HomeScreen` → `SetupScreen` → `ModernScreen` or `ClassicScreen` →
+`SummaryScreen`.
 
-- Home has START A NEW ROUND (fresh, Q1 zeros) and "Load demo round
-  (mid-match)" (seeded Q13-in-progress, same ruleset logic as live play).
-- Both go through setup so ruleset tabs + view pick are in every flow.
-- Setup `_start` pushes the chosen live screen; Summary pushes on top of
-  the live screen; Summary "Done" pops until the first route (home).
-- System back from a live screen returns to setup; the round object is
-  discarded (Phase 3: autosave makes this a resume instead).
-- Production home's "Resume round" list each row taps to resume and carries a
-  delete affordance that first asks for confirmation (a mis-tap must not lose
-  a round silently).
-- A live screen's header carries a back button that returns to the starting
-  screen (Home); every ruling autosaves, so leaving mid-match is safe and the
-  round resumes from Home.
+- Home starts a new round or resumes a previously saved one.
+- Setup picks the ruleset, teams, quizzers, and live-view variant, then pushes
+  the chosen live screen; Summary is pushed on top of the live screen and its
+  "Done" pops back to Home.
+- Home's "Resume round" list: each row resumes a saved round and carries a
+  delete affordance that asks for confirmation first (a mis-tap must not lose a
+  round silently).
+- A live screen's header carries a back button that returns to Home; every
+  ruling autosaves, so leaving mid-match is safe and the round resumes from Home.
 
 ## 2. Global principles (locked)
 
@@ -34,7 +30,7 @@ Silent by default: the app never plays audio (all Material
 so a fresh install cannot distract an official match; live screens also cap
 OS text scaling at 1.3× to protect the no-scroll layout.
 
-## 3. Setup flow (`setup_screen.dart`)
+## 3. Setup flow (`lib/views/setup_screen.dart`)
 
 - Ruleset tabs in the AppBar load the REAL presets
   (`assets/rulesets/tbq-25-26.json`, `jbq-2026.json`); tab switch updates
@@ -52,16 +48,13 @@ OS text scaling at 1.3× to protect the no-scroll layout.
   (uncapped when the book sets no roster max). Bench quizzers are named the
   same way and start behind the table.
 - View pick cards: Modern ("Split-field team halves") vs Classic
-  ("Paper-style scoresheet ledger"). Start button label is dynamic:
-  "START ROUND" fresh, "START DEMO ROUND" demo (demo shows a banner:
-  a Q13-in-progress match is loaded; JBQ shows no quiz-out chip because
-  its threshold is 6 — proof thresholds come from the preset).
+  ("Paper-style scoresheet ledger"). Start button reads "START ROUND".
 
 ## 4. Live scoring — shared console contract
 
-Applies identically to Modern `_scoringZone` and Classic `_console`.
+Applies identically to Modern and Classic.
 
-| Tap | Source | FakeRound → future engine event | Result |
+| Tap | Source | Engine event | Result |
 |---|---|---|---|
 | Quizzer card / label cell | team half / ledger label | `select` (view-local, NOT journaled; no-op on inactive; re-tap deselects) | Enables CORRECT / INCORRECT / quizzer FOUL |
 | CORRECT | console (needs selection) | `markCorrect` → `AnswerEvent(q, side, index, correct)` | `+value`; correct++; quiz-out check (5/TBQ, 6/JBQ) adds bonus + flag + alert; advances to next Q, clears selection, repaints immediately; forbidden by the D10 guardrails (console disables the button + shows the reason) when the quizzer or their team already answered Q, or Q already has a correct answer |
@@ -89,7 +82,7 @@ The same blocked path covers D11: until the current question's point value is
 set, CORRECT/INCORRECT are disabled and the status line reads `BLOCKED — Set
 the point value for Qn first`.
 
-## 5. Modern specifics (`direction_a_screen.dart`)
+## 5. Modern specifics (`lib/views/modern_screen.dart`)
 
 Split field: red left / green right, team band (live total) + quizzer
 cards (score, C/I/F counts, status chip) + TAP TO SCORE affordance on the
@@ -105,7 +98,7 @@ question.
 `matchComplete` swaps the console for: result text + "Add overtime
 question" (tie only) + "View summary".
 
-## 6. Classic specifics (`direction_b_screen.dart`)
+## 6. Classic specifics (`lib/views/classic_screen.dart`)
 
 Ledger grid geometry: 20×48 + 140 label + 64 total = 1164dp, fits 1280
 (shrinks only for overtime columns). Title row per team: name, `TEAM FOUL n`
@@ -151,10 +144,9 @@ guards void/substitute state).
   Position column (`seat N` / `bench`), so a rotated-out quizzer's points stay
   on the sheet.
 
-## 8. Summary (`summary_screen.dart`)
+## 8. Summary (`lib/views/summary_screen.dart`)
 
-Result banner (WINNER/TIE + tabular score + ruleset/demo tag), team cards
+Result banner (WINNER/TIE + tabular score + ruleset tag), team cards
 (score, time-outs, challenges, per-quizzer breakdown), individual results
 table, question-by-question review (cells + INTERRUPTED/CONTESTED tags),
-PDF/CSV buttons show "available in the full app" (prototype-inert),
-Done returns home.
+PDF/CSV export buttons (share sheet via `share_plus`), Done returns home.

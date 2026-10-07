@@ -1,8 +1,7 @@
 # Concordance
 
-An offline, touch-first **scorekeeper for Bible Quiz matches** — a clean,
-modern replacement for the official app, built to be intuitive and usable
-within seconds of picking it up.
+A clean, modern **scorekeeping app for Bible Quiz matches**, built to be
+intuitive and usable within seconds of picking it up.
 
 Concordance runs **one round** of scoring on a tablet, completely offline, 
 with built-in presets for the Assemblies of God **Teen Bible Quiz (TBQ)** 
@@ -10,12 +9,18 @@ and **Junior Bible Quiz (JBQ)** rulebooks.
 
 Currently working and tested on: Android / Fire tablet · Windows · Linux · macOS
 
+> **Disclaimer:** Concordance is an independent community project and is **not
+> affiliated with, endorsed by, or associated with Bible Quiz** or any of its
+> organizing bodies. It is **not for official use** — please do not
+> rely on it as the scorekeeper of record for official matches. Personal,
+> practice, and unofficial use is welcome.
+
 ## Contents
 
 - [What is this?](#what-is-this)
 - [Screenshots](#screenshots)
 - [Features](#features)
-- [Install](#install)
+- [Installation](#installation)
 - [Quick start](#quick-start)
 - [Configuring rulesets](#configuring-rulesets)
 - [Development](#development)
@@ -32,12 +37,11 @@ Points are awarded for correct answers and deducted for incorrect ones, and
 individual quizzers can "quiz out," "strike out," or "foul out." Somebody has to
 keep score — accurately, live, and fast.
 
-That somebody is usually a volunteer, and the existing digital tools are clunky
+Many existing digital tools for keeping track of scores during a match are clunky
 enough that most people wish they just had the familiar paper scoresheet instead.
-Concordance is built for that person: **big buttons, one-tap scoring, an obvious undo**,
+Concordance is designed for those people: **big buttons, one-tap scoring, an obvious undo**,
 and everything the paper scoresheet records (interruptions, contests, time-outs, fouls)
-captured digitally. It's designed to be handed off to a volunteer scorekeeper
-and used without any training, making scorekeeping **easier**, not harder.
+captured digitally. It's meant to make scorekeeping **easier**, not harder.
 
 The app never makes a sound, works with no internet, and saves every entry,
 so a tablet crash, dead battery, or Wi-Fi outage mid-match will never
@@ -55,18 +59,18 @@ lose the game.
   undo for every mis-tap.
 - **Two live-scoring views** — *Modern* (a split-field layout) and *Classic* (a
   recognizable scoresheet ledger). Pick per device or per round.
-- **Automatic alerts** — quiz-out, strike-out, and foul-out notify you so you
-   never have to track them manually.
-- **Rulesets for everyone** — TBQ and JBQ ship as built-in presets.
+- **Automatic alerts** — quiz-out, strike-out, and foul-outs appear as 
+   notifications so you never have to track them manually.
+- **One app for both programs** — Both TBQ and JBQ rules are built-in as presets.
 - **Autosave & resume** — every action is written to disk immediately; a round
   survives an app kill or reboot, mid-match.
 - **PDF/CSV export** — a readable round summary you can save or share.
 - **Offline & silent** — no network, no accounts, no telemetry; the app plays no
   audio (haptics are opt-in and off by default), so it never distracts a match.
-- **Light and dark mode** — follows the system theme; light red/green tints keep the
-  two teams distinguishable at a glance regardless.
+- **Light and dark mode** — follows the system theme; light red/green tints keep 
+   the two teams distinguishable at a glance regardless.
 
-## Install
+## Installation
 
 ### Android / Fire tablet (recommended)
 
@@ -125,13 +129,13 @@ The full schema and the decisions behind it are documented in
 ## Development
 
 Built with [Flutter](https://flutter.dev) (stable); see
-[CONTRIBUTING.md](CONTRIBUTING.md) for the full toolchain, build, test, and
+[CONTRIBUTING.md](docs/CONTRIBUTING.md) for the full toolchain, build, test, and
 release-signing details.
 
 ## Contributing
 
 Concordance is still in active development so contributions are welcome! Please read
-[CONTRIBUTING.md](CONTRIBUTING.md) for the development environment, testing standard,
+[CONTRIBUTING.md](docs/CONTRIBUTING.md) for the development environment, testing standard,
 and release process.
 
 ## Bug Reports/Feature Requests
@@ -140,7 +144,7 @@ Open an [issue](https://github.com/JosiahL06/Concordance/issues/new) in the Gith
 
 ## License
 
-[GNU Affero General Public License v3.0](LICENSE).
+[GNU Affero General Public License, version 3 only](LICENSE) (AGPL-3.0-only).
 
 ## Acknowledgements
 

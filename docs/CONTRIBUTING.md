@@ -4,7 +4,7 @@ Thanks for your interest in Concordance! This document covers everything a
 developer needs: the toolchain, how to build and test, how releases are cut and
 signed, and the working agreement for changes.
 
-For what the app *is* and how to *use* it, see the [README](README.md).
+For what the app *is* and how to *use* it, see the [README](/README.md).
 
 ## Contents
 
@@ -44,7 +44,10 @@ flutter build macos              # only builds on a Mac with Xcode
   and links GTK, so it needs `clang` plus `cmake`, `ninja`, `pkg-config` and
   `libgtk-3-dev`. Do **not** override `CC`/`CXX`; the Flutter tool overwrites
   them. If a stale `build/linux/.../CMakeCache.txt` was generated under a
-  different toolchain, delete `build/linux` and rebuild.
+  different toolchain, delete `build/linux` and rebuild. The build also installs
+  a `.desktop` entry and a hicolor app icon into the bundle's `share/` tree
+  (`linux/org.concordance.app.desktop`, `linux/icons/...`) so a packaged
+  install integrates with the desktop launcher.
 - **macOS** — the `macos/` Xcode runner is committed and configured (bundle id
   `org.concordance.app`, landscape-tablet default window, sandboxed no-network
   entitlements), but `flutter build macos` **only runs on a Mac with Xcode**.
@@ -100,7 +103,7 @@ Two architecture commitments underpin everything:
    (scores, question progression, quiz-out/strike-out/foul-out) is *derived* by
    folding events. This makes undo/correction trivial and rules testable.
 2. **Ruleset-as-data.** Everything that varies between rulebooks lives in a
-   JSON config (`docs/ruleset-schema.md`); the engine is ruleset-agnostic.
+   JSON config (`docs/design/ruleset-schema.md`); the engine is ruleset-agnostic.
    New rulebooks = new JSON, never engine forks. If a rule can't be expressed,
    extend the **schema**, never fork the engine.
 

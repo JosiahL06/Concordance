@@ -1,0 +1,18 @@
+Concordance
+Copyright (C) 2026 Josiah Laakkonen <Josiah.Laakkonen6@gmail.com>
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, version 3 only (AGPL-3.0-only). The full license text is
+in the LICENSE file.
+
+Concordance is an independent, community project and is not affiliated with,
+endorsed by, or associated with Bible Quiz or any of its organizing bodies.
+
+The scoring rules encoded in the built-in presets are derived from the
+Assemblies of God Teen Bible Quiz and Junior Bible Quiz rulebooks,
+© My Healthy Church, licensed for local church use only. The rulebook documents
+are not part of this repository.
+
+Third-party software is listed in pubspec.lock; each dependency is distributed
+under its own license (also available in the app via About → View licenses).

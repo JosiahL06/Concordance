@@ -11,6 +11,7 @@ import '../engine/ruleset.dart';
 import 'classic_screen.dart';
 import 'modern_screen.dart';
 import 'setup_screen.dart';
+import 'common/about_button.dart';
 import 'common/haptics_toggle.dart';
 import 'common/theme_toggle.dart';
 
@@ -96,7 +97,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Concordance'),
-        actions: const [ThemeToggleButton(), HapticsToggleButton()],
+        actions: const [
+          ThemeToggleButton(),
+          HapticsToggleButton(),
+          AboutButton(),
+        ],
       ),
       body: Center(
         child: ConstrainedBox(

@@ -1,8 +1,9 @@
 name: concordance
-description: "Concordance - a touch-first, offline scorekeeper for Bible Quiz rounds (Android/Windows/Linux)."
+description: "Concordance - a touch-first, offline scorekeeper for Bible Quiz rounds (Android/Windows/Linux/macOS)."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+repository: https://github.com/JosiahL06/Concordance
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -16,7 +17,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.0-beta+1
 
 environment:
   sdk: ^3.13.5
@@ -42,10 +43,15 @@ dependencies:
   pdf: ^3.10.8
   csv: ^6.0.0
   share_plus: ^10.1.2
+  package_info_plus: ^8.1.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  # Generates the platform launcher icons (Android/Windows/macOS) from
+  # assets/icon/app_icon.png — see the flutter_launcher_icons section below.
+  flutter_launcher_icons: ^0.14.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -95,3 +101,21 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Generates the platform launcher/app icons from a single 1024x1024 master
+# (assets/icon/app_icon.png). Regenerate with:
+#   dart run flutter_launcher_icons
+# The master PNG is a build-time asset only and is NOT bundled in the app.
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 24
+  adaptive_icon_background: "#37474F"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  windows:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+    icon_size: 256
+  macos:
+    generate: true
+    image_path: "assets/icon/app_icon.png"

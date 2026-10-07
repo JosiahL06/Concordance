@@ -126,3 +126,15 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
   install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
 endif()
+
+# Install the desktop entry and app icon so a system installation integrates
+# with the desktop launcher (icon + menu entry). Both land under the install
+# prefix's share/ tree, so they are also included in the Linux release tarball.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/org.concordance.app.desktop"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}/share/applications"
+  COMPONENT Runtime)
+install(FILES
+  "${CMAKE_CURRENT_SOURCE_DIR}/icons/hicolor/512x512/apps/org.concordance.app.png"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/512x512/apps"
+  COMPONENT Runtime)
+

@@ -1,0 +1,56 @@
+name: Bug report
+description: Report a problem with Concordance
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report! Please remember
+        Concordance is in **beta** and is not yet intended for official matches.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to '...'
+        2. Tap '...'
+        3. See error
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Concordance version
+      description: Shown in the About dialog (info icon on the home screen).
+      placeholder: e.g. 1.0.0-beta
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Android / Fire tablet
+        - Windows
+        - Linux
+        - macOS
+    validations:
+      required: true
+  - type: dropdown
+    id: ruleset
+    attributes:
+      label: Ruleset in use
+      options:
+        - Teen Bible Quiz (TBQ)
+        - Junior Bible Quiz (JBQ)
+        - Not applicable / unsure
+    validations:
+      required: false

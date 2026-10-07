@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Concordance
+GenericName=Bible Quiz Scorekeeper
+Comment=An offline, touch-first scorekeeper for Bible Quiz rounds
+Exec=concordance
+Icon=org.concordance.app
+Terminal=false
+Categories=Education;
+Keywords=bible;quiz;scorekeeper;scoring;
+StartupNotify=true
+StartupWMClass=org.concordance.concordance

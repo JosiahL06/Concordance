@@ -32,6 +32,11 @@ secrets/
 .env.*
 !.env.example
 
+# ── Project-specific: internal dev notes ──────────────────────
+# Local development rules / assistant notes. Kept on disk for the
+# maintainer but never published; not part of the public repository.
+.clinerules/
+
 # ── Project-specific: release artifacts ───────────────────────
 # CI-built APKs/installers are downloaded from GitHub Releases,
 # not committed here.

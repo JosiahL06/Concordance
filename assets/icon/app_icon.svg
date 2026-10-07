@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Concordance launcher icon: a bold "C" monogram on the brand seed color.
+       The C is a stroked circle with a dash gap rotated so the opening faces
+       right (3 o'clock). -->
+  <rect width="1024" height="1024" rx="184" ry="184" fill="#37474F"/>
+  <circle cx="512" cy="512" r="288" fill="none" stroke="#FFFFFF"
+          stroke-width="128" stroke-linecap="round"
+          stroke-dasharray="1300 510" transform="rotate(51 512 512)"/>
+</svg>

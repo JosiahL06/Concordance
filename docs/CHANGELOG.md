@@ -7,19 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- **Docs: README rewritten for newcomers.** The README is now an end-user-first
-  welcome (what the app is, screenshots, features, install, quick start,
-  ruleset configuration) instead of a development roadmap. All developer, CI,
-  and release-signing/trust content moved to a new `CONTRIBUTING.md`; added
-  `docs/screenshots/` (setup, Modern + Classic live views, summary) captured on
-  the `fire_hd_10` emulator. No code changes.
-
-## [1.0.0-beta]
+## [1.0.0-beta] - 2026-10-07
 
 ### Added
 
+- **Branded app launcher icons** for Android, Windows, and macOS, generated
+  from a single master via `flutter_launcher_icons` (replacing the stock
+  Flutter template icons).
+- **In-app About dialog** (info button on the home screen) showing the app
+  name, version (via `package_info_plus`), and the AGPL-3.0-only notice, with
+  the bundled license list.
+- **Community health files**: `SECURITY.md`, `CODE_OF_CONDUCT.md` (Contributor
+  Covenant 2.1), GitHub issue forms (bug / feature request), and a pull
+  request template.
+- **Linux desktop integration**: a `linux/org.concordance.app.desktop` entry and
+  a hicolor app icon, installed into the bundle's `share/` tree by
+  `linux/CMakeLists.txt` (and therefore included in the Linux release tarball).
 - **Question-set value guardrails** (schema decision **D12**) — advisory, never
   blocking. The rulebooks fix the value distribution (TBQ eight 10s/nine
   20s/three 30s; JBQ ten/seven/three) and, for JBQ, how the set may be arranged
@@ -101,8 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Primary-target configuration for the Amazon Fire HD 10 (2023): landscape
   1920×1200, Android 11 / API 30 baseline, GMS-free dependency policy, and a
   matching `fire_hd_10` test emulator.
-- Project documentation: README (setup & platforms), TODO roadmap, and
-  development rules in `.clinerules/`.
+- Project documentation: README (setup & platforms) and a TODO roadmap.
 - License: GNU Affero General Public License v3.0 only (AGPL-3.0-only).
 
 - **Dual-mode live-scoring prototype** (`lib/prototype/`): Direction A
@@ -193,6 +195,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Pre-beta cleanup.** Repository prepared for a public beta:
+  - Added a prominent disclaimer to the README (independent project; **not
+    affiliated with Bible Quiz**; not yet ready for use by official
+    scorekeepers in official matches).
+  - Bumped the version to `1.0.0-beta`.
+  - **Removed the dead `lib/prototype/` code** (a parallel prototype UI no
+    longer imported by the app or tests) and reframed
+    `docs/design/interaction.md` as the shipped-screens spec.
+  - Untracked the internal `.clinerules/` notes so they are no longer part of
+    the public repository (still kept locally and `.gitignore`d).
+  - `pubspec.yaml`: added macOS to the description and a `repository` field;
+    corrected the README license line to AGPL-3.0-only.
+  - Added a `NOTICE` file (project copyright + attribution) and a Linux
+    `.desktop` entry + hicolor icon (`linux/org.concordance.app.desktop`,
+    installed via `linux/CMakeLists.txt`). The `LICENSE` file itself is left as
+    the unmodified AGPL-3.0 text.
 - **Docs: README rewritten for newcomers.** The README is now an end-user-first
   welcome (what the app is, screenshots, features, install, quick start,
   ruleset configuration) instead of a development roadmap. All developer, CI,
