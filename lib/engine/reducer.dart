@@ -119,7 +119,12 @@ FoldResult applyEvent(Ruleset ruleset, RoundState state, RoundEvent event) {
       q.answers.clear();
       return FoldResult.ok(state);
     case QuestionValueEvent():
-      return questionValueFold(ruleset, state, event.questionNumber, event.value);
+      return questionValueFold(
+        ruleset,
+        state,
+        event.questionNumber,
+        event.value,
+      );
     case SubstituteQuestionEvent():
       return substituteQuestionFold(state, event.questionNumber, event.value);
     case SubstituteQuizzerEvent():

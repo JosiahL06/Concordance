@@ -39,7 +39,10 @@ Future<void> pump(WidgetTester tester, Widget screen) async {
   final theme = ThemeController(prefs);
   addTearDown(theme.dispose);
   await tester.pumpWidget(
-    ThemeScope(notifier: theme, child: MaterialApp(home: screen)),
+    ThemeScope(
+      notifier: theme,
+      child: MaterialApp(home: screen),
+    ),
   );
   await tester.pumpAndSettle();
 }
@@ -55,10 +58,7 @@ void main() {
     expect(find.text('SET VALUE'), findsOneWidget);
     await tester.tap(find.text('Red 1'));
     await tester.pumpAndSettle();
-    expect(
-      find.textContaining('Set the point value for Q1'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('Set the point value for Q1'), findsOneWidget);
     expect(round.markCorrect(), isFalse); // engine-side guard
 
     // Set Q1 to 30 from the navigator's value sub-row (the first "set" cell).

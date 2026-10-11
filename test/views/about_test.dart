@@ -26,6 +26,9 @@ void main() {
     expect(find.text('Concordance'), findsOneWidget);
     expect(find.text('v1.0.0-beta'), findsOneWidget);
     expect(find.textContaining('AGPL-3.0-only'), findsOneWidget);
-    expect(find.textContaining('Not affiliated with Bible Quiz'), findsOneWidget);
+    expect(
+      find.textContaining('Not affiliated with Bible Quiz'),
+      findsOneWidget,
+    );
   });
 }

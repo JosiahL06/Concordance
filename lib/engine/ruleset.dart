@@ -132,7 +132,8 @@ class MatchConfig {
       regulationQuestions: json['regulationQuestions'] as int,
       answerValues: ([for (final v in values) v.toInt()]..sort()),
       valueCounts: {
-        for (final e in counts.entries) int.parse(e.key): (e.value as num).toInt(),
+        for (final e in counts.entries)
+          int.parse(e.key): (e.value as num).toInt(),
       },
       valueRules: json['valueRules'] == null
           ? const ValueRules()

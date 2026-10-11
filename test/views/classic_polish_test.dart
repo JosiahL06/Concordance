@@ -128,10 +128,9 @@ void main() {
     // The score mark survives alongside the foul.
     expect(find.text('+10'), findsOneWidget);
     final cellBox = tester.getRect(
-      find.ancestor(
-        of: find.text('+10'),
-        matching: find.byType(Container),
-      ).first,
+      find
+          .ancestor(of: find.text('+10'), matching: find.byType(Container))
+          .first,
     );
     final scoreBox = tester.getRect(find.text('+10'));
     final badgeBox = tester.getRect(find.text('F'));
@@ -187,9 +186,8 @@ void main() {
     await pumpClassic(tester, round);
 
     // No selection yet: no primary-bordered cell.
-    final scheme = Theme.of(
-      tester.element(find.byType(ClassicScreen).first),
-    ).colorScheme;
+    final scheme = Theme.of(tester.element(find.byType(ClassicScreen).first))
+        .colorScheme;
     bool hasPrimaryBorder() {
       var found = false;
       for (final e in find.byType(Container).evaluate()) {
@@ -197,8 +195,7 @@ void main() {
         final decoration = widget.decoration;
         if (decoration is BoxDecoration && decoration.border is Border) {
           final border = decoration.border as Border;
-          if (border.top.color == scheme.primary &&
-              border.top.width == 3) {
+          if (border.top.color == scheme.primary && border.top.width == 3) {
             found = true;
             break;
           }
@@ -211,8 +208,11 @@ void main() {
 
     round.select(Side.red, 0);
     await tester.pumpAndSettle();
-    expect(hasPrimaryBorder(), isTrue,
-        reason: 'Red 1 x Q1 intersect should highlight');
+    expect(
+      hasPrimaryBorder(),
+      isTrue,
+      reason: 'Red 1 x Q1 intersect should highlight',
+    );
   });
 
   testWidgets('console blocks and explains a guarded answer (D10)', (

@@ -345,10 +345,11 @@ class _SetupScreenState extends State<SetupScreen> {
     // No built-in per-question order (D11): show the book's value distribution
     // so the keeper knows what to expect, but each question's value is set
     // live during the round.
-    final dist = (r.match.valueCounts.entries.toList()
-          ..sort((a, b) => a.key.compareTo(b.key)))
-        .map((e) => '${e.value}\u00d7${e.key}')
-        .join(', ');
+    final dist =
+        (r.match.valueCounts.entries.toList()
+              ..sort((a, b) => a.key.compareTo(b.key)))
+            .map((e) => '${e.value}\u00d7${e.key}')
+            .join(', ');
     final challenge = r.challengeKind == ChallengeKind.contest
         ? 'Contests'
         : "Coach's Appeals";
