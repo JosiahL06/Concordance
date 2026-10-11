@@ -2391,12 +2391,16 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>Release notes now come from the changelog and point to the versioned wiki.</strong>
   The <code>release</code> job in <code>.github/workflows/build.yml</code> no longer uses GitHub's
   auto-generated <code>generate_release_notes</code> (a PR/commit summary). It now checks
-  out the repo, extracts the matching <code>## [&lt;version&gt;]</code> section from
-  <code>docs/CHANGELOG.md</code>, and builds the release body from a short pointer to the
-  <strong>versioned</strong> installation guide
-  (<code>https://josiahl06.github.io/Concordance/&lt;version&gt;/installation/</code>) followed by
-  that version's full changelog. A <code>v*</code> tag with no matching changelog section
-  <strong>fails</strong> the job instead of publishing incomplete notes.</li>
+  out the repo and builds a short release body with two pointers into the
+  <strong>versioned</strong> wiki: the
+  <a href="https://josiahl06.github.io/Concordance/&lt;version&gt;/installation/">installation guide</a>
+  and the
+  <a href="https://josiahl06.github.io/Concordance/&lt;version&gt;/changelog/">full changelog</a>
+  for that version — so the download assets stay above the fold instead of
+  sitting below a long inlined changelog. The job still verifies the tag has a
+  matching <code>## [&lt;version&gt;]</code> section in <code>docs/CHANGELOG.md</code> and <strong>fails</strong> if it
+  is missing, so a release can never point at a changelog page with no such
+  version.</li>
 </ul>
 <h2 id="100-beta2-2026-10-11">[1.0.0-beta.2] - 2026-10-11<a class="headerlink" href="#100-beta2-2026-10-11" title="Permanent link">&para;</a></h2>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
