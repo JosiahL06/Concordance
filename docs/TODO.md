@@ -259,8 +259,10 @@
       then bump; once Zensical is 1.x and proven across a release cycle or
       two, drop `mkdocs-material` from `requirements-docs.txt` and delete the
       fallback notes in its header / `.clinerules/toolchain-and-commands.md`
-- [ ] Write out the documentation content (the new pages are currently
-      outlines with the structure and facts-to-verify recorded inline)
+- [x] Write out the documentation content — every wiki page is now finished
+      prose (home, getting started, per-device installation, the user guide,
+      rulesets, reference, explanations, and troubleshooting/FAQ), written in a
+      plain voice for a volunteer scorekeeper
 - [ ] Capture per-OS installation screenshots (Fire HD 10 from the
       `fire_hd_10` emulator; Windows/macOS on those machines)
 - [ ] Enable Pages on the GitHub repo (Settings → Pages → Source: **Deploy

@@ -1,31 +1,59 @@
 # macOS
 
-<!-- OUTLINE (docs pass): type = HOW-TO. Artifact: concordance-macos.zip
-     (a zipped .app). Unsigned + unnotarized → Gatekeeper blocks it.
-     This page is important: the double-click failure looks like a broken app
-     to a non-technical user, so lead with the fix. -->
+The Mac version is a normal app you drag into your Applications folder. The only
+tricky part is the first launch, which macOS blocks until you tell it the app is
+safe. This page covers both.
 
-## Outline
+## Which Mac you need
 
-1. **Which Mac** — Apple silicon vs Intel: the CI build is a single artifact;
-   state exactly what it contains (universal vs arm64-only — confirm from the
-   build workflow before publishing this page) and what Rosetta means if the
-   user is on the other architecture.
-2. **Download** `concordance-macos.zip` from the Releases page and unzip it.
-3. **Move it to Applications** — drag `Concordance.app` there, because running
-   it from Downloads trips Gatekeeper on every launch.
-4. **First launch (unsigned app)** — the warning "cannot be opened because the
-   developer cannot be verified"; give both paths:
-   - right-click (or Control-click) the app → **Open** → **Open** again, and
-   - the `xattr -dr com.apple.quarantine /Applications/Concordance.app`
-     terminal one-liner, with a plain-language explanation of what it does.
-5. **Why this happens** — the build is unsigned/unnotarized; notarization needs
-   a paid Apple Developer account (link the roadmap/security notes).
-6. **Uninstalling** — drag to Trash plus where the round database lives.
+The download is built for Apple silicon Macs — the ones with an M1 chip or
+newer. On an older Intel Mac the app will not open, because the download
+contains only the Apple silicon version. Support for Intel Macs is something a
+future release may add.
 
-!!! note
-    Screenshots must be captured on an actual Mac — this machine cannot run
-    `flutter build macos` (see the toolchain notes).
+## 1. Download and unzip it
+
+Download `concordance-macos.zip` from the project's
+[Releases page](https://github.com/JosiahL06/Concordance/releases), then
+double-click the zip file to unzip it. You get an app called
+**Concordance.app**.
+
+## 2. Move it into Applications
+
+Drag **Concordance.app** into your **Applications** folder. If you leave it in
+your Downloads folder, macOS will make you step past a warning every single time
+you open it.
+
+## 3. Open it for the first time
+
+macOS will refuse the first launch, with a message such as *"Concordance.app
+cannot be opened because the developer cannot be verified."* This is macOS being
+careful about an app it does not recognise. There are two ways past it:
+
+- **Right-click (or Control-click) the app**, choose **Open**, then click
+  **Open** again in the box that appears.
+- Or open the **Terminal** app and run this line:
+
+  ```sh
+  xattr -dr com.apple.quarantine /Applications/Concordance.app
+  ```
+
+  It tells macOS to stop treating the app as an unknown download. You only need
+  to do this once.
+
+## 4. Why the warning appears
+
+The Mac version is not signed or notarized by Apple. Notarizing an app requires
+a paid Apple developer account, which the project does not have yet. Until then,
+the steps above are the way in — and after that first launch, the app behaves
+like any other.
+
+## 5. Uninstalling
+
+Drag **Concordance.app** from Applications to the Trash. Your saved rounds are
+not kept inside the app, so remove those too if you want them gone. See
+[Data & storage](../reference/data-and-storage.md) and
+[Updating & uninstalling](updating-and-uninstalling.md).
 
 ## Related
 

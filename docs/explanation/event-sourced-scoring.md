@@ -1,32 +1,45 @@
 # Event-sourced scoring
 
-<!-- OUTLINE (docs pass): type = EXPLANATION.
-     Explains the single most important engineering decision in the app in
-     plain language: rulings are recorded as events, and the scoreboard is
-     *derived* by replaying them. Then explain the user-visible consequences:
-     exact undo, crash-proof resume, auditable history, and why corrections
-     re-evaluate notices instead of patching numbers. -->
+This page explains the most important idea behind the app, in plain terms.
 
-## Outline
+## The idea
 
-- **The idea** — a round is a list of things that happened (a correct answer on
-  question 7 by seat 3, a foul on question 9, a time-out). Scores, quiz-out
-  flags and alerts are *computed* from that list, never stored as the truth.
-- **Consequence 1 — undo is exact.** Undoing removes the event and recomputes;
-  there is no "subtract the same number again" guesswork, so a quiz-out bonus
-  disappears together with the answer that caused it.
-- **Consequence 2 — a crash costs nothing.** The list is written to disk as it
-  happens; reopening replays it and lands on exactly the same screen.
-- **Consequence 3 — rules stay testable.** Because the engine folds events
-  without knowing about screens, rule scenarios are unit-tested against the
-  rulebooks (this is where the golden tests come from).
-- **Consequence 4 — the paper-sheet marks fall out naturally.** Interruptions,
-  contests, fouls and voids are all just events with marks.
-- **What this is not** — it is not a database of totals, and undoing is not
-  "editing history": the journal keeps what actually happened.
-- Keep it to ~400 words; the audience is a curious volunteer or new
-  contributor, not an engineer reading an architecture doc (that content lives
-  in the design notes).
+A round is a list of the things that happened: a correct answer on question 7 by
+the quizzer in seat 3, a foul on question 9, a time-out for the Red team. The
+scores, the quiz-out flags, and the notices are all worked out *from* that list.
+The list is the truth; the numbers on the screen are a summary of it.
+
+## Why undo is exact
+
+Because the scores are worked out from the list, undoing something means taking
+it out of the list and working the scores out again. There is no guesswork about
+how much to subtract to put things back. If you undo a correct answer that had
+quizzed a quizzer out, the bonus was only ever there because of that answer, so
+it disappears with it and the quizzer's totals come out right again.
+
+## Why a crash never loses data
+
+The list is written down as it grows. If the app closes unexpectedly, opening it
+again reads the list back and works out the very same scores, on the very same
+question. Everything that was on the screen is still there.
+
+## Why the scoresheet marks come so naturally
+
+Interruptions, contests, fouls, and voids are just more items in the list.
+Because the app already knows what happened on every question, drawing the
+paper-like marks on the navigator is simply a matter of reading the list back.
+
+## What this is not
+
+The app does not store a running total and nudge it up and down. It stores what
+happened and works the total out. Undo is not "editing history" either: the list
+is a record of what you recorded, and undo removes the most recent entry.
+
+## Where to go next
+
+If you only want to know what to do when you make a mistake, read
+[Undo & corrections](../guide/undo-and-corrections.md). For the technical
+description aimed at people working on the code, see the design notes.
 
 ## Related
 

@@ -1,29 +1,56 @@
 # Recovering a round
 
-<!-- OUTLINE (docs pass): type = TROUBLESHOOTING. The most emotionally
-     important page in the wiki: a scorekeeper believes they lost a match.
-     Lead with "you almost certainly haven't", then the actual steps.
-     Keep the guarantees honest: anything already on screen was written. -->
+**First: do not panic, and do not uninstall the app.** Everything you had
+already recorded was written to the device. Opening the app again is safe, and
+uninstalling would remove the very thing you are trying to save.
 
-## Outline
+## The round is not on the home screen
 
-- **First, don't panic and don't uninstall.** Everything already recorded is on
-  disk; opening the app again is safe.
-- **The round isn't on Home** — check for a saved round under Resume, and
-  whether you are looking at a *new* round; explain how a round is identified.
-- **The app crashed / the tablet died mid-match** — reopen, resume; the state
-  is rebuilt from the journal, including undo history (link the guide page).
-- **The app will not start at all** — platform-specific steps
-  (reinstall over the top; on Android installing a newer APK over the old one
-  keeps app data — but a *different signing key* forces an uninstall, which
-  deletes it: say so clearly).
-- **The last tap is missing** — what to do: re-enter the ruling; explain that a
-  write in flight is atomic, so you will never see a half-applied ruling.
-- **Starting a fresh copy without losing the old one** — how to record the
-  score you can see and carry on (there is no import feature; be honest).
-- **Reporting it** — the exact details to capture *before* touching anything
-  further, with a link to the issue template. If the data is genuinely
-  important, say plainly: stop, export nothing, open an issue.
+Look through the **Resume round** list carefully. Each saved round is labelled
+with its two team names, so look for the names you used. If you see a different
+set of names, you may be looking at the list just after starting a new round —
+the earlier one should still be there too.
+
+## The app closed, or the tablet ran out of battery
+
+Open the app and resume the round from the home screen. The scores are worked
+out again from everything you recorded, including your undo history, so you
+land on the same screen with the same numbers. See
+[Autosave & recovery](../guide/autosave-and-recovery.md).
+
+## The app will not open at all
+
+- **Android / Fire:** install the app again over the top of the old one. As long
+  as it is the same app from the same source, your rounds are kept. Installing
+  an app that was signed by a *different* key forces Android to remove the old
+  one first, and that deletes your rounds — so only install the official
+  download.
+- **Windows and Linux:** your rounds are not stored inside the app's folder, so
+  replacing or re-extracting that folder does not touch them.
+- **macOS:** replacing the app in Applications does not touch your rounds
+  either.
+
+## The last tap is missing
+
+If the very last thing you recorded is gone, the app closed in the moment
+between your tap and the change being written down. Re-enter that one ruling and
+carry on. You will never see a ruling half-applied, because each change is saved
+in one piece.
+
+## Continuing without the old round
+
+There is no way to bring a round in from a file. If you need to carry on from a
+score you can see but cannot reopen, start a new round, set the scores up as
+they were, and continue from there. Be aware that the old round's history stays
+with the old round.
+
+## If the round really matters
+
+If a round is important and it will not open, stop before you do anything else.
+Do not uninstall the app, and do not delete any rounds. Then open an issue on
+the [project's issues page](https://github.com/JosiahL06/Concordance/issues) and
+describe what happened. Include the app version (from the **About** button),
+your device, and what you saw.
 
 ## Related
 

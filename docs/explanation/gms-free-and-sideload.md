@@ -1,28 +1,47 @@
 # GMS-free & sideload-only
 
-<!-- OUTLINE (docs pass): type = EXPLANATION.
-     Explains why "download an APK and tap it" is the normal install path for
-     this app rather than a hack, and what that means for the user. -->
+This page explains why you install Concordance by downloading a file and opening
+it, rather than from an app store. In short: the tablet this app is built for
+does not have the usual store on it.
 
-## Outline
+## The target device has no Google Play
 
-- **The target device has no Google Play services** — Amazon Fire tablets run
-  Fire OS, which has no Play Store and no Google APIs; the app and every
-  library it uses are deliberately GMS-free so this is a supported target, not
-  a compromise.
-- **What "sideload" actually means** — installing an APK from a trusted source
-  instead of a store; the device warns you once, and that warning is expected.
-- **Why not publish to stores?** — the store question, the account/review cost,
-  and that the project would rather ship an offline tool directly than depend
-  on a store account for something this small (also note the AGPL-3.0-only
-  licensing stance).
-- **What you give up** — automatic updates; you install each new release
-  yourself (link to Updating), and the app does not check for updates (it never
-  goes online).
-- **Trust model** — releases are checksummed and the APK is signed with a
-  project keystore; verification is how you confirm a download.
-- **Other devices are first-class too** — Windows/Linux/macOS bundles exist for
-  practice and desktop use.
+The tablet Concordance is made for runs Amazon's own version of Android, called
+Fire OS. It has no Play Store and none of Google's other services. The app, and
+every part it uses, is built to work without them — so a Fire tablet is a
+supported target, not a compromise.
+
+## What "sideloading" means
+
+Sideloading just means installing an app from a file you obtained yourself,
+rather than from a store. Your device warns you the first time you do it,
+because it cannot vouch for where the file came from. That warning is normal,
+and each install page shows you exactly what to tap.
+
+## Why not publish to an app store?
+
+Publishing to app stores brings ongoing account and review costs, and for a
+small offline tool that did not seem like the right trade. The project would
+rather hand you the app directly. Concordance is also open source under a
+license (AGPL-3.0-only) that some stores make awkward to distribute.
+
+## What you give up
+
+You install each new version yourself, because the app never checks for updates
+— it never goes online. See
+[Updating & uninstalling](../installation/updating-and-uninstalling.md).
+
+## Trusting a download
+
+Every release comes with a list of codes so you can confirm a download is
+genuine, and the Android app file is signed by the project. That is how you tell
+a real download from a tampered one. See
+[Verifying your download](../installation/verifying-downloads.md).
+
+## Other devices work just as well
+
+Windows, Linux, and Mac builds exist for desktop use and practice. They use the
+same code as the tablet version.
 
 ## Related
 

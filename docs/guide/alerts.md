@@ -1,27 +1,71 @@
 # Alerts
 
-<!-- OUTLINE (docs pass): type = HOW-TO/reference hybrid: one section per
-     alert, each "when it fires → what it says → what you do".
-     Alerts are visual only — the app never plays audio — so screenshot them. -->
+**Goal:** know what each on-screen notice means, and whether you have to do
+anything about it.
 
-**Goal:** know what each on-screen notice means and whether you must act.
+## How alerts appear
 
-## To cover
+Alerts are the notices that appear just above the scoring console. They are
+plain text and they do not move — there is no flicker and no sound. Tap a notice
+to dismiss it; dismissing it only hides the notice, and it never changes the
+round.
 
-- **How alerts appear** — static banners/notices, no animation, no sound
-  (that is a feature; link the "never makes a sound" explanation).
-- **Quiz-out** — fires at the ruleset threshold (TBQ 5th correct, JBQ 6th),
-  includes the bonus; auto-detected, never toggled by hand.
-- **Strike-out** — third incorrect.
-- **Foul-out** — third foul.
-- **Notification limits** — the 4th team time-out and the unsuccessful-contest
-  threshold (TBQ 3rd / JBQ appeals limit).
-- **What an alert does NOT do** — it never changes the score by itself; every
-  point value still comes from a scoring action.
-- **Dismissing** — whether notices are dismissible and whether dismissing
-  hides them permanently (state it precisely; check the live screens).
-- Accessibility note: alerts are rendered as real text so TalkBack can
-  announce them; haptics are opt-in and off by default.
+Because the app does not make any sound, the notices are the only way it tells
+you something has happened. If you have a screen reader turned on, it reads the
+notice aloud like any other text.
+
+## The notices you will see
+
+### Quiz out
+
+Appears when a quizzer reaches the ruleset's number of correct answers — five in
+Teen Bible Quiz, six in Junior Bible Quiz. It includes the bonus that comes with
+quizzing out. You do not add anything yourself; the app works it out from the
+answers you have already recorded.
+
+### Strike out
+
+Appears on a quizzer's third incorrect answer.
+
+### Foul out
+
+Appears on a quizzer's third foul.
+
+### Time-out limit
+
+Appears when a team asks for a time-out past its limit — the fourth in
+regulation. The request is not counted, and the notice reminds you that a team
+foul is owed, which you record yourself.
+
+### Contest or appeal limit
+
+Appears when a team reaches its allowance — the third unsuccessful contest in
+Teen Bible Quiz, or its final appeal in Junior Bible Quiz. After that, further
+challenges from that team are refused.
+
+### A tied match
+
+Appears when the last regulation question leaves the match level. An overtime
+question is added, and you carry on scoring.
+
+### A value notice
+
+Appears when a point value breaks a rule of the ruleset — a thirty-point
+question at one end of a Junior Bible Quiz match, or two thirty-point questions
+in a row, for example. It is a heads-up only. Nothing is blocked, and the notice
+returns if you undo the value and enter it again.
+
+## What an alert never does
+
+A notice does not change a score by itself. Every point — including the quiz-out
+bonus — comes either from a scoring action you make or from the rulings already
+recorded. The notice is there to tell you what happened, not to do it for you.
+
+## Dismissing a notice
+
+Tap a notice to make it go away. Dismissing it does not undo anything and does
+not change the round, and the same notice can appear again later if the same
+situation comes up again.
 
 ## Related
 

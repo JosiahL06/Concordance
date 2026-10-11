@@ -1,27 +1,51 @@
 # Updating & uninstalling
 
-<!-- OUTLINE (docs pass): type = HOW-TO, per platform. Short sections.
-     Key facts to verify before writing:
-       * Android/Fire: install the new APK over the old one (same signing key
-         required — the release keystore); rounds live in app data, so they
-         survive an update but NOT an uninstall.
-       * Desktop: replace the folder; the round database lives in the OS's
-         per-user app-data directory, so it survives replacing the bundle. -->
+Your saved rounds are kept outside the app itself, so an update keeps them and
+uninstalling deletes them. For where they are kept, see
+[Data & storage](../reference/data-and-storage.md).
 
-## Outline
+## Android and Fire tablets
 
-- **Where your rounds live** (one sentence, linking to Data & storage) —
-  updating keeps them, uninstalling deletes them.
-- **Android / Fire** — download the newer APK and install it over the existing
-  app; note the "App not installed" signature-mismatch case (debug build vs
-  release build) and how to fix it (uninstall the debug build first).
-- **Windows** — extract the new zip over the old folder (or replace it);
-  your rounds are stored outside the app folder.
-- **Linux** — same, replace `bundle/`.
-- **macOS** — replace the `.app` in Applications; re-do the Gatekeeper
-  right-click-Open step because the quarantine flag is re-applied.
-- **Uninstalling** — per platform, plus an explicit warning + a "back up first"
-  note (export a PDF/CSV of any round you care about before uninstalling).
+**To update:** download the newer `app-release.apk` and install it over the app
+that is already there. Your rounds are kept.
+
+If you see **"App not installed"** during an update, it usually means the copy
+already on the device came from a different build. Uninstall the old app first,
+then install the new one — but note that uninstalling also deletes your rounds,
+so save anything you need first.
+
+**To uninstall:** press and hold the app icon and choose **Uninstall**, or go to
+**Settings → Apps**, find Concordance, and uninstall it there.
+
+## Windows
+
+**To update:** download the new zip, extract it, and let it replace the old
+folder. Your rounds are stored elsewhere, so they are not affected.
+
+**To uninstall:** delete the folder.
+
+## Linux
+
+**To update:** extract the new archive and replace the old `bundle` folder with
+the new one.
+
+**To uninstall:** delete the `bundle` folder.
+
+## macOS
+
+**To update:** download the new zip, unzip it, and drag the new
+**Concordance.app** into Applications, replacing the old one. Because macOS
+marks every download as unknown, you will need to repeat the right-click
+**Open** step from the [macOS page](macos.md) after updating.
+
+**To uninstall:** drag the app to the Trash, then remove its data folder if you
+also want your rounds gone — see [Data & storage](../reference/data-and-storage.md).
+
+## Before you uninstall
+
+Uninstalling removes your saved rounds along with the app. If a match matters to
+you, save it first as a PDF or a spreadsheet file — see
+[Match summary](../guide/match-summary.md).
 
 ## Related
 

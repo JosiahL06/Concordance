@@ -23,9 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `.github/workflows/wiki.yml` builds and deploys on pushes to `main`
   (GitHub-only, like the other workflows), and `ci.yml` gained a `docs` job
   running `zensical build --strict`, so a broken link or a page missing from
-  the nav fails the PR. The rendered site (`site/`) is gitignored. The pages
-  are currently outlines — structure, facts to verify, and screenshots to
-  capture are recorded inline — rather than finished prose.
+  the nav fails the PR. The rendered site (`site/`) is gitignored. Every wiki
+  page is now written as finished prose — home, getting started, per-device
+  installation, the user guide, rulesets, reference, explanations, and
+  troubleshooting/FAQ — in a plain voice aimed at a volunteer scorekeeper who
+  has never seen the app. Per-page screenshots are still to be captured for
+  some pages.
 - **Versioned documentation.** The wiki is now published as **side-by-side
   versions** using **mike** (the Zensical-compatible fork `squidfunk/mike`,
   pinned to a commit SHA in `requirements-docs.txt`). `mkdocs.yml` enables the

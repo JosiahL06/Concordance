@@ -1,25 +1,40 @@
 # Offline-only, no accounts
 
-<!-- OUTLINE (docs pass): type = EXPLANATION.
-     Audience question: "is this going to phone home, or need Wi-Fi at the
-     venue?" Answer: no, and here's why that is a design constraint rather
-     than a missing feature. -->
+**The question this answers:** will this app need the internet, or send anything
+about my match anywhere?
 
-## Outline
+## The choice
 
-- **The constraint**: v1 is one round, on one device, with no server. Not a
-  TODO — an architectural boundary (the official Bible Quiz database has no
-  public API, so "sync" was never on the table).
-- **What that buys you**: works in a gym with no signal; nothing to log into;
-  nothing to leak; a match cannot be interrupted by a captive portal.
-- **The cost**: rounds live on one device — share results by exporting a
-  PDF/CSV, not by syncing.
-- **Privacy in practice**: no analytics, no telemetry, no crash reporting, no
-  network permissions in the manifest.
-- **What "no accounts" means** for a club with several tablets: each device is
-  its own scorekeeper; nothing to configure.
-- A short note on why a future online version, if it ever exists, would still
-  keep the core loop offline.
+Concordance works on one device, with no server and no account. This is not a
+feature missing from the app that might arrive later — it is a boundary the app
+is built to keep. The official Bible Quiz records system does not offer a public
+way for another program to connect, so sharing scores online was never
+something the project could rely on.
+
+## What that gives you
+
+- It works without any signal at all.
+- There is nothing to sign in to.
+- There is nothing to leak, because nothing leaves the device.
+- A dropped connection or a hotel-style sign-in page cannot interrupt a match.
+
+## The cost
+
+A round lives on the one device it was recorded on. To share a result, save it
+as a PDF or a spreadsheet file and send that file. See
+[Match summary](../guide/match-summary.md).
+
+## Privacy in practice
+
+There is no usage tracking, no analytics, and no crash reports. The app does not
+even ask the device for permission to use the internet, so it cannot connect
+even by accident. See [Data & storage](../reference/data-and-storage.md) for
+exactly what is kept and where.
+
+## If an online version ever exists
+
+If the project ever adds an online way to share results, the main job of scoring
+a round on one device would stay offline.
 
 ## Related
 

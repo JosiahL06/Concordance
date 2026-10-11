@@ -1,27 +1,42 @@
 # Modern vs Classic
 
-<!-- OUTLINE (docs pass): type = EXPLANATION with a practical recommendation
-     at the end ("try both, keep what the room reads best"). Screenshots of the
-     same round state in both views, side by side, are the whole point of this
-     page. -->
+Concordance has two ways to show the live screen. This page explains the
+difference and helps you choose.
 
-## Outline
+## Two ways to look at the same round
 
-- **Two ways to look at the same round** — Modern is a split-field layout built
-  for the table's shape; Classic is a scoresheet ledger that mirrors the paper
-  page the sport has used forever.
-- **They are not two apps** — both are thin layouts over the same engine
-  state, so switching views can never change a score or a ruling.
-- **How to tell them apart** at a glance (screenshot pair, annotated).
-- **Who tends to prefer which** — new volunteers vs veterans raised on the
-  paper sheet; the design brief behind Classic was "make it feel like the
-  scoresheet without being a scan of it".
-- **Choosing** — set a device default in Settings, override per round at Setup.
-- **The one behavioural difference worth knowing** — on Classic, ledger cells
-  navigate to a question; on both views, scoring happens only in the console.
-- **A note on future direction** — scoresheet mimicry is a fallback, not the
-  starting point; if either view proves confusing in the field it will be
-  revisited.
+- **Modern** splits the screen into two halves — red on the left, green on the
+  right — with a large card for each seated quizzer. It is built for the shape
+  of a tablet.
+- **Classic** shows a grid like the paper scoresheet: one row per quizzer, one
+  column per question.
+
+## They are not two apps
+
+Both are only two ways of showing the same round. Switching from one to the
+other can never change a score or a ruling, because the numbers are the same
+either way. That is why you can pick one for a round without any worry.
+
+## Telling them apart at a glance
+
+- If you see two large colored halves with a card per quizzer, you are on
+  **Modern**.
+- If you see a grid of rows and columns with question numbers across the top,
+  you are on **Classic**.
+
+## Who each is made for
+
+Modern is meant for newcomers; it strays from the traditional spreadsheet design
+so that everything in the app is large and easy to see and touch on a tablet screen.
+If you prefer the more familiar paper scoresheet, Classic is made for you, so that
+you don't have to relearn a whole layout to scorekeep a match.
+
+## Choosing
+
+You choose the layout on the setup screen when you start a round, and the app
+remembers your last choice for next time. To change the remembered default,
+just choose the other one at setup. See [Settings](../guide/settings.md). Changing the
+layout mid-round may be added in a future update.
 
 ## Related
 

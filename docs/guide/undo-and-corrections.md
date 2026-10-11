@@ -1,27 +1,47 @@
 # Undo & corrections
 
-<!-- OUTLINE (docs pass): type = HOW-TO + a short explanation of *why* it is
-     this way (the app is event-sourced, so undo is exact, not "approximately
-     reverse"). Keep the theory brief and link the explanation page. -->
+**Goal:** fix a mis-tap without disturbing anything else that has already
+happened.
 
-**Goal:** fix a mis-tap without disturbing anything else that has happened.
+## Where Undo is
 
-## To cover
+Undo is a large button in the bottom console, on both live screens. It is always
+on screen, never hidden behind a long press, and its label tells you what it is
+about to take back — for example, *UNDO — Red 2 correct*.
 
-- **Where Undo is** — prominent, always visible; ≥48 dp; never long-press-only.
-- **What Undo does** — rewinds the most recent ruling *and* the screen position
-  together, so the keeper is looking at the thing being undone.
-- **What Undo does not do** — it never edits history; it retracts an event and
-  re-evaluates derived state (scores, quiz-out/strike-out flags, notices).
-  This is why undoing a quiz-out also removes the bonus.
-- **Repeated undo** — how far back it goes (the whole round), and that it is
-  safe because rounds are saved as a journal.
-- **Correcting an old question** — the Classic ledger lets you navigate to a
-  past question and score it; explain that the question number is carried with
-  the ruling.
-- **When *not* to undo** — voiding/contesting a question is a different
-  procedure (link), not an undo.
-- Screenshots: before/after pair showing scores and the notice changing.
+## What Undo does
+
+Undo rewinds the most recent ruling. Two things happen together:
+
+- The ruling is taken back, and the scores, the quizzer's counts, and any
+  notices are worked out again from what is left.
+- The screen moves back to the question that ruling belonged to, so you are
+  looking at the thing you are changing.
+
+Undo is exact, not approximate. If you undo a correct answer that had quizzed a
+quizzer out, the quiz-out bonus goes away along with it, because the bonus only
+ever came from that answer. See
+[Event-sourced scoring](../explanation/event-sourced-scoring.md) for why.
+
+## Going further back
+
+Undo is not limited to the last tap. Press it again to step back one ruling at a
+time, right to the start of the round. Every ruling is kept in the round's saved
+history, so there is nothing you can spoil by going back.
+
+## Correcting an older question
+
+On the Classic screen you can move to a question other than the current one — tap
+its cell in the grid to go there, then score as usual. The ruling remembers which
+question it belongs to, so a correction lands on the right one. The question
+numbers and the value row help you confirm you are in the right place first.
+
+## When not to use Undo
+
+Undo takes back a *ruling*. It is not the way to throw out a question or to
+handle a contest — those have their own actions and buttons. If a question is
+voided and read again, that is a void, not an undo. See
+[Fouls, contests, interruptions & time-outs](fouls-contests-interruptions-timeouts.md).
 
 ## Related
 

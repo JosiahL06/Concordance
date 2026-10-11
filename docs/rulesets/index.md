@@ -1,33 +1,49 @@
 # Rulesets
 
-<!-- OUTLINE (docs pass): type = brief EXPLANATION index for the ruleset
-     section. Explain the ruleset-as-data idea in a few sentences and route to
-     the TBQ/JBQ pages and the schema.
-
-     COPYRIGHT GUARD: this section may state numeric rules and cite rule
-     numbers/sections, but must NOT reproduce rulebook prose. The PDFs are
-     licensed for local church use only and are never committed or published.
-     Always send readers to the official rulebooks for the rules themselves. -->
-
 **Goal:** understand how Concordance knows the rules, and which numbers are
 built in.
 
-## To cover
+## Rules as data, not code
 
-- **Ruleset-as-data** — question counts, point values, multipliers,
-  quiz-out/strike/foul limits and notification limits all live in a
-  configuration file, not in code; new seasons are new files, never app
-  updates to the engine.
-- **Two presets ship today**: [TBQ 25-26](tbq.md) and [JBQ 2026](jbq.md).
-  Older rulesets are never deleted, so a past season's round can still be
-  scored exactly as it was played.
-- **How a ruleset is selected** — per round, at setup.
-- **Where the numbers come from** — the official rulebooks; state clearly that
-  this wiki records only the numeric facts needed to score, and that the
-  rulebooks govern.
-- **Adding a ruleset** — point at the schema and the contributing guide; no
-  code changes required.
-- A short statement of the project's copyright policy for rule text.
+Everything that changes from one rulebook to another lives in a ruleset file
+rather than in the app's code. That means how many questions there are, what
+they are worth, how a correct answer is scored, how many wrong answers strike a
+quizzer out, and the limits on time-outs and challenges.
+
+Because of this, a new season is a new ruleset file, and the app does not need
+updating to score it. Rulesets are never removed, so a round from a past season
+can still be scored exactly the way it was played.
+
+## The two built-in rulesets
+
+- **Teen Bible Quiz** for the 2025-26 season → [TBQ preset](tbq.md)
+- **Junior Bible Quiz** for 2026 → [JBQ preset](jbq.md)
+
+## Choosing a ruleset
+
+You choose the ruleset when you set up a round, on the tabs at the top of the
+setup screen. The choice applies to that round.
+
+## Where the numbers come from
+
+The numbers in a ruleset come from the official rulebooks. This wiki records
+only the numbers needed to keep score — it does not restate the rules
+themselves. The official rulebooks are the authority, and where this wiki and a
+rulebook disagree, the rulebook wins.
+
+## A note on the rulebooks
+
+The rulebooks are copyrighted and licensed for local church use only. They are
+not copied into or published with this app or this wiki. What you will find here
+are the numbers the app needs, together with a pointer to the official book for
+the rules themselves.
+
+## Adding a ruleset
+
+A new ruleset is a single file, and no changes to the app are needed to support
+it. The format is described on the
+[Ruleset schema](../design/ruleset-schema.md) page, and the
+[contributing guide](../CONTRIBUTING.md) explains how to add one.
 
 ## Related
 
