@@ -7,13 +7,13 @@
   {
     "version": "1.0.0-beta.2",
     "title": "1.0.0-beta.2",
-    "aliases": []
+    "aliases": [
+      "latest"
+    ]
   },
   {
     "version": "v1.0.0-beta",
     "title": "v1.0.0-beta",
-    "aliases": [
-      "latest"
-    ]
+    "aliases": []
   }
 ]
