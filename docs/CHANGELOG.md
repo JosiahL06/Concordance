@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0-beta.2] - 2026-10-11
+## [1.0.0-beta.1] - 2026-10-11
 
 ### Added
 
@@ -154,6 +154,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   makes migration 2's rebuild correct by construction. When a migration has run,
   `PRAGMA foreign_key_check` validates the result and refuses to open on an
   orphan.
+- **Release notes now come from the changelog and point to the versioned wiki.**
+  The `release` job in `.github/workflows/build.yml` no longer uses GitHub's
+  auto-generated `generate_release_notes` (a PR/commit summary). It now checks
+  out the repo and builds a short release body with two pointers into the
+  **versioned** wiki: the
+  [installation guide](https://josiahl06.github.io/Concordance/&lt;version&gt;/installation/)
+  and the
+  [full changelog](https://josiahl06.github.io/Concordance/&lt;version&gt;/changelog/)
+  for that version — so the download assets stay above the fold instead of
+  sitting below a long inlined changelog. The job still verifies the tag has a
+  matching `## [<version>]` section in `docs/CHANGELOG.md` and **fails** if it
+  is missing, so a release can never point at a changelog page with no such
+  version.
 
 ## [1.0.0-beta] - 2026-10-07
 
