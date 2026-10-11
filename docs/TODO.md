@@ -265,11 +265,11 @@
       plain voice for a volunteer scorekeeper
 - [ ] Capture per-OS installation screenshots (Fire HD 10 from the
       `fire_hd_10` emulator; Windows/macOS on those machines)
-- [ ] Enable Pages on the GitHub repo (Settings → Pages → Source: **Deploy
+- [x] Enable Pages on the GitHub repo (Settings → Pages → Source: **Deploy
       from a branch** → `gh-pages` → `/ (root)`) — required once before the
       versioned deploy workflow can publish (the first `wiki.yml` run creates
       the `gh-pages` branch)
-- [ ] Publish the `v1.0.0-beta` GitHub Release (signed APK + desktop bundles + SHA256SUMS)
+- [x] Publish the `v1.0.0-beta` GitHub Release (signed APK + desktop bundles + SHA256SUMS)
 - [ ] Installation, setup, and touch verification pass on a real tablet
 - [ ] Live match test; verify that a new user can keep up with a live game and scorekeep accurately
 - [ ] Public release of v1.0.0

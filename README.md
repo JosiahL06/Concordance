@@ -48,18 +48,6 @@ The app never makes a sound, works with no internet, and saves every entry,
 so a tablet crash, dead battery, or Wi-Fi outage mid-match will never
 lose the game.
 
-## Documentation
-
-The full documentation — per-device installation guides, the user guide,
-ruleset details, and troubleshooting — is published at:
-
-**<https://josiahl06.github.io/Concordance/>**
-
-Its source is the [`docs/`](docs/) folder in this repository (built with
-Zensical, MkDocs Material's successor), so it is versioned and reviewed
-alongside the code. Preview it locally with `zensical serve`; see
-[CONTRIBUTING.md](docs/CONTRIBUTING.md) for the toolchain.
-
 ## Screenshots
 
 | Setup | Live scoring — Modern | Live scoring — Classic | Summary |
@@ -85,8 +73,8 @@ alongside the code. Preview it locally with `zensical serve`; see
 
 ## Installation
 
-Step-by-step per-device instructions (with screenshots) live in the
-documentation: **<https://josiahl06.github.io/Concordance/installation/>**.
+Step-by-step per-device instructions are in the
+project wiki: **<https://josiahl06.github.io/Concordance/installation/>**.
 The short version:
 
 ### Android / Fire tablet (recommended)
@@ -141,9 +129,12 @@ Future rulesets will be added as they are released; previous rulesets will never
 
 To support a custom ruleset, add a new JSON file — **no code changes**.
 The full schema and the decisions behind it are documented in
-[`docs/design/ruleset-schema.md`](docs/design/ruleset-schema.md) (also
-published as [Ruleset schema](https://josiahl06.github.io/Concordance/design/ruleset-schema/)
-on the documentation site).
+[`docs/design/ruleset-schema.md`](docs/design/ruleset-schema.md)
+
+## Documentation
+
+For more information — per-device installation guides, the user guide, 
+ruleset details, and troubleshooting — see the [project wiki](https://josiahl06.github.io/Concordance/)
 
 ## Development
 
