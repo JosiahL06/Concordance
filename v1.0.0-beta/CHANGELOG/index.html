@@ -1,0 +1,2952 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Offline, touch-first scorekeeper for Bible Quiz matches — Teen Bible Quiz (TBQ) and Junior Bible Quiz (JBQ) presets built in.">
+      
+      
+      
+        <link rel="canonical" href="https://josiahl06.github.io/Concordance/v1.0.0-beta/CHANGELOG/">
+      
+      
+        <link rel="prev" href="../CONTRIBUTING/">
+      
+      
+        <link rel="next" href="../design/interaction/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.69">
+    
+    
+      
+        <title>Changelog - Concordance</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.e15858d4.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.b27955a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="./.." title="Concordance" class="md-header__button md-logo" aria-label="Concordance" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Concordance
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Changelog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/JosiahL06/Concordance" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    JosiahL06/Concordance
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="./.." class="md-tabs__link">
+        
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../getting-started/first-match/" class="md-tabs__link">
+          
+  
+  Getting started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../installation/" class="md-tabs__link">
+          
+  
+  Installation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guide/set-up-a-match/" class="md-tabs__link">
+          
+  
+  User guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../rulesets/" class="md-tabs__link">
+          
+  
+  Rulesets
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/data-and-storage/" class="md-tabs__link">
+          
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../explanation/" class="md-tabs__link">
+          
+  
+  Explanation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../troubleshooting/" class="md-tabs__link">
+          
+  
+  Troubleshooting & FAQ
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+      
+    
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../CONTRIBUTING/" class="md-tabs__link">
+          
+  
+  Project
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="Concordance" class="md-nav__button md-logo" aria-label="Concordance" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    Concordance
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/JosiahL06/Concordance" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    JosiahL06/Concordance
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Getting started
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/first-match/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Your first match
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/tour/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tour of the screens
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Installation
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Installation
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Which download do I need?
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/fire-hd-10/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Amazon Fire HD 10
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/android/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Other Android devices
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/windows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Windows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/linux/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Linux
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/macos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  macOS
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/verifying-downloads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Verifying your download
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/updating-and-uninstalling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Updating & uninstalling
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  User guide
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  User guide
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/set-up-a-match/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Set up a match
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/scoring-answers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Score answers
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/undo-and-corrections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Undo & corrections
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/fouls-contests-interruptions-timeouts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Fouls, contests, interruptions & time-outs
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/alerts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Alerts
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/question-navigator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Question navigator
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/autosave-and-recovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Autosave & recovery
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/match-summary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Match summary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Rulesets
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Rulesets
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rulesets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rulesets/tbq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  TBQ preset
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rulesets/jbq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  JBQ preset
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../design/ruleset-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Ruleset schema
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Reference
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/data-and-storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Data & storage
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/release-artifacts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Release artifacts & checksums
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Explanation
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Explanation
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../explanation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Why Concordance works this way
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../explanation/offline-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Offline-only, no accounts
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../explanation/event-sourced-scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Event-sourced scoring
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../explanation/modern-vs-classic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Modern vs Classic
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../explanation/gms-free-and-sideload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  GMS-free & sideload-only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Troubleshooting & FAQ
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Troubleshooting & FAQ
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/install-and-launch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Install & launch problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/data-recovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Recovering a round
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  FAQ
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Project
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_9">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Project
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Changelog
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Changelog
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#unreleased" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [Unreleased]
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#100-beta2-2026-10-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [1.0.0-beta.2] - 2026-10-11
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[1.0.0-beta.2] - 2026-10-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Added
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Fixed
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Changed
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#100-beta-2026-10-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [1.0.0-beta] - 2026-10-07
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[1.0.0-beta] - 2026-10-07">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Added
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Changed
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Fixed
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../design/interaction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Screens & interaction design
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Code of conduct
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security policy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#unreleased" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [Unreleased]
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#100-beta2-2026-10-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [1.0.0-beta.2] - 2026-10-11
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[1.0.0-beta.2] - 2026-10-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Added
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Fixed
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Changed
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#100-beta-2026-10-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [1.0.0-beta] - 2026-10-07
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[1.0.0-beta] - 2026-10-07">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Added
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Changed
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Fixed
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+  
+
+
+<h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
+<p>All notable changes to this project will be documented in this file.</p>
+<p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>,
+and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="100-beta2-2026-10-11">[1.0.0-beta.2] - 2026-10-11<a class="headerlink" href="#100-beta2-2026-10-11" title="Permanent link">&para;</a></h2>
+<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Documentation site (wiki).</strong> Concordance now has a full documentation wiki
+  built from the tracked <code>docs/</code> folder and published to GitHub Pages at
+  <a href="https://josiahl06.github.io/Concordance/">https://josiahl06.github.io/Concordance/</a>. It is built with <strong>Zensical</strong>
+  (MkDocs Material's successor — same creators, MIT, reads the same
+  <code>mkdocs.yml</code> with the Material look kept via <code>variant: classic</code>);
+  <code>mkdocs-material</code> remains pinned as a fallback builder until Zensical is
+  past 1.0. <code>mkdocs.yml</code> defines a Diátaxis-style structure — getting started,
+  per-OS installation (Fire HD 10 side-load, Android, Windows, Linux, macOS,
+  checksum verification, updating/uninstalling), user guide, rulesets,
+  reference, explanations, and troubleshooting/FAQ — and
+  <code>requirements-docs.txt</code> pins the toolchain.
+  <code>.github/workflows/wiki.yml</code> builds and deploys on pushes to <code>main</code>
+  (GitHub-only, like the other workflows), and <code>ci.yml</code> gained a <code>docs</code> job
+  running <code>zensical build --strict</code>, so a broken link or a page missing from
+  the nav fails the PR. The rendered site (<code>site/</code>) is gitignored. Every wiki
+  page is now written as finished prose — home, getting started, per-device
+  installation, the user guide, rulesets, reference, explanations, and
+  troubleshooting/FAQ — in a plain voice aimed at a volunteer scorekeeper who
+  has never seen the app. Per-page screenshots are still to be captured for
+  some pages.</li>
+<li><strong>Versioned documentation.</strong> The wiki is now published as <strong>side-by-side
+  versions</strong> using <strong>mike</strong> (the Zensical-compatible fork <code>squidfunk/mike</code>,
+  pinned to a commit SHA in <code>requirements-docs.txt</code>). <code>mkdocs.yml</code> enables the
+  version selector with <code>extra.version.provider: mike</code>. <code>wiki.yml</code> publishes a
+  <code>v*</code> tag as <code>&lt;version&gt;</code> plus the <code>latest</code> alias (making <code>latest</code> the default
+  so <code>/</code> redirects there), a <code>main</code> push as the moving <code>dev</code> version, and an
+  explicit <code>version</code> via manual dispatch. Deployment moved from the GitHub
+  Pages Actions to a <strong><code>gh-pages</code> branch</strong> that mike commits and pushes (Pages
+  source must be "Deploy from a branch" → <code>gh-pages</code> → <code>/ (root)</code>); the fork is
+  a transitional shim until Zensical ships native versioning. mike builds
+  through <code>zensical</code>, so the <code>exclude: *.pdf</code> guard still keeps the rulebook
+  PDFs unpublished.</li>
+<li><strong>The rulebook PDFs can no longer reach the published wiki.</strong> Both MkDocs
+  (before this change) and Zensical copied the gitignored <code>docs/*.pdf</code> files —
+  the two rulebook PDFs, licensed for local church use only, plus the
+  CC-By <code>free-paper-scoresheet.pdf</code> — into <code>site/</code>, and <code>wiki.yml</code> deployed
+  <code>site/</code> wholesale, so they would have been publicly redistributed by the
+  Pages deploy. A <code>plugins: exclude:</code> entry with a <code>*.pdf</code> glob in <code>mkdocs.yml</code>
+  now keeps them out of the build output (Zensical does not honor <code>.gitignore</code>
+  the way MkDocs did, so the glob is load-bearing); <code>.gitignore</code> carries a
+  comment warning not to remove it.</li>
+<li><strong>Autosave failures are now visible instead of silent.</strong> A new persistent
+  warning strip (<code>SaveErrorBar</code>, shared by both live views via <code>NoticeSlot</code>)
+  appears while <code>RoundController.saveError</code> is set: <code>NOT SAVING - this round is
+  only in memory and will be lost if the app closes.</code> It deliberately has no
+  dismiss button, so a keeper cannot hide the one signal that the round is not
+  on disk, and it clears itself once a save succeeds. Scoring stays enabled
+  throughout — the round is still playable, it is just not durable.</li>
+<li><strong>Durability and concurrency pragmas at open.</strong> File-backed databases now open
+  in <code>journal_mode = WAL</code> with <code>synchronous = NORMAL</code> and a 5000 ms
+  <code>busy_timeout</code>; foreign keys are enforced (<code>PRAGMA foreign_keys = ON</code>), so
+  <code>events.round_id REFERENCES rounds(id)</code> is a real constraint rather than a
+  comment, and <code>close()</code> runs <code>PRAGMA optimize</code>.</li>
+<li><code>RoundStore.pragmaInt(name)</code> for on-device diagnostics; per-connection settings
+  such as <code>synchronous</code> and <code>foreign_keys</code> are invisible to any other connection,
+  so they cannot be inspected through a second handle.</li>
+<li><code>lib/app/timestamps.dart</code>: <code>parseTimestamp</code> / <code>formatTimestamp</code>, rendering a
+  saved round's start time as <code>10 Oct 2026, 14:23</code> in the keeper's local time.</li>
+<li><strong>Versioned schema migrations.</strong> <code>RoundStore</code> now tracks <code>PRAGMA
+  user_version</code> and applies ordered, transactional migrations on open
+  (<code>RoundStore.schemaVersion</code> + <code>_migrations</code>); a database written by a newer
+  build is refused with a clear error instead of being read incorrectly. The
+  ad-hoc <code>_ensureBenchColumns</code> is now migration 1, and <code>openAt()</code> was split out
+  of <code>open()</code> so a database can be opened by path (tests, desktop tooling).
+  Migration 2 rebuilds <code>events</code> as <code>WITHOUT ROWID</code> with <code>ON DELETE CASCADE</code>;
+  migration 3 normalises <code>created_at</code> to UTC.</li>
+<li><strong>Space reclamation.</strong> New databases use <code>PRAGMA auto_vacuum = INCREMENTAL</code>, so
+  pages freed by deleted rounds and undone events go on a free list instead of
+  the file growing forever, and <code>RoundStore.reclaimSpace()</code> hands them back to
+  the OS. A database created by an earlier build is converted on first open
+  (one-time <code>VACUUM</code>); <code>deleteRound</code> reclaims as part of deleting.</li>
+</ul>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>.gitignore</code>: the <code>reference/</code> rule was unanchored</strong>, so it also ignored the
+  new <code>docs/reference/</code> documentation section (any directory named <code>reference</code>
+  at any depth). The rule is now <code>/reference/</code>, matching only the root-level
+  third-party study material it was written for; <code>/.clinerules/</code> was anchored
+  the same way for the same reason.</li>
+<li><strong>Autosave could lose an entire round if the app was killed mid-save.</strong> Every
+  scoring change rewrote the round's journal — <code>DELETE</code> every event row, then
+  re-insert them one at a time — and with each statement auto-committing, a kill
+  between the delete and the re-inserts left the journal empty or half-written.
+  That is exactly the failure autosave exists to prevent (locked decision 4), and
+  the window recurred on every single tap. Writes are now <strong>delta</strong> writes inside
+  one <code>BEGIN IMMEDIATE</code> transaction: a scoring tap appends one row, an undo
+  deletes one row, and a failed save rolls back to the previous journal.</li>
+<li><code>RoundStore.deleteRound</code> now removes the round row and its journal in a single
+  transaction, so an interrupted delete can no longer orphan events.</li>
+<li><strong>A failed autosave could desync the screen from the engine and double-score a
+  ruling.</strong> <code>RoundController._saved()</code> called the autosave hook <em>before</em>
+  <code>notifyListeners()</code>, so a throw from SQLite (disk full, read-only volume,
+  <code>database is locked</code>) escaped <code>apply()</code>/<code>undo()</code> after the engine had already
+  accepted the event — the scores changed but the screen never repainted. The
+  keeper would see nothing happen, tap again, and score twice. The hook is now
+  wrapped: failures are recorded in <code>RoundController.saveError</code>, notified like any
+  other change, and shown in the live chrome.</li>
+<li><strong>A database written by a newer build is no longer modified before being
+  refused.</strong> The version guard now runs first, ahead of <code>VACUUM</code> and the
+  <code>journal_mode</code> switch, so an unreadable file is left exactly as it was found.</li>
+<li><strong>Saved rounds no longer display a raw ISO timestamp.</strong> The resume list showed
+  <code>tbq-25-26 · 2026-10-10T14:23:45.123456</code> verbatim; it now reads
+  <code>tbq-25-26 · 10 Oct 2026, 14:23</code>.</li>
+</ul>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>RoundStore</code> gained <code>transaction()</code> and <code>saveJournal(roundId, journal,
+  persistedCount)</code>. The live screens track how many events are already on disk
+  and write only the difference, which also removes the per-row <code>MAX(seq)</code> scan
+  and the full-table rewrite on every tap. Resuming seeds that count from the
+  replayed journal. <code>appendEvent</code>/<code>truncateTo</code> remain as the single-row
+  primitives.</li>
+<li><strong><code>created_at</code> is stored as UTC with a <code>Z</code> suffix</strong> (<code>DateTime.now().toUtc()</code>
+  instead of <code>DateTime.now()</code>). A naive local timestamp is not comparable across
+  devices and changes meaning silently when the device's zone or DST changes.
+  Migration 3 normalises existing rows by <em>interpreting</em> the stored local time as
+  UTC — the offset it was written in was never recorded and cannot be recovered,
+  so this is a deliberate, documented, pre-1.0-only shift.</li>
+<li><strong><code>events</code> is now a <code>WITHOUT ROWID</code> table</strong> (migration 2). <code>PRIMARY KEY
+  (round_id, seq)</code> is not an INTEGER PRIMARY KEY, so SQLite was storing the table
+  as a rowid B-tree <em>plus</em> a separate <code>sqlite_autoindex</code> B-tree for the key —
+  every event written twice, with the key stored twice. One B-tree keyed by
+  <code>(round_id, seq)</code> now serves the journal's only access pattern
+  (<code>WHERE round_id = ? ORDER BY seq</code>), a contiguous range scan.</li>
+<li><strong><code>deleteRound</code> is a single statement.</strong> <code>events</code> now carries <code>ON DELETE
+  CASCADE</code>, so the child rows go with the round instead of being deleted
+  explicitly first.</li>
+<li><strong>WAL replaces the rollback journal for file-backed databases.</strong> Autosave runs
+  on the UI isolate on every scoring tap, and the old <code>journal_mode = delete</code> +
+  <code>synchronous = FULL</code> defaults paid a journal-file create/write/fsync/delete/
+  fsync cycle per tap. WAL makes each commit one sequential append, and <code>NORMAL</code>
+  keeps the fsync off the tap path. Durability trade-off: WAL + <code>NORMAL</code> survives
+  app kill and process crash (what locked decision 4 requires); only power loss or
+  an OS-level crash can drop the most recent commits. <code>_synchronousNormal</code> in
+  <code>RoundStore</code> is the single constant to raise to <code>FULL</code> if that window ever
+  matters more than the tap latency.</li>
+<li>Migrations now run with foreign keys <strong>off</strong>, and enforcement is enabled only
+  afterwards. SQLite's documented table-rebuild procedure requires enforcement to
+  be off while a table is rebuilt, and <code>PRAGMA foreign_keys</code> is a no-op inside a
+  transaction — so enabling it last, rather than toggling per migration, is what
+  makes migration 2's rebuild correct by construction. When a migration has run,
+  <code>PRAGMA foreign_key_check</code> validates the result and refuses to open on an
+  orphan.</li>
+</ul>
+<h2 id="100-beta-2026-10-07">[1.0.0-beta] - 2026-10-07<a class="headerlink" href="#100-beta-2026-10-07" title="Permanent link">&para;</a></h2>
+<h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Branded app launcher icons</strong> for Android, Windows, and macOS, generated
+  from a single master via <code>flutter_launcher_icons</code> (replacing the stock
+  Flutter template icons).</li>
+<li><strong>In-app About dialog</strong> (info button on the home screen) showing the app
+  name, version (via <code>package_info_plus</code>), and the AGPL-3.0-only notice, with
+  the bundled license list.</li>
+<li><strong>Community health files</strong>: <code>SECURITY.md</code>, <code>CODE_OF_CONDUCT.md</code> (Contributor
+  Covenant 2.1), GitHub issue forms (bug / feature request), and a pull
+  request template.</li>
+<li><strong>Linux desktop integration</strong>: a <code>linux/org.concordance.app.desktop</code> entry and
+  a hicolor app icon, installed into the bundle's <code>share/</code> tree by
+  <code>linux/CMakeLists.txt</code> (and therefore included in the Linux release tarball).</li>
+<li><strong>Question-set value guardrails</strong> (schema decision <strong>D12</strong>) — advisory, never
+  blocking. The rulebooks fix the value distribution (TBQ eight 10s/nine
+  20s/three 30s; JBQ ten/seven/three) and, for JBQ, how the set may be arranged
+  (≥3 twenties and ≥1 thirty in each half, no 30 first or last, no consecutive
+  30s — JBQ Match Guidelines §3a–d). The keeper can still enter any value, but
+  <code>collectNotices</code> now raises a one-time notice (<code>value-count</code>, <code>value-at-end</code>,
+  <code>value-consecutive</code>, <code>value-half-minimum</code>) when the entered set breaks a
+  stipulation, surfaced through the normal fire-once / undo / resume machinery
+  from <code>RoundController.setQuestionValue</code>.</li>
+<li>
+<p>Constraints are ruleset-as-data: new <code>match.valueRules</code>
+    (<code>noValueAtEnds</code>, <code>noConsecutiveValues</code>, <code>halfMinimums</code>), present for
+    <code>jbq-2026</code>, absent for <code>tbq-25-26</code> (counts only). Checks read regulation
+    slots only (overtime is exempt) and judge the per-half minimums only once a
+    half is fully assigned.</p>
+</li>
+<li>
+<p><strong>Live per-question point values</strong> (schema decision <strong>D11</strong>). The rulebooks
+  fix a value <em>distribution</em> (TBQ eight 10s/nine 20s/three 30s; JBQ
+  ten/seven/three) but <strong>no per-question order</strong>, so the built-in 20-slot
+  <code>pointValues</code> sequence is gone. A regulation question now starts <strong>unset</strong>
+  and the keeper sets its value as the question is read:</p>
+</li>
+<li>New journaled <code>QuestionValueEvent</code> (autosave / undo / refold); the engine
+    rejects an answer on an unset question (<code>question-value-unset</code>), locks the
+    value once the question is answered (<code>question-value-locked</code>), and only
+    accepts a value in the ruleset's <code>answerValues</code>
+    (<code>question-value-not-allowed</code>). Overtime slots keep their rule value and
+    are read-only (<code>question-value-overtime-fixed</code>); a voided slot takes its
+    value from the substitute (<code>question-value-voided</code>).</li>
+<li><code>RoundView.questionValues</code> is now <code>List&lt;int?&gt;</code> (null = unset) with a new
+    <code>questionValueEditable(n)</code> read; <code>RoundController.setQuestionValue(n, v)</code>
+    surfaces rejections as an alert.</li>
+<li><strong>UI:</strong> the Modern navigator gains a point-value sub-row and the Classic
+    ledger column headers carry each question's value; both (and the live
+    header's <code>N PTS</code> / <code>SET VALUE</code> badge) open the same <strong>anchored popup menu</strong>
+    over the ruleset's allowed values. Unset questions are visibly <code>set</code>; the
+    scoring console reads <code>BLOCKED — Set the point value for Qn first</code> until a
+    value is assigned.</li>
+<li>
+<p><strong>Ruleset schema v2:</strong> <code>match.pointValues</code> (sequence) → <code>match.answerValues</code>
+    (allowed set) + <code>match.valueCounts</code> (distribution, shown on the setup
+    card). Both built-in presets (<code>tbq-25-26</code>, <code>jbq-2026</code>) updated; the
+    per-question order is no longer encoded. Saved rounds are unaffected (the
+    journal carries no point values).</p>
+</li>
+<li>
+<p><strong>Accessibility + haptics pass</strong> — haptics are now <strong>opt-in and off by
+  default</strong> (<code>HapticsController</code>/<code>HapticsScope</code>, persisted per device, toggle
+  button beside the theme switch on every screen), so a fresh install can
+  never buzz or click during an official match. The app's own tap audio is
+  silenced app-wide (Material <code>enableFeedback</code> disabled in <code>buildTheme</code>,
+  silent <code>QuietDialogOption</code>/<code>QuietMenuItem</code> replacements, silent custom
+  InkWells) — the only feedback channels are the opt-in vibration tick and
+  TalkBack's speech when the OS enables it. Screen-reader labels cover the
+  scoring console (with blocked-reason hints), quizzer cards/cells, navigator
+  and ledger cell marks, and team scores; the alert banner is a live region.
+  Live-screen text scaling is capped at 1.3× to protect the no-scroll layout
+  (audited at 1.5/2.0; headers made ellipsis-safe).</p>
+</li>
+<li>
+<p><strong>CI workflows</strong> (<code>.github/workflows/</code>): <code>ci.yml</code> runs <code>flutter analyze</code> +
+  <code>flutter test</code> on pushes to <code>main</code> and pull requests; <code>build.yml</code> builds all
+  four targets (Android APK, Linux bundle, Windows zip, macOS <code>.app</code> zip) on
+  <code>v*</code> tags and manual dispatch, attaching the artifacts to a GitHub Release.
+  Every job is gated on <code>github.server_url == 'https://github.com'</code> so a mirror
+  to Gitea Actions skips them instead of failing.</p>
+</li>
+<li><strong>Android release signing in CI</strong> — the release APK is signed with a
+  keystore supplied via GitHub secrets (<code>ANDROID_KEYSTORE_BASE64</code> + password/
+  alias), decoded into the runner temp dir at build time and verified with
+  <code>apksigner --print-certs</code>. Falls back to the debug key when the secret is
+  absent, so local release builds keep working with no setup.</li>
+<li><strong>Release checksums</strong> — every release now publishes a <code>SHA256SUMS</code> file
+  covering all four artifacts, so downloads can be verified with
+  <code>sha256sum -c</code>.</li>
+<li><strong>macOS desktop target</strong> — <code>macos/</code> runner scaffolded and configured for the
+  secondary desktop story: bundle id <code>org.concordance.app</code>, app name
+  "Concordance", AGPL-3.0-only copyright string, and a landscape-tablet default
+  window (1280×800, minimum 1024×700). Entitlements stay sandboxed with no
+  network access, matching the offline-only policy. Build-ready in the repo, but
+  <code>flutter build macos</code> requires a Mac with Xcode.</li>
+<li>Initial Flutter project scaffold (v3.47.6 / Dart 3.13.5) with Android,
+  Windows, and Linux targets.</li>
+<li>Android package <code>org.concordance.app</code> with launcher label "Concordance".</li>
+<li>Primary-target configuration for the Amazon Fire HD 10 (2023): landscape
+  1920×1200, Android 11 / API 30 baseline, GMS-free dependency policy, and a
+  matching <code>fire_hd_10</code> test emulator.</li>
+<li>Project documentation: README (setup &amp; platforms) and a TODO roadmap.</li>
+<li>
+<p>License: GNU Affero General Public License v3.0 only (AGPL-3.0-only).</p>
+</li>
+<li>
+<p><strong>Dual-mode live-scoring prototype</strong> (<code>lib/prototype/</code>): Direction A
+  "Modern" (split-field) and Direction B "Classic" (paper-style scoresheet
+  ledger), selectable from the prototype home; validated on the <code>fire_hd_10</code>
+  emulator at 1920×1200 landscape.</p>
+</li>
+<li>New Round setup screen: ruleset tabs loaded from the real presets, team
+  names, roster steppers clamped to each preset, Modern/Classic view pick,
+  fresh-start and seeded-demo flows.</li>
+<li>Round summary screen: result banner, team cards, per-quizzer breakdown,
+  question-by-question review; PDF/CSV export shown as prototype-inert
+  affordances.</li>
+<li>Tap-flow contract (<code>docs/design/interaction.md</code>) mapping every prototype
+  action to its future engine event and <code>RoundView</code> read.</li>
+<li><strong>Scoring engine</strong> (<code>lib/engine/</code>, pure Dart, no Flutter imports):</li>
+<li>Event-sourced round model — scoring actions are journaled events;
+    state is derived by folding, so undo is pop + re-fold and the journal
+    is the persistence unit.</li>
+<li><code>RoundView</code> view-model serving both Modern and Classic reads
+    (per-cell ledger marks, per-question deltas, running totals).</li>
+<li>Ruleset-as-data schema (<code>docs/ruleset-schema.md</code>, decisions D1–D9)
+    with validation returning structured <code>RuleViolation</code>s (never throws).</li>
+<li>Built-in presets <code>tbq-25-26</code> and <code>jbq-2026</code> (<code>assets/rulesets/</code>),
+    encoded from the official rulebooks.</li>
+<li>Scorekeeper notifications: quiz/strike/foul-out, 4th time-out request,
+    3rd unsuccessful contest (TBQ), exhausted Coach's Appeals (JBQ).</li>
+<li>Overtime/void/substitute-question/quizzer-substitution support.</li>
+<li>
+<p>22 golden tests worked from both rulebooks (<code>test/engine/</code>), including
+    full-regulation-match simulations with hand-computed expectations.</p>
+</li>
+<li>
+<p><strong>Production app (Phase 3)</strong> — the prototype's flows now run on the real
+  engine; <code>FakeRound</code> is no longer used outside <code>lib/prototype/</code>.</p>
+</li>
+<li><code>RoundController</code> (<code>lib/app/</code>) owns a <code>RoundView</code> plus the view state the
+    engine deliberately excludes (screen position, selection, alert
+    dismissal). Correct/incorrect advances and clears selection; fouls stay
+    on the question; every ruling repaints immediately.</li>
+<li>Production screens (<code>lib/views/</code>): Home (new round / resume / view
+    toggle), Setup, Modern, Classic, Summary, with shared widgets in
+    <code>views/common/</code> composed by both live layouts.</li>
+<li><code>ScoreboardView</code> (Modern | Classic) persisted per device with
+    <code>shared_preferences</code> and overridable per session from setup.</li>
+<li>Autosave to SQLite (<code>sqlite3</code> + <code>path_provider</code>): rounds and journal rows,
+    written on every event; resuming re-folds the journal and restores screen
+    position and completion state.</li>
+<li>Round summary with working PDF and CSV export through the platform share
+    sheet (<code>pdf</code>, <code>csv</code>, <code>share_plus</code>).</li>
+<li>Void question, read substitute question, and quizzer substitution entry
+    points, closing the gaps flagged in <code>docs/design/interaction.md</code>.</li>
+<li>Team header buttons beside each team name in both live views: <code>TEAM FOUL n</code>
+    (team-only tally) and contest/appeal (TBQ unsuccessful/3, JBQ
+    used/2), with side-scoped entry dialogs. Personal fouls are per-quizzer
+    and show on the cells, so the header counts team fouls only.</li>
+<li>Home "Resume round" list: delete a saved round via <code>RoundStore.deleteRound</code>,
+  guarded by a confirmation dialog so a mis-tap cannot silently lose a round.</li>
+<li>Answer guardrails (schema decision D10), enforced in the pure engine
+  (<code>answerGuardrail</code>) and surfaced by the scoring console: a question admits
+  at most one answer per quizzer, one answer per team, and one correct answer
+  — a correct answer closes the question to both teams. An <em>interrupted</em> miss
+  is reread to the other team (so wrong+right / wrong+wrong are its legal
+  two-answer orders); a <em>non-interrupted</em> miss is not reread and closes the
+  question to the other team too. A guarded answer is rejected (never
+  journaled); the console disables CORRECT/INCORRECT and shows <code>BLOCKED —
+  &lt;reason&gt;</code> (FOUL stays live). Voiding a question clears its answer ledger so
+  the substitute reads fresh (D4), and retracts the slot's answer points (D3):
+  each recorded answer is reversed (points, the correct/incorrect count, and
+  any quiz-out/strike-out plus its bonus), the Classic ledger's cell mark and
+  RUNNING delta clear, and fouls on the slot stand. The ledger reads
+  (<code>cellOutcome</code>/<code>teamDelta</code>/<code>cellHasFoul</code>) now derive from the slot's
+  recorded answers/fouls instead of re-scanning the journal.</li>
+<li>Back button on both live-scoring screens' headers returns to the starting
+  screen (Home); every ruling autosaves, so leaving mid-match is safe and the
+  round resumes from Home.</li>
+<li><strong>Bench roster + substitutions.</strong> New Round now takes a seated count plus a
+  bench count, with a name field per quizzer; the bench is bounded by each
+  ruleset's roster cap (JBQ 8 quizzers; TBQ uncapped). A team is a single,
+  stable roster (<code>QuizzerState.onBench</code>); a substitution SWAPS a seated quizzer
+  with a bench quizzer — during or after a time-out, and with <strong>no requirement
+  that anyone has quizzed out</strong>. The entrant takes the outgoing quizzer's
+  <strong>seat</strong>, so the seated order is preserved (subbing Red 2 → Red 5 gives
+  Red 1, Red 5, Red 3, Red 4). Both keep their points (a rotated-out quizzer
+  moves to the bench, where each name shows its running total) and stable
+  indices keep every recorded answer attributed to its quizzer. Both live views
+  show a BENCH strip; the More menu drives the swap
+  (<code>SubstituteQuizzerEvent</code> carries <code>outIndex</code> + <code>benchIndex</code>, both roster
+  indices). Roster + bench persist and are restored on resume.</li>
+<li><code>match.maxRosterPerTeam</code> (nullable) added to the ruleset schema; JBQ sets 8,
+  TBQ leaves it uncapped.</li>
+</ul>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Pre-beta cleanup.</strong> Repository prepared for a public beta:</li>
+<li>Added a prominent disclaimer to the README (independent project; <strong>not
+    affiliated with Bible Quiz</strong>; not yet ready for use by official
+    scorekeepers in official matches).</li>
+<li>Bumped the version to <code>1.0.0-beta</code>.</li>
+<li><strong>Removed the dead <code>lib/prototype/</code> code</strong> (a parallel prototype UI no
+    longer imported by the app or tests) and reframed
+    <code>docs/design/interaction.md</code> as the shipped-screens spec.</li>
+<li>Untracked the internal <code>.clinerules/</code> notes so they are no longer part of
+    the public repository (still kept locally and <code>.gitignore</code>d).</li>
+<li><code>pubspec.yaml</code>: added macOS to the description and a <code>repository</code> field;
+    corrected the README license line to AGPL-3.0-only.</li>
+<li>Added a <code>NOTICE</code> file (project copyright + attribution) and a Linux
+    <code>.desktop</code> entry + hicolor icon (<code>linux/org.concordance.app.desktop</code>,
+    installed via <code>linux/CMakeLists.txt</code>). The <code>LICENSE</code> file itself is left as
+    the unmodified AGPL-3.0 text.</li>
+<li><strong>Docs: README rewritten for newcomers.</strong> The README is now an end-user-first
+  welcome (what the app is, screenshots, features, install, quick start,
+  ruleset configuration) instead of a development roadmap. All developer, CI,
+  and release-signing/trust content moved to a new <code>CONTRIBUTING.md</code>; added
+  <code>docs/screenshots/</code> (setup, Modern + Classic live views, summary) captured on
+  the <code>fire_hd_10</code> emulator. No code changes.</li>
+<li>Desktop identity metadata now reads "Concordance" everywhere: Windows
+  <code>VERSIONINFO</code> <code>CompanyName</code> / <code>FileDescription</code> / <code>ProductName</code> (previously
+  lowercase "concordance" / "org.concordance"), and <code>LegalCopyright</code> corrected
+  from "All rights reserved" to AGPL-3.0-only. Windows and Linux window titles
+  updated to match the Android/macOS label.</li>
+<li>Second polishing pass (UI):</li>
+<li>All notices (transient alerts and the end-of-round strip) share one slot
+    directly above the scoring console (<code>NoticeSlot</code>).</li>
+<li>Classic ledger: the redundant RUNNING total row is removed; the team total
+    stays in the team header.</li>
+<li>Home no longer carries a Modern/Classic picker; the view is chosen on the
+    New Round setup screen.</li>
+<li>New Round: the ruleset pick moved from an AppBar tab bar into an in-body
+    segmented settings row.</li>
+<li>Quizzer names are decoupled from the team name — each seated and bench
+    quizzer has its own name field (a blank field falls back to "<Team> N").</li>
+<li>Dark-mode color pass: team tints and ink are theme-aware
+    (<code>sideTintFor</code>/<code>sideInkFor</code>) — deep tints with light ink in dark mode,
+    while light mode is unchanged.</li>
+<li>The live game no longer scrolls: ledger rows, team cards, the question
+    navigator, and the time-out rail all size to the 1280×800 screen.</li>
+<li>Summary leads with an Announcements block — 1st/2nd place team and the top
+    two individual scorers across the whole match.</li>
+<li>
+<p>PDF/CSV export lists every roster quizzer with a Position column
+    (<code>seat N</code> / <code>bench</code>) so benched quizzers' points are shown, not lost.</p>
+</li>
+<li>
+<p>Overtime is now automatic and deterministic: a tie after the final question
+  appends the next overtime question from the ruleset sequence (TBQ: 10-point
+  substitutes; JBQ: 10/20/30 then 20s) with a notice to the keeper. There is
+  no longer a button to enter overtime. Undo reverts the overtime question
+  and the ruling that forced it.</p>
+</li>
+<li>Live screens follow the app theme (system / light / dark) from a single
+  shared seed instead of forcing light mode; a theme toggle (system → light
+  → dark) is present on Home, Setup, both live headers, and Summary, and the
+  choice is persisted per device.</li>
+<li>Scoring console: CORRECT is green and INCORRECT red again, for at-a-glance
+  clarity from across the table.</li>
+<li>Classic time-out rail: a used time-out now fills solid in the team color with
+  white text, so used vs. available is unmistakable.</li>
+<li>Classic ledger: empty question cells and empty running-total cells are blank
+  instead of showing a dot.</li>
+</ul>
+<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Classic ledger could overflow horizontally at the 1280dp design width:
+  question cells now flex instead of using a computed fixed width, so the
+  grid cannot overflow at any width.</li>
+<li>Live bottom bar overflowed once the "More" actions menu was added; the undo
+  button now flexes and its label ellipsizes.</li>
+<li>The setup screen's Modern/Classic choice was ignored when starting a round
+  (the home screen routed with its own setting); the choice now drives the
+  live screen and becomes the remembered default.</li>
+<li>Setup no longer shows an indeterminate progress spinner (never settles in
+  tests, and the project avoids decorative motion).</li>
+<li><strong>Android: the app crashed at launch with <code>Failed to load dynamic library
+  'libsqlite3.so'</code>.</strong> The <code>sqlite3</code> package alone does not bundle the native
+  library; added <code>sqlite3_flutter_libs</code>, which ships it for Android/Windows/
+  Linux. Verified on the <code>fire_hd_10</code> (API 30) emulator: the app now opens the
+  store and creates <code>concordance.db</code>.</li>
+<li>Ignore <code>android/.kotlin/</code> (Gradle's Kotlin session dir).</li>
+<li>An incorrect answer on an <em>interrupted</em> question no longer auto-advances:
+  interrupted questions are re-read to the other team, so the keeper stays on
+  the question rather than moving on (no banner — the position not moving is
+  the signal).</li>
+<li>The footer Contest/Appeal gavel button was removed — the per-team header
+  buttons are now the single challenge entry point, and the duplicate dialog
+  path in <code>LiveBottomBar</code> is gone.</li>
+<li>Storage failures are actionable: if the SQLite store cannot be opened, the
+  home screen explains the failure and offers a retry instead of leaving a
+  dead disabled button.</li>
+<li>Summary team cards were unreadable in <strong>dark mode</strong>: score, time-outs and
+  fouls inherited theme colors (near-white) while the card background is a
+  fixed <em>light</em> team tint. Content on a tinted surface now uses a fixed dark
+  ink (<code>sideInk</code> / <code>sideInkMuted</code> in <code>views/common/live_chrome.dart</code>), applied
+  to the summary cards, the summary winner banner, and the tinted text in the
+  Modern and Classic live views. A dark-mode contrast test guards it.</li>
+<li><strong>Live views still had dark-mode contrast gaps.</strong> Two opposite mistakes
+  remained in <code>ModernScreen</code> / <code>ClassicScreen</code>:</li>
+<li>Side labels and buttons that draw on <em>dark</em> theme surfaces (the Modern team
+    header name, the Classic time-out rail caption and unused <code>TO</code> buttons, and
+    the shared <code>RED TO</code> / <code>GREEN TO</code> bottom-bar buttons) used the fixed deep
+    red/green, which is dark-on-dark and nearly invisible. They now use
+    <code>sideAccent(side, scheme)</code>, which keeps the same deep accent in light mode
+    and swaps to a lightened variant (<code>redAccentDark</code> / <code>greenAccentDark</code>) in
+    dark mode (≥4.5:1 against the dark surfaces).</li>
+<li>Ledger text that sits on the <em>fixed light</em> team tints (the Classic <code>SCORE</code>
+    totals, <code>RUNNING</code> label and per-team totals) inherited the theme's
+    <code>onSurface</code> and so rendered near-white on pale tints. It now uses the fixed
+    dark <code>sideInk</code> / <code>sideInkMuted</code>, matching the summary fix.</li>
+<li><code>test/views/live_contrast_test.dart</code> asserts both directions in dark mode
+    (the bugs are invisible in light mode) plus the light-mode accent identity.</li>
+<li><strong>Notifications repeated on every later ruling.</strong> A quizzer's quiz-out (or
+  strike-out / foul-out) was re-announced on each subsequent answer by any
+  quizzer, because <code>RoundController</code> re-derived the alert from the engine's
+  <em>currently active</em> notices (<code>collectNotices</code>), which stay true for the rest
+  of the round. The controller now remembers which notices it has already
+  surfaced (<code>_announced</code>, keyed by code + message) and only shows each one
+  once, so dismissing the banner no longer brings it back and later rulings
+  stay quiet. The 4th time-out notice had the same defect through a second,
+  duplicated code path in <code>takeTimeOut</code>; that path now flows through the same
+  once-per-message gate, so the engine's notice is the single source.
+  Regression tests: <code>test/app/round_controller_test.dart</code> ("notices do not
+  repeat" group).</li>
+<li><strong>A quizzer's out was never announced again after it was undone.</strong> The
+  once-per-notice gate remembered a notice forever, so after undoing the answer
+  that made a quizzer quiz out (or strike/foul out) and later re-scoring them
+  out at another question, no banner appeared. The controller now re-arms a
+  notice whenever its condition stops holding (<code>_reconcileAnnounced</code>), so it
+  fires again the next time it happens — which matters once quizzer
+  substitutions are in play. The resume path also settles already-journaled
+  outs (<code>markCurrentNoticesSeen</code>), so a resumed round does not replay settled
+  history.</li>
+<li><strong>Time-outs could be taken past the team allotment (4/3, 5/3, …).</strong> Both
+  rulebooks cap a team at 3, with a 4th <em>request</em> denied and penalized as a
+  team foul. <code>TimeOutEvent</code> is now rejected at the cap in the engine (never
+  journaled, so undo/persistence are unaffected); <code>RoundController.takeTimeOut</code>
+  returns false and prompts the keeper to assign the team foul through the
+  normal foul path. The app deliberately does <strong>not</strong> auto-assess the foul.
+  <code>docs/design/interaction.md</code> and <code>docs/ruleset-schema.md</code> updated; the
+  golden/controller tests rewritten to the cap semantics.</li>
+<li><strong>Overtime time-outs now follow each rulebook</strong> (<code>LimitsConfig.timeOutCap</code>).
+  TBQ Time-outs §4 voids any remaining time-outs in overtime, so no team
+  time-out may be taken (<code>overtimeTimeOutsCarry</code> false, <code>overtimeExtraTimeOuts</code>
+  0 — both already in the preset). JBQ Time-outs §§4–5 carry remaining
+  time-outs over <em>and</em> grant one extra, so the overtime cap is 3 + 1 = 4
+  (<code>carry</code> true, <code>extra</code> 1 — already in the preset). The engine resolves the
+  cap from whether overtime questions have been appended; the live counters
+  display <code>taken/displayCap</code> (never below what was taken, so a TBQ team that
+  used two reads "2/2"), and the overtime announcement states the rule. The
+  free one-minute overtime time-out both books declare is the Quizmaster's, not
+  a team time-out, so it is not counted.</li>
+<li><strong>Personal fouls no longer erase the score mark.</strong> <code>RoundView.cellOutcome</code>
+  was last-write-wins, so a foul on an answered cell replaced <code>+20</code>/<code>−10</code>
+  with <code>F</code>. The cell read is now split: <code>cellOutcome</code> returns the answer
+  mark only and <code>cellHasFoul</code> reports the foul; the Classic ledger shows the
+  score plus a capital-F badge pinned to the cell's top-right corner (the
+  cell <code>Stack</code> expands so the badge anchors to the cell, with the score
+  wrapped in <code>Center</code>) — foul-only cells keep the bare <code>F</code> — and the
+  summary/CSV notes list both. <code>TeamView</code> additionally exposes <code>teamFouls</code>,
+  <code>challengesUsed</code>, and <code>unsuccessfulChallenges</code> for the header tallies.
+  Tests: <code>test/views/classic_polish_test.dart</code>.</li>
+<li><strong>Polish pass (bottom bar, headers, marks, gating).</strong> The shared
+  bottom-bar <code>RED/GRN TO</code> duplicates are removed (Modern takes time-outs
+  from a header button; Classic keeps its ledger rail); Summary is disabled
+  until the match completes; interrupted questions ring the Classic column
+  header like the paper circle; the selected-quizzer × current-question
+  intersect highlights; the More menu disables void once the current
+  question is voided and substitute-question until a void exists.
+  <code>docs/design/interaction.md</code> updated; global edit/undo dialogue deferred
+  to post-v1 (single-step undo + <code>undoLabel</code> covers v1).</li>
+</ul>
+<!-- Version link references (e.g. [0.1.0]: <repo>/compare/v0.0.1...v0.1.0)
+     are added here at the first release, once the canonical repo URL exists. -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Concordance is an independent community project, not affiliated with Bible Quiz, and not for official use. Licensed AGPL-3.0-only.
+    </div>
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["navigation.tabs","navigation.sections","navigation.top","search.highlight","search.suggest","content.code.copy","toc.follow"],"redirect":null,"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":{"provider":"mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      
+    
+  </body>
+</html>
