@@ -1976,6 +1976,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="[Unreleased]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Changed
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2013,7 +2030,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         Changed
@@ -2052,7 +2069,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
+  <a href="#changed_2" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         Changed
@@ -2225,6 +2242,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="[Unreleased]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Changed
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2262,7 +2296,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         Changed
@@ -2301,7 +2335,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
+  <a href="#changed_2" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         Changed
@@ -2352,6 +2386,18 @@
 <p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>,
 and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Release notes now come from the changelog and point to the versioned wiki.</strong>
+  The <code>release</code> job in <code>.github/workflows/build.yml</code> no longer uses GitHub's
+  auto-generated <code>generate_release_notes</code> (a PR/commit summary). It now checks
+  out the repo, extracts the matching <code>## [&lt;version&gt;]</code> section from
+  <code>docs/CHANGELOG.md</code>, and builds the release body from a short pointer to the
+  <strong>versioned</strong> installation guide
+  (<code>https://josiahl06.github.io/Concordance/&lt;version&gt;/installation/</code>) followed by
+  that version's full changelog. A <code>v*</code> tag with no matching changelog section
+  <strong>fails</strong> the job instead of publishing incomplete notes.</li>
+</ul>
 <h2 id="100-beta2-2026-10-11">[1.0.0-beta.2] - 2026-10-11<a class="headerlink" href="#100-beta2-2026-10-11" title="Permanent link">&para;</a></h2>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
@@ -2459,7 +2505,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   <code>tbq-25-26 · 2026-10-10T14:23:45.123456</code> verbatim; it now reads
   <code>tbq-25-26 · 10 Oct 2026, 14:23</code>.</li>
 </ul>
-<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>RoundStore</code> gained <code>transaction()</code> and <code>saveJournal(roundId, journal,
   persistedCount)</code>. The live screens track how many events are already on disk
@@ -2697,7 +2743,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><code>match.maxRosterPerTeam</code> (nullable) added to the ruleset schema; JBQ sets 8,
   TBQ leaves it uncapped.</li>
 </ul>
-<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
+<h3 id="changed_2">Changed<a class="headerlink" href="#changed_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Pre-beta cleanup.</strong> Repository prepared for a public beta:</li>
 <li>Added a prominent disclaimer to the README (independent project; <strong>not
