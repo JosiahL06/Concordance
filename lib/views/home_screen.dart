@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../app/presets.dart';
 import '../app/round_controller.dart';
 import '../app/settings.dart';
+import '../app/timestamps.dart';
 import '../data/round_store.dart';
 import '../engine/events.dart';
 import '../engine/ruleset.dart';
@@ -193,7 +194,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ListTile(
                     title: Text('${r['red_name']} vs ${r['green_name']}'),
                     subtitle: Text(
-                      '${r['ruleset_id']} \u00b7 ${r['created_at']}',
+                      '${r['ruleset_id']} \u00b7 '
+                      '${formatTimestamp('${r['created_at']}')}',
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -238,8 +240,9 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _rounds = _store!.listRounds());
   }
 
-  /// Creates the round row and installs the save hook: every journal change
-  /// rewrites the event rows (rounds are tiny; correctness over cleverness).
+  /// Creates the round row and installs the autosave hook. The row is a single
+  /// insert (already atomic); the journal starts empty and the first event
+  /// writes it.
   void _attachAutosave(RoundController controller) {
     final store = _store!;
     final id = store.createRound(
@@ -254,11 +257,19 @@ class _HomeScreenState extends State<HomeScreen> {
       greenBench: controller.view.greenBenchSeed,
     );
     controller.roundId = id;
+    _installAutosave(controller, id, 0);
+  }
+
+  /// Installs the delta autosave hook: each change writes only what changed —
+  /// one appended row per scoring tap, one deleted row per undo — inside a
+  /// single transaction. A kill mid-save therefore leaves the round intact
+  /// rather than half-written. [persisted] is how many of the journal's events
+  /// are already on disk: 0 for a fresh round, the journalled length on resume.
+  void _installAutosave(RoundController controller, int id, int persisted) {
+    final store = _store!;
+    var onDisk = persisted;
     controller.autosave = (c) {
-      store.truncateTo(id, 0);
-      for (final e in c.view.journal) {
-        store.appendEvent(id, e);
-      }
+      onDisk = store.saveJournal(id, c.view.journal, onDisk);
     };
   }
 
@@ -301,12 +312,9 @@ class _HomeScreenState extends State<HomeScreen> {
     controller.questionIndex = controller.firstOpenQuestion() - 1;
     controller.recomputeCompletion();
     controller.roundId = id;
-    controller.autosave = (c) {
-      store.truncateTo(id, 0);
-      for (final e in c.view.journal) {
-        store.appendEvent(id, e);
-      }
-    };
+    // The journal just replayed is exactly what is on disk; only later changes
+    // need writing.
+    _installAutosave(controller, id, controller.view.journal.length);
     _openLive(context, controller);
   }
 

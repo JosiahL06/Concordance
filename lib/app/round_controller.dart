@@ -53,6 +53,15 @@ class RoundController extends ChangeNotifier {
   /// Last banner text; null = dismissed/shown nothing.
   String? lastAlert;
 
+  /// Set when the last autosave threw; null while saving is healthy.
+  ///
+  /// A save failure deliberately does **not** stop scoring — losing an
+  /// in-progress match to a disk problem would be worse than losing the
+  /// autosave — but it must not be silent either, or the keeper finishes a round
+  /// believing it was written. The live chrome shows a persistent warning while
+  /// this is non-null.
+  String? saveError;
+
   int get questionNumber => questionIndex + 1;
   int get questionCount => view.questionValues.length;
 
@@ -65,7 +74,8 @@ class RoundController extends ChangeNotifier {
 
   /// Whether question [n]'s value can be (re)set now (a regulation, unvoided,
   /// unanswered slot).
-  bool questionValueEditable(int n) => view.questionValueEditable(n) && !matchComplete;
+  bool questionValueEditable(int n) =>
+      view.questionValueEditable(n) && !matchComplete;
 
   bool get canUndo => view.journal.isNotEmpty;
 
@@ -387,8 +397,19 @@ class RoundController extends ChangeNotifier {
 
   /// Notifies listeners and persists the journal through the installed
   /// [autosave] hook (no-op when no store is attached, e.g. tests).
+  ///
+  /// A save failure must never skip [notifyListeners]. The engine has already
+  /// accepted the event by the time this runs, so an exception escaping here
+  /// would leave the derived state changed but the screen unpainted: the keeper
+  /// would see nothing happen, tap again, and score twice. Failures are caught,
+  /// recorded in [saveError], and notified like any other change.
   void _saved() {
-    autosave?.call(this);
+    try {
+      autosave?.call(this);
+      saveError = null;
+    } catch (e) {
+      saveError = '$e';
+    }
     notifyListeners();
   }
 

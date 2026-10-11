@@ -53,12 +53,32 @@
 - [x] Round summary + PDF/CSV export (mode-agnostic, single implementation;
       share sheet via `share_plus`)
 - [x] SQLite autosave & round resume (`sqlite3` direct, journal-as-rows;
-      save-on-event, resume re-folds)
+      save-on-event, resume re-folds). Writes are delta writes inside one
+      transaction (`RoundStore.saveJournal`), so a kill mid-save leaves the
+      previous journal intact rather than a half-written one, and
+      `deleteRound` is atomic too.
+- [x] Versioned schema migrations (`PRAGMA user_version` + ordered
+      `_migrations`, one transaction per step; refuses a database from a newer
+      build) and space reclamation (`auto_vacuum = INCREMENTAL`, one-time
+      conversion for older databases, `RoundStore.reclaimSpace()` after bulk
+      deletes). Migration 2 rebuilds `events` as `WITHOUT ROWID` +
+      `ON DELETE CASCADE`; migration 3 normalises `created_at` to UTC.
+- [x] SQLite durability/concurrency pragmas at open: WAL + `synchronous = NORMAL`
+      (keeps the per-tap fsync off the UI isolate), `busy_timeout`, enforced
+      foreign keys (enabled *after* migrations, so a rebuild runs with them off
+      as SQLite requires), `PRAGMA optimize` on close. A failed autosave is
+      caught, kept off the repaint path (`RoundController.saveError`), and shown
+      as a persistent "NOT SAVING" strip in both live views.
+- [x] Saved-round timestamps: stored as UTC (`Z`-suffixed) and rendered
+      readably (`10 Oct 2026, 14:23`) via `lib/app/timestamps.dart`
 - [x] Void / substitute-question / substitute-quizzer UI entry points
       (documented gap in `docs/design/interaction.md` §7)
 - [x] Tests: engine goldens + `RoundController` adapter + store round-trip +
       widget flows (setup, Classic scoring/undo, Modern scoring), storage
-      failure, dark-mode contrast, theme toggle — 46 passing
+      failure, dark-mode contrast, theme toggle. The store suite now also covers
+      open-time pragmas, the v0→v3 migration paths (including the `events`
+      rebuild preserving every journalled event), and the autosave-failure paths
+      at both the controller and widget level — 176 passing
 
 ## Phase 4 — Packaging & polish
 - [x] Overtime is automatic: tie after the final question appends the next

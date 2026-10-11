@@ -491,4 +491,64 @@ void main() {
       expect(c.lastAlert, isNull);
     });
   });
+
+  group('autosave failures (locked decision 4: a round must survive)', () {
+    test('a throwing save still repaints, and is reported', () {
+      final c = freshTbq();
+      var saves = 0;
+      c.autosave = (c) {
+        saves++;
+        throw StateError('disk full');
+      };
+
+      var notified = 0;
+      c.addListener(() => notified++);
+
+      c.select(Side.red, 0);
+      expect(c.markCorrect(), isTrue);
+
+      // The engine accepted the event, so the screen must still be told even
+      // though the write failed — otherwise the keeper sees nothing happen,
+      // taps again, and scores twice.
+      expect(notified, greaterThan(0));
+      expect(c.saveError, contains('disk full'));
+
+      // The score is right in memory: a disk problem must not block scoring, it
+      // only makes the round non-durable.
+      expect(c.scoreOf(Side.red), greaterThan(0));
+      expect(saves, 1);
+    });
+
+    test('a later successful save clears the warning', () {
+      final c = freshTbq();
+      var failing = true;
+      c.autosave = (c) {
+        if (failing) throw StateError('disk full');
+      };
+
+      c.select(Side.red, 0);
+      c.markCorrect();
+      expect(c.saveError, isNotNull);
+
+      // Recovered (space freed): the warning must not outlive the condition.
+      failing = false;
+      c.select(Side.red, 1);
+      c.markCorrect();
+      expect(c.saveError, isNull);
+    });
+
+    test('a failed save leaves no half-applied ruling', () {
+      final c = freshTbq();
+      c.autosave = (c) => throw StateError('disk full');
+
+      c.select(Side.red, 0);
+      expect(c.markCorrect(), isTrue);
+      expect(c.canUndo, isTrue);
+
+      // The in-memory journal is intact, so undo still returns the round to its
+      // pre-ruling state.
+      c.undo();
+      expect(c.scoreOf(Side.red), 0);
+    });
+  });
 }

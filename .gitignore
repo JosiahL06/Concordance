@@ -32,6 +32,12 @@ secrets/
 .env.*
 !.env.example
 
+# ── Project-specific: third-party reference material ──────────
+# Local study material extracted from third-party apps (e.g. the
+# official EZScore APK and reverse-engineering notes derived from
+# it). Keep on disk for the maintainer; never publish or redistribute.
+reference/
+
 # ── Project-specific: internal dev notes ──────────────────────
 # Local development rules / assistant notes. Kept on disk for the
 # maintainer but never published; not part of the public repository.

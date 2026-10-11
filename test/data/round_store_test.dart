@@ -28,6 +28,15 @@ RoundView freshView() => RoundView(
   questionValues: kTbqValues,
 );
 
+/// A minimal round row for the durability tests.
+int newRound(RoundStore store) => store.createRound(
+  rulesetId: 'tbq-25-26',
+  redName: 'Red',
+  greenName: 'Green',
+  redSeats: const ['Red 1', 'Red 2'],
+  greenSeats: const ['Green 1', 'Green 2'],
+);
+
 void main() {
   test('journal round-trips through SQLite and re-folds identically', () {
     final store = RoundStore.inMemory();
@@ -186,5 +195,107 @@ void main() {
     store.deleteRound(id);
     expect(store.listRounds(), isEmpty);
     expect(store.loadRound(id), isNull);
+  });
+
+  test('saveJournal writes only the delta (append, no-op, undo)', () {
+    final store = RoundStore.inMemory();
+    final id = newRound(store);
+    final journal = <RoundEvent>[
+      const AnswerEvent(
+        questionNumber: 1,
+        side: Side.red,
+        quizzerIndex: 0,
+        correct: true,
+      ),
+      const TimeOutEvent(side: Side.red),
+      const InterruptionEvent(questionNumber: 2),
+    ];
+
+    var onDisk = store.saveJournal(id, journal, 0);
+    expect(onDisk, 3);
+    expect(store.loadJournal(id), hasLength(3));
+
+    // Nothing changed: no rows written, count unchanged.
+    expect(store.saveJournal(id, journal, onDisk), 3);
+    expect(store.loadJournal(id), hasLength(3));
+
+    // Append one: only the new row is written.
+    journal.add(
+      const FoulEvent(questionNumber: 3, side: Side.green, quizzerIndex: 1),
+    );
+    onDisk = store.saveJournal(id, journal, onDisk);
+    expect(onDisk, 4);
+    expect(store.loadJournal(id), hasLength(4));
+
+    // Undo two: only the tail is deleted, the prefix survives in order.
+    journal.removeLast();
+    journal.removeLast();
+    onDisk = store.saveJournal(id, journal, onDisk);
+    expect(onDisk, 2);
+    final remaining = store.loadJournal(id);
+    expect(remaining, hasLength(2));
+    expect(remaining[0], isA<AnswerEvent>());
+    expect(remaining[1], isA<TimeOutEvent>());
+  });
+
+  test('saveJournal and appendEvent agree on seq after an undo', () {
+    final store = RoundStore.inMemory();
+    final id = newRound(store);
+    final journal = <RoundEvent>[
+      const AnswerEvent(
+        questionNumber: 1,
+        side: Side.red,
+        quizzerIndex: 0,
+        correct: true,
+      ),
+      const TimeOutEvent(side: Side.red),
+    ];
+    var onDisk = store.saveJournal(id, journal, 0);
+    expect(onDisk, 2);
+
+    // Undo back to one event, then let the per-row path append the next one:
+    // seq must stay dense (0, 1) rather than skip the slot the undo freed.
+    journal.removeLast();
+    onDisk = store.saveJournal(id, journal, onDisk);
+    expect(onDisk, 1);
+    store.appendEvent(
+      id,
+      const FoulEvent(questionNumber: 5, side: Side.red, quizzerIndex: 0),
+    );
+
+    final rows = store.loadJournal(id);
+    expect(rows, hasLength(2));
+    expect(rows.last, isA<FoulEvent>());
+  });
+
+  test('a failing save rolls back, leaving the previous journal intact', () {
+    final store = RoundStore.inMemory();
+    final id = newRound(store);
+    store.appendEvent(
+      id,
+      const AnswerEvent(
+        questionNumber: 1,
+        side: Side.red,
+        quizzerIndex: 0,
+        correct: true,
+      ),
+    );
+    expect(store.loadJournal(id), hasLength(1));
+
+    // Simulates the app dying part-way through a save — the window the old
+    // wipe-then-rewrite autosave left open on every single tap. Inside a
+    // transaction the whole save is discarded, so the round keeps its journal.
+    expect(
+      () => store.transaction(() {
+        store.truncateTo(id, 0);
+        store.appendEvent(id, const TimeOutEvent(side: Side.red));
+        throw StateError('simulated kill mid-save');
+      }),
+      throwsStateError,
+    );
+
+    final after = store.loadJournal(id);
+    expect(after, hasLength(1));
+    expect(after.single, isA<AnswerEvent>());
   });
 }

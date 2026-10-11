@@ -735,10 +735,11 @@ class CurrentValueButton extends StatelessWidget {
 }
 
 /// Single, unified home for every notice a keeper must not miss: the
-/// end-of-round strip (persistent) and the transient [AlertBanner]. Both live
-/// views place this in the same slot directly above the scoring console, so a
-/// notice always appears in one prominent, predictable place instead of
-/// bouncing between the header and the console area.
+/// end-of-round strip (persistent), the autosave-failure warning (persistent),
+/// and the transient [AlertBanner]. Both live views place this in the same slot
+/// directly above the scoring console, so a notice always appears in one
+/// prominent, predictable place instead of bouncing between the header and the
+/// console area.
 class NoticeSlot extends StatelessWidget {
   const NoticeSlot({super.key, required this.round});
 
@@ -751,6 +752,7 @@ class NoticeSlot extends StatelessWidget {
       children: [
         if (round.matchComplete || round.inOvertime)
           EndOfRoundBar(round: round),
+        SaveErrorBar(round: round),
         AlertBanner(round: round),
       ],
     );

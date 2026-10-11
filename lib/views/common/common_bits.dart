@@ -226,3 +226,54 @@ class AlertBanner extends StatelessWidget {
     );
   }
 }
+
+/// Persistent strip shown while autosave is failing (see
+/// [RoundController.saveError]).
+///
+/// Deliberately has **no** dismiss button: the condition is true until a save
+/// actually succeeds, and letting a keeper clear it would let them hide the one
+/// thing telling them the round is not on disk. It disappears by itself when the
+/// next save works. Scoring stays enabled throughout — the round is still
+/// playable, it is just not durable — so the wording says what is at stake
+/// rather than telling the keeper to stop.
+///
+/// The raw exception text stays on the controller for diagnostics; only the
+/// consequence is shown here, because a stack-trace fragment is no help to a
+/// volunteer mid-match.
+class SaveErrorBar extends StatelessWidget {
+  const SaveErrorBar({super.key, required this.round});
+
+  final RoundController round;
+
+  @override
+  Widget build(BuildContext context) {
+    if (round.saveError == null) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    // liveRegion: TalkBack announces the warning when it appears, matching the
+    // fire-once behavior of the scoring alerts. The app makes no sound itself.
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Container(
+        color: scheme.errorContainer,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Row(
+          children: [
+            Icon(Icons.save_outlined, color: scheme.onErrorContainer),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'NOT SAVING - this round is only in memory and will be lost '
+                'if the app closes.',
+                style: TextStyle(
+                  color: scheme.onErrorContainer,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -7,6 +7,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Autosave failures are now visible instead of silent.** A new persistent
+  warning strip (`SaveErrorBar`, shared by both live views via `NoticeSlot`)
+  appears while `RoundController.saveError` is set: `NOT SAVING - this round is
+  only in memory and will be lost if the app closes.` It deliberately has no
+  dismiss button, so a keeper cannot hide the one signal that the round is not
+  on disk, and it clears itself once a save succeeds. Scoring stays enabled
+  throughout — the round is still playable, it is just not durable.
+- **Durability and concurrency pragmas at open.** File-backed databases now open
+  in `journal_mode = WAL` with `synchronous = NORMAL` and a 5000 ms
+  `busy_timeout`; foreign keys are enforced (`PRAGMA foreign_keys = ON`), so
+  `events.round_id REFERENCES rounds(id)` is a real constraint rather than a
+  comment, and `close()` runs `PRAGMA optimize`.
+- `RoundStore.pragmaInt(name)` for on-device diagnostics; per-connection settings
+  such as `synchronous` and `foreign_keys` are invisible to any other connection,
+  so they cannot be inspected through a second handle.
+- `lib/app/timestamps.dart`: `parseTimestamp` / `formatTimestamp`, rendering a
+  saved round's start time as `10 Oct 2026, 14:23` in the keeper's local time.
+- **Versioned schema migrations.** `RoundStore` now tracks `PRAGMA
+  user_version` and applies ordered, transactional migrations on open
+  (`RoundStore.schemaVersion` + `_migrations`); a database written by a newer
+  build is refused with a clear error instead of being read incorrectly. The
+  ad-hoc `_ensureBenchColumns` is now migration 1, and `openAt()` was split out
+  of `open()` so a database can be opened by path (tests, desktop tooling).
+  Migration 2 rebuilds `events` as `WITHOUT ROWID` with `ON DELETE CASCADE`;
+  migration 3 normalises `created_at` to UTC.
+- **Space reclamation.** New databases use `PRAGMA auto_vacuum = INCREMENTAL`, so
+  pages freed by deleted rounds and undone events go on a free list instead of
+  the file growing forever, and `RoundStore.reclaimSpace()` hands them back to
+  the OS. A database created by an earlier build is converted on first open
+  (one-time `VACUUM`); `deleteRound` reclaims as part of deleting.
+
+### Fixed
+
+- **Autosave could lose an entire round if the app was killed mid-save.** Every
+  scoring change rewrote the round's journal — `DELETE` every event row, then
+  re-insert them one at a time — and with each statement auto-committing, a kill
+  between the delete and the re-inserts left the journal empty or half-written.
+  That is exactly the failure autosave exists to prevent (locked decision 4), and
+  the window recurred on every single tap. Writes are now **delta** writes inside
+  one `BEGIN IMMEDIATE` transaction: a scoring tap appends one row, an undo
+  deletes one row, and a failed save rolls back to the previous journal.
+- `RoundStore.deleteRound` now removes the round row and its journal in a single
+  transaction, so an interrupted delete can no longer orphan events.
+- **A failed autosave could desync the screen from the engine and double-score a
+  ruling.** `RoundController._saved()` called the autosave hook *before*
+  `notifyListeners()`, so a throw from SQLite (disk full, read-only volume,
+  `database is locked`) escaped `apply()`/`undo()` after the engine had already
+  accepted the event — the scores changed but the screen never repainted. The
+  keeper would see nothing happen, tap again, and score twice. The hook is now
+  wrapped: failures are recorded in `RoundController.saveError`, notified like any
+  other change, and shown in the live chrome.
+- **A database written by a newer build is no longer modified before being
+  refused.** The version guard now runs first, ahead of `VACUUM` and the
+  `journal_mode` switch, so an unreadable file is left exactly as it was found.
+- **Saved rounds no longer display a raw ISO timestamp.** The resume list showed
+  `tbq-25-26 · 2026-10-10T14:23:45.123456` verbatim; it now reads
+  `tbq-25-26 · 10 Oct 2026, 14:23`.
+
+### Changed
+
+- `RoundStore` gained `transaction()` and `saveJournal(roundId, journal,
+  persistedCount)`. The live screens track how many events are already on disk
+  and write only the difference, which also removes the per-row `MAX(seq)` scan
+  and the full-table rewrite on every tap. Resuming seeds that count from the
+  replayed journal. `appendEvent`/`truncateTo` remain as the single-row
+  primitives.
+- **`created_at` is stored as UTC with a `Z` suffix** (`DateTime.now().toUtc()`
+  instead of `DateTime.now()`). A naive local timestamp is not comparable across
+  devices and changes meaning silently when the device's zone or DST changes.
+  Migration 3 normalises existing rows by *interpreting* the stored local time as
+  UTC — the offset it was written in was never recorded and cannot be recovered,
+  so this is a deliberate, documented, pre-1.0-only shift.
+- **`events` is now a `WITHOUT ROWID` table** (migration 2). `PRIMARY KEY
+  (round_id, seq)` is not an INTEGER PRIMARY KEY, so SQLite was storing the table
+  as a rowid B-tree *plus* a separate `sqlite_autoindex` B-tree for the key —
+  every event written twice, with the key stored twice. One B-tree keyed by
+  `(round_id, seq)` now serves the journal's only access pattern
+  (`WHERE round_id = ? ORDER BY seq`), a contiguous range scan.
+- **`deleteRound` is a single statement.** `events` now carries `ON DELETE
+  CASCADE`, so the child rows go with the round instead of being deleted
+  explicitly first.
+- **WAL replaces the rollback journal for file-backed databases.** Autosave runs
+  on the UI isolate on every scoring tap, and the old `journal_mode = delete` +
+  `synchronous = FULL` defaults paid a journal-file create/write/fsync/delete/
+  fsync cycle per tap. WAL makes each commit one sequential append, and `NORMAL`
+  keeps the fsync off the tap path. Durability trade-off: WAL + `NORMAL` survives
+  app kill and process crash (what locked decision 4 requires); only power loss or
+  an OS-level crash can drop the most recent commits. `_synchronousNormal` in
+  `RoundStore` is the single constant to raise to `FULL` if that window ever
+  matters more than the tap latency.
+- Migrations now run with foreign keys **off**, and enforcement is enabled only
+  afterwards. SQLite's documented table-rebuild procedure requires enforcement to
+  be off while a table is rebuilt, and `PRAGMA foreign_keys` is a no-op inside a
+  transaction — so enabling it last, rather than toggling per migration, is what
+  makes migration 2's rebuild correct by construction. When a migration has run,
+  `PRAGMA foreign_key_check` validates the result and refuses to open on an
+  orphan.
+
 ## [1.0.0-beta] - 2026-10-07
 
 ### Added
