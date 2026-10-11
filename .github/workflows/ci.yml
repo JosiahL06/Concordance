@@ -30,3 +30,24 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
+
+  docs:
+    name: Docs site builds clean
+    # GitHub-only, like analyze-test above: keep the Gitea mirror green.
+    if: github.server_url == 'https://github.com'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          # setup-python only auto-detects requirements.txt; ours is named for
+          # the docs toolchain, so point the cache key at it explicitly.
+          cache-dependency-path: requirements-docs.txt
+
+      # Same strict build the deploy workflow runs, so a PR that breaks a link,
+      # drops a page from the nav, or adds a bad reference fails before merge.
+      - run: pip install -r requirements-docs.txt
+      - run: mkdocs build --strict

@@ -4,16 +4,16 @@ Thanks for your interest in Concordance! This document covers everything a
 developer needs: the toolchain, how to build and test, how releases are cut and
 signed, and the working agreement for changes.
 
-For what the app *is* and how to *use* it, see the [README](/README.md).
+For what the app *is* and how to *use* it, see the [documentation home](index.md).
 
 ## Contents
 
 - [Development environment](#development-environment)
-- [Building & running](#building--running)
+- [Building and running](#building-and-running)
 - [Testing](#testing)
-- [Project layout & architecture](#project-layout--architecture)
+- [Project layout and architecture](#project-layout-and-architecture)
 - [Continuous integration](#continuous-integration)
-- [Release signing & distribution trust](#release-signing--distribution-trust)
+- [Release signing and distribution trust](#release-signing-and-distribution-trust)
 - [Repository notes](#repository-notes)
 - [Working agreement](#working-agreement)
 
@@ -23,7 +23,7 @@ Concordance is built with [Flutter](https://flutter.dev) (stable **3.47.6** /
 Dart **3.13.5**). The Android target also needs **JDK 17** and the **Android
 SDK 36**.
 
-## Building & running
+## Building and running
 
 Run these from the repository root:
 
@@ -54,7 +54,7 @@ flutter build macos              # only builds on a Mac with Xcode
   The plain output is a `.app` bundle (an executable), **not** an installer; a
   `.dmg`/`.pkg` must be created separately.
 - **Windows** — Authenticode signing is deferred (see
-  [distribution trust](#release-signing--distribution-trust)).
+  [distribution trust](#release-signing-and-distribution-trust)).
 
 ### Primary test emulator
 
@@ -86,7 +86,7 @@ Tests live in `test/`. A feature is **not done without tests**.
 - **Screens** (`test/views/`) → widget tests for scoring flows, contrast and
   accessibility.
 
-## Project layout & architecture
+## Project layout and architecture
 
 - `lib/engine/` — the scoring engine, **pure Dart** (no Flutter imports),
   unit-testable in isolation.
@@ -140,7 +140,7 @@ warnings until Windows and macOS signing land. The Android APK **is**
 release-signed when the keystore secrets are configured, and debug-signed only
 as a fallback.
 
-## Release signing & distribution trust
+## Release signing and distribution trust
 
 ### Android
 

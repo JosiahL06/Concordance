@@ -235,6 +235,18 @@
 - [x] Removed dead `lib/prototype/`; reframed `docs/design/interaction.md`
 - [x] `.clinerules/` untracked (kept local only; gitignored)
 - [x] Version set to `1.0.0-beta`; CHANGELOG `[1.0.0-beta]` cut
+- [x] Documentation site scaffolded: Material for MkDocs over the tracked
+      `docs/` folder (`mkdocs.yml`, `requirements-docs.txt`), a Diátaxis-style
+      nav (getting started · per-OS installation · user guide · rulesets ·
+      reference · explanations · troubleshooting/FAQ · project), deployed to
+      GitHub Pages by `.github/workflows/wiki.yml` and link-checked by the new
+      `docs` job in `ci.yml` (`mkdocs build --strict`)
+- [ ] Write out the documentation content (the new pages are currently
+      outlines with the structure and facts-to-verify recorded inline)
+- [ ] Capture per-OS installation screenshots (Fire HD 10 from the
+      `fire_hd_10` emulator; Windows/macOS on those machines)
+- [ ] Enable Pages on the GitHub repo (Settings → Pages → Source: GitHub
+      Actions) — required once before the deploy workflow can publish
 - [ ] Publish the `v1.0.0-beta` GitHub Release (signed APK + desktop bundles + SHA256SUMS)
 - [ ] Installation, setup, and touch verification pass on a real tablet
 - [ ] Live match test; verify that a new user can keep up with a live game and scorekeep accurately

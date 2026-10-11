@@ -1,0 +1,121 @@
+# Concordance documentation site — Material for MkDocs.
+#
+# Source lives in docs/ alongside the code (docs-as-code: reviewed in PRs,
+# versioned with the app). CI builds it strictly and deploys to GitHub Pages:
+#   * deploy: .github/workflows/wiki.yml
+#   * PR link check: the "docs" job in .github/workflows/ci.yml
+#
+# Local preview:  mkdocs serve        (see docs/CONTRIBUTING.md)
+#
+# NOTE: the rulebook PDFs under docs/ are third-party and licensed for local
+# church use only. They are gitignored, never committed, never published, and
+# no rulebook prose may be added to any page here (numeric rules are fine).
+site_name: Concordance
+site_description: >-
+  Offline, touch-first scorekeeper for Bible Quiz matches — Teen Bible Quiz
+  (TBQ) and Junior Bible Quiz (JBQ) presets built in.
+site_url: https://josiahl06.github.io/Concordance/
+docs_dir: docs
+site_dir: site
+copyright: >-
+  Concordance is an independent community project, not affiliated with Bible
+  Quiz, and not for official use. Licensed AGPL-3.0-only.
+
+# Tracked in git but not published: the maintainer roadmap.
+exclude_docs: |
+  TODO.md
+
+repo_url: https://github.com/JosiahL06/Concordance
+repo_name: JosiahL06/Concordance
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Your first match: getting-started/first-match.md
+      - Tour of the screens: getting-started/tour.md
+  - Installation:
+      - Which download do I need?: installation/index.md
+      - Amazon Fire HD 10: installation/fire-hd-10.md
+      - Other Android devices: installation/android.md
+      - Windows: installation/windows.md
+      - Linux: installation/linux.md
+      - macOS: installation/macos.md
+      - Verifying your download: installation/verifying-downloads.md
+      - Updating & uninstalling: installation/updating-and-uninstalling.md
+  - User guide:
+      - Set up a match: guide/set-up-a-match.md
+      - Score answers: guide/scoring-answers.md
+      - Undo & corrections: guide/undo-and-corrections.md
+      - Fouls, contests, interruptions & time-outs: guide/fouls-contests-interruptions-timeouts.md
+      - Alerts: guide/alerts.md
+      - Question navigator: guide/question-navigator.md
+      - Autosave & recovery: guide/autosave-and-recovery.md
+      - Match summary: guide/match-summary.md
+      - Settings: guide/settings.md
+  - Rulesets:
+      - Overview: rulesets/index.md
+      - TBQ preset: rulesets/tbq.md
+      - JBQ preset: rulesets/jbq.md
+      - Ruleset schema: design/ruleset-schema.md
+  - Reference:
+      - Data & storage: reference/data-and-storage.md
+      - Release artifacts & checksums: reference/release-artifacts.md
+      - Glossary: reference/glossary.md
+  - Explanation:
+      - Why Concordance works this way: explanation/index.md
+      - Offline-only, no accounts: explanation/offline-only.md
+      - Event-sourced scoring: explanation/event-sourced-scoring.md
+      - Modern vs Classic: explanation/modern-vs-classic.md
+      - GMS-free & sideload-only: explanation/gms-free-and-sideload.md
+  - Troubleshooting & FAQ:
+      - Overview: troubleshooting/index.md
+      - Install & launch problems: troubleshooting/install-and-launch.md
+      - Recovering a round: troubleshooting/data-recovery.md
+      - FAQ: troubleshooting/faq.md
+  - Project:
+      - Contributing: CONTRIBUTING.md
+      - Changelog: CHANGELOG.md
+      - Screens & interaction design: design/interaction.md
+      - Code of conduct: CODE_OF_CONDUCT.md
+      - Security policy: SECURITY.md

@@ -1,0 +1,12 @@
+# Documentation site toolchain (docs/ → GitHub Pages).
+#
+# Used by .github/workflows/ci.yml (strict build check on PRs) and
+# .github/workflows/wiki.yml (build + deploy). Material for MkDocs bundles
+# MkDocs, PyMdown Extensions and the theme itself, so one pin is enough.
+#
+# Pinned for reproducible builds (see .clinerules/toolchain-and-commands.md).
+# Local preview on this machine:
+#   python -m venv ~/sdk/cache/mkdocs-venv
+#   ~/sdk/cache/mkdocs-venv/bin/pip install -r requirements-docs.txt
+#   ~/sdk/cache/mkdocs-venv/bin/mkdocs serve
+mkdocs-material==9.7.7

@@ -36,12 +36,15 @@ secrets/
 # Local study material extracted from third-party apps (e.g. the
 # official EZScore APK and reverse-engineering notes derived from
 # it). Keep on disk for the maintainer; never publish or redistribute.
-reference/
+# Anchored to the repository root deliberately: an unanchored `reference/`
+# also matches the documentation section at docs/reference/.
+/reference/
 
 # ── Project-specific: internal dev notes ──────────────────────
 # Local development rules / assistant notes. Kept on disk for the
 # maintainer but never published; not part of the public repository.
-.clinerules/
+# Anchored to the repository root for the same reason as `reference/` above.
+/.clinerules/
 
 # ── Project-specific: release artifacts ───────────────────────
 # CI-built APKs/installers are downloaded from GitHub Releases,
@@ -146,6 +149,11 @@ macos/.symlinks/
 # ── Flutter version manager (if adopted) ──────────────────────
 .fvm/
 !.fvm/fvm_config.json
+
+# ── Project-specific: documentation site build output ─────────
+# Material for MkDocs renders docs/ → site/; CI deploys that to GitHub
+# Pages (.github/workflows/wiki.yml). The built site is never committed.
+site/
 
 # ── Other tooling ─────────────────────────────────────────────
 node_modules/

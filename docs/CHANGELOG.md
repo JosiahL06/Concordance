@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Documentation site (wiki).** Concordance now has a full documentation wiki
+  built with Material for MkDocs from the tracked `docs/` folder and published
+  to GitHub Pages at <https://josiahl06.github.io/Concordance/>. `mkdocs.yml`
+  defines a Diátaxis-style structure — getting started, per-OS installation
+  (Fire HD 10 side-load, Android, Windows, Linux, macOS, checksum verification,
+  updating/uninstalling), user guide, rulesets, reference, explanations, and
+  troubleshooting/FAQ — and `requirements-docs.txt` pins the toolchain.
+  `.github/workflows/wiki.yml` builds and deploys on pushes to `main`
+  (GitHub-only, like the other workflows), and `ci.yml` gained a `docs` job
+  running `mkdocs build --strict`, so a broken link or a page missing from the
+  nav fails the PR. The rendered site (`site/`) is gitignored. The pages are
+  currently outlines — structure, facts to verify, and screenshots to capture
+  are recorded inline — rather than finished prose.
 - **Autosave failures are now visible instead of silent.** A new persistent
   warning strip (`SaveErrorBar`, shared by both live views via `NoticeSlot`)
   appears while `RoundController.saveError` is set: `NOT SAVING - this round is
@@ -42,6 +55,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`.gitignore`: the `reference/` rule was unanchored**, so it also ignored the
+  new `docs/reference/` documentation section (any directory named `reference`
+  at any depth). The rule is now `/reference/`, matching only the root-level
+  third-party study material it was written for; `/.clinerules/` was anchored
+  the same way for the same reason.
 - **Autosave could lose an entire round if the app was killed mid-save.** Every
   scoring change rewrote the round's journal — `DELETE` every event row, then
   re-insert them one at a time — and with each statement auto-committing, a kill
