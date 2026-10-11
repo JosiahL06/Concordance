@@ -1,15 +1,25 @@
-# Concordance documentation site — Material for MkDocs.
+# Concordance documentation site — built with Zensical.
+#
+# Zensical (zensical.org) is the successor to MkDocs Material, written by the
+# same team and released under MIT. It reads this file directly, so the layout
+# is still MkDocs-shaped; the Material theme is preserved with `variant: classic`
+# below. Search is built in — no search plugin needed.
 #
 # Source lives in docs/ alongside the code (docs-as-code: reviewed in PRs,
 # versioned with the app). CI builds it strictly and deploys to GitHub Pages:
 #   * deploy: .github/workflows/wiki.yml
 #   * PR link check: the "docs" job in .github/workflows/ci.yml
 #
-# Local preview:  mkdocs serve        (see docs/CONTRIBUTING.md)
+# Local preview:  zensical serve    (see docs/CONTRIBUTING.md)
+# Fallback:       mkdocs serve      (mkdocs-material is still pinned in
+#                                   requirements-docs.txt while Zensical is
+#                                   pre-1.0 — see that file's header)
 #
 # NOTE: the rulebook PDFs under docs/ are third-party and licensed for local
-# church use only. They are gitignored, never committed, never published, and
-# no rulebook prose may be added to any page here (numeric rules are fine).
+# church use only. They are gitignored, never committed, and never published —
+# the "exclude" plugin below keeps them out of site/ (gitignore alone does
+# not, for either builder). No rulebook prose may be added to any page here
+# (numeric rules are fine).
 site_name: Concordance
 site_description: >-
   Offline, touch-first scorekeeper for Bible Quiz matches — Teen Bible Quiz
@@ -21,9 +31,6 @@ copyright: >-
   Concordance is an independent community project, not affiliated with Bible
   Quiz, and not for official use. Licensed AGPL-3.0-only.
 
-# Tracked in git but not published: the maintainer roadmap.
-exclude_docs: |
-  TODO.md
 
 repo_url: https://github.com/JosiahL06/Concordance
 repo_name: JosiahL06/Concordance
@@ -31,6 +38,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  variant: modern
   features:
     - navigation.tabs
     - navigation.sections
@@ -53,8 +61,31 @@ theme:
   icon:
     repo: fontawesome/brands/github
 
+# Versioned docs. `provider: mike` tells the theme to render the version
+# selector from versions.json on the gh-pages branch (populated by mike — see
+# requirements-docs.txt). Optional per-version settings (default_version,
+# visible aliases, the outdated-version warning) follow the Material for MkDocs
+# versioning guide and still work here. mike deploys versions side-by-side
+# (/1.0/, /latest/); the site root redirects to `latest`.
+extra:
+  version:
+    provider: mike
+
+# `search` is a no-op under Zensical (search is built in and needs no plugin),
+# but `mkdocs build` still needs it for the fallback path, so it stays.
 plugins:
   - search
+  # "exclude" is Zensical's replacement for MkDocs' exclude_docs. The *.pdf
+  # glob backstops the gitignored third-party PDFs: gitignore keeps them out
+  # of the repo, but both builders still copy docs/ assets into site/, and
+  # wiki.yml deploys site/ wholesale — so without this they would be
+  # PUBLISHED (the rulebook PDFs are licensed for local church use only).
+  # Never remove the *.pdf glob. TODO.md is the internal roadmap, kept out of
+  # the published nav.
+  - exclude:
+      glob:
+        - TODO.md
+        - "*.pdf"
 
 markdown_extensions:
   - admonition

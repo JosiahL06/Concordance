@@ -74,7 +74,36 @@ adb install -r build/app/outputs/flutter-apk/app-debug.apk
 adb shell am start -n org.concordance.app/.MainActivity
 adb exec-out screencap -p > /tmp/screen.png
 adb emu kill          # always shut down when finished
+### Documentation site (Zensical)
+
+The docs are built with [Zensical](https://zensical.org) (MkDocs Material's
+successor — same creators, MIT), which reads `mkdocs.yml` unchanged and keeps
+the Material look via `variant: classic`:
+
+```sh
+source $HOME/sdk/env.sh
+~/sdk/cache/docs-venv/bin/pip install -r requirements-docs.txt   # first time
+~/sdk/cache/docs-venv/bin/zensical serve             # local preview, http://127.0.0.1:8000
+~/sdk/cache/docs-venv/bin/zensical build --strict    # the CI gate; MUST be clean
 ```
+
+Key points:
+- Zensical **does not** honor `.gitignore`; the `plugins: exclude:` entry with
+  `*.pdf` keeps the gitignored rulebook PDFs out of `site/` (they are never
+  published). Do not remove that glob.
+- Zensical is still pre-1.0 — `zensical==0.0.69` is pinned and `mkdocs-material`
+  is kept as a fallback builder (`requirements-docs.txt`). Re-evaluate after the
+  0.1.0 release (TODO.md).
+- `ci.yml` also runs `zensical build --strict` in the `docs` job (PR gate):
+  broken internal links or a page missing from the nav fail the PR.
+- **Versioned publishing uses `mike`** (the Zensical-compatible fork
+  `squidfunk/mike`, pinned in `requirements-docs.txt`). Docs are published
+  side-by-side per version on a **`gh-pages` branch** which GitHub Pages serves
+  (Settings → Pages → Source: "Deploy from a branch" → `gh-pages` → `/ (root)`),
+  and `mkdocs.yml` enables the selector via `extra.version.provider: mike`.
+  `wiki.yml` deploys a `v*` tag as `<version>` + `latest`, a `main` push as the
+  moving `dev` version, or an explicit `version` via manual dispatch. See
+  `.clinerules/toolchain-and-commands.md` for the local `mike` commands.
 
 ## Testing
 
@@ -117,7 +146,13 @@ Workflows live under `.github/workflows/` (GitHub Actions layout, also valid
 for Gitea Actions):
 
 - **`ci.yml`** — `flutter analyze` + `flutter test` on every push to `main` and
-  on pull requests. Fast gate, no build.
+  on pull requests, plus a `docs` job running `zensical build --strict` (same
+  strict gate as the deploy workflow).
+- **`wiki.yml`** — builds the Zensical site on `docs/**` / `mkdocs.yml` /
+  `requirements-docs.txt` and deploys it **versioned** with `mike` to the
+  `gh-pages` branch (GitHub Pages → "Deploy from a branch"). A `v*` tag deploys
+  `<version>` + `latest` (and makes `latest` the default); a `main` push deploys
+  the moving `dev` version; manual dispatch deploys an explicit `version`.
 - **`build.yml`** — full four-platform release build on `v*` tags and via manual
   dispatch (*Actions → Build → Run workflow*): Android APK, Linux bundle,
   Windows zip, and macOS `.app` zip. Tag builds attach the artifacts to a GitHub

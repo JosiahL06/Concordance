@@ -42,12 +42,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: pip
-          # setup-python only auto-detects requirements.txt; ours is named for
-          # the docs toolchain, so point the cache key at it explicitly.
-          cache-dependency-path: requirements-docs.txt
+          # No pip cache, matching wiki.yml — see the note there.
 
       # Same strict build the deploy workflow runs, so a PR that breaks a link,
       # drops a page from the nav, or adds a bad reference fails before merge.
       - run: pip install -r requirements-docs.txt
-      - run: mkdocs build --strict
+      - run: zensical build --strict

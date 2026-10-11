@@ -1,28 +1,54 @@
 name: Docs
 
-# Builds the Material for MkDocs site in docs/ and deploys it to GitHub Pages.
+# Builds the Zensical site in docs/ and deploys it to GitHub Pages *versioned*,
+# using the Zensical-compatible mike fork (see requirements-docs.txt).
 #
-# GitHub-only: the Pages actions (configure/upload/deploy-pages) do not exist
-# on the Gitea mirror, so the whole workflow skips there instead of failing —
-# the same gate ci.yml and build.yml use.
+# Deployment model: mike commits each built version to a `gh-pages` branch and
+# pushes it; GitHub Pages serves that branch. The GitHub Pages *Actions*
+# (configure/upload/deploy-pages) are NOT used here, and the one-time
+# Settings → Pages → Source must be "Deploy from a branch" → `gh-pages` →
+# `/ (root)`. The first successful run creates the `gh-pages` branch.
 #
-# One-time setup (repo owner): Settings → Pages → Source: "GitHub Actions".
+# What gets deployed:
+#   * push of a `v*` tag → deploy `<tag minus leading v>`, move the `latest`
+#     alias to it, and make `latest` the default (`/` redirects to it).
+#   * push to `main`     → deploy the moving `dev` version (unreleased docs).
+#   * workflow_dispatch  → deploy `inputs.version` (blank elsewhere = `dev`).
+#
+# Path filters only gate *branch* pushes (GitHub does not evaluate them for
+# tag pushes), so a version tag always publishes.
+#
+# GitHub-only: mike pushes a branch and Pages is a GitHub feature, so the job
+# skips on the Gitea mirror instead of failing — the same gate ci.yml and
+# build.yml use.
+#
+# One-time setup (repo owner):
+#   Settings → Pages → Source: "Deploy from a branch" → `gh-pages` → `/ (root)`.
+# If the GITHUB_TOKEN push does not trigger a Pages rebuild, add a
+# `GH_PAGES_TOKEN` PAT secret (repo scope) and point mike's remote at it.
+#
 # Live URL: https://josiahl06.github.io/Concordance/
 on:
   push:
     branches: [main]
+    tags: ['v*']
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
       - 'requirements-docs.txt'
       - '.github/workflows/wiki.yml'
   workflow_dispatch:
+    inputs:
+      version:
+        description: >-
+          Version to deploy (e.g. 1.0 or 1.0.1). Leave blank on a tag build to
+          use the tag; blank elsewhere deploys the `dev` version.
+        required: false
+        default: ''
 
-# GITHUB_TOKEN scopes required to publish to Pages (id-token is for OIDC).
+# mike commits to and pushes the gh-pages branch, so it needs write access.
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 # One deployment at a time, and never cancel one that is already running.
 concurrency:
@@ -30,39 +56,82 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    name: Build site
+  deploy:
+    name: Build & deploy versioned docs
     if: github.server_url == 'https://github.com'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # mike needs real history so it can fetch and commit to the gh-pages
+          # branch it manages.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: pip
-          # setup-python only auto-detects requirements.txt; this file has a
-          # docs-specific name, so the cache key must point at it explicitly.
-          cache-dependency-path: requirements-docs.txt
+          # No pip cache: Zensical upstream advises against CI caching for now
+          # (its wheel layout changes often enough that a stale cache costs
+          # more than the seconds it saves).
 
-      # --strict turns broken internal links and missing nav entries into
-      # build failures, so the published site can never contain dead links.
       - run: pip install -r requirements-docs.txt
-      - run: mkdocs build --strict
 
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
+      # --strict turns broken internal links and pages missing from the nav
+      # into failures. ci.yml runs this gate on branch pushes; this workflow is
+      # the only gate on *tag* pushes, so keep it here too.
+      - name: Verify the site builds cleanly
+        run: zensical build --strict
 
-  deploy:
-    name: Deploy to GitHub Pages
-    needs: build
-    if: github.server_url == 'https://github.com'
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5
+      - name: Work out the version to deploy
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          version=''
+          release='false'
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            version="${GITHUB_REF#refs/tags/v}"
+            release='true'
+          elif [[ -n "${INPUT_VERSION}" ]]; then
+            version="${INPUT_VERSION}"
+            release='true'
+          else
+            version='dev'
+          fi
+          printf 'value=%s\n'   "${version}" >> "$GITHUB_OUTPUT"
+          printf 'release=%s\n' "${release}" >> "$GITHUB_OUTPUT"
+          echo "Deploying version '${version}' (release=${release})"
+
+      - name: Fetch the gh-pages branch (if any)
+        run: git fetch origin gh-pages --depth=1 || echo 'No gh-pages branch yet — mike will create it.'
+
+      - name: Configure a git identity for mike's commits
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Deploy with mike
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+          RELEASE: ${{ steps.version.outputs.release }}
+        run: |
+          set -euo pipefail
+          # In CI `origin` is this GitHub repo, so mike's default remote is
+          # correct. Aliases default to symlinks (mike) which GitHub Pages
+          # serves; switch to `--alias-type copy` here if an alias ever 404s.
+          if [[ "${RELEASE}" == 'true' ]]; then
+            mike deploy --push --update-aliases "${VERSION}" latest
+            # Default points at the *moving* alias so future releases inherit it.
+            mike set-default --push latest
+          else
+            mike deploy --push "${VERSION}"
+            # Make the site root resolve before the first release exists.
+            # `set-default` creates gh-pages:index.html; only set it when that
+            # is absent, so later `dev` pushes never clobber a release's
+            # `latest` default.
+            if ! git cat-file -e gh-pages:index.html 2>/dev/null; then
+              mike set-default --push "${VERSION}"
+            fi
+          fi
+

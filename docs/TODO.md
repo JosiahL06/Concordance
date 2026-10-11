@@ -235,18 +235,38 @@
 - [x] Removed dead `lib/prototype/`; reframed `docs/design/interaction.md`
 - [x] `.clinerules/` untracked (kept local only; gitignored)
 - [x] Version set to `1.0.0-beta`; CHANGELOG `[1.0.0-beta]` cut
-- [x] Documentation site scaffolded: Material for MkDocs over the tracked
-      `docs/` folder (`mkdocs.yml`, `requirements-docs.txt`), a Diátaxis-style
-      nav (getting started · per-OS installation · user guide · rulesets ·
-      reference · explanations · troubleshooting/FAQ · project), deployed to
-      GitHub Pages by `.github/workflows/wiki.yml` and link-checked by the new
-      `docs` job in `ci.yml` (`mkdocs build --strict`)
+- [x] Documentation site scaffolded: Zensical (MkDocs Material's successor;
+      `mkdocs-material` kept pinned as a fallback builder until Zensical is
+      past 1.0) over the tracked `docs/` folder (`mkdocs.yml`,
+      `requirements-docs.txt`), a Diátaxis-style nav (getting started · per-OS
+      installation · user guide · rulesets · reference · explanations ·
+      troubleshooting/FAQ · project), deployed to GitHub Pages by
+      `.github/workflows/wiki.yml` and link-checked by the new `docs` job in
+      `ci.yml` (`zensical build --strict`)
+- [x] Rulebook PDFs excluded from the published wiki (`plugins: exclude:` +
+      `*.pdf` glob in `mkdocs.yml`; both builders had been copying the
+      gitignored `docs/*.pdf` files into `site/`, which the Pages deploy
+      publishes wholesale)
+- [x] Versioned docs published with **mike** (the Zensical-compatible fork
+      `squidfunk/mike`, pinned to a commit SHA in `requirements-docs.txt`):
+      `mkdocs.yml` sets `extra.version.provider: mike`; `wiki.yml` deploys a
+      `v*` tag as `<version>` + `latest` (default), a `main` push as the moving
+      `dev` version, or an explicit `version` via manual dispatch — committing
+      to a `gh-pages` branch that Pages serves (`mike` builds through
+      `zensical`, so the `*.pdf` exclusion still holds)
+- [ ] Re-evaluate the docs toolchain after Zensical's 0.1.0 community launch
+      (Nov 5, 2026): confirm the pinned `zensical==0.0.69` still builds clean,
+      then bump; once Zensical is 1.x and proven across a release cycle or
+      two, drop `mkdocs-material` from `requirements-docs.txt` and delete the
+      fallback notes in its header / `.clinerules/toolchain-and-commands.md`
 - [ ] Write out the documentation content (the new pages are currently
       outlines with the structure and facts-to-verify recorded inline)
 - [ ] Capture per-OS installation screenshots (Fire HD 10 from the
       `fire_hd_10` emulator; Windows/macOS on those machines)
-- [ ] Enable Pages on the GitHub repo (Settings → Pages → Source: GitHub
-      Actions) — required once before the deploy workflow can publish
+- [ ] Enable Pages on the GitHub repo (Settings → Pages → Source: **Deploy
+      from a branch** → `gh-pages` → `/ (root)`) — required once before the
+      versioned deploy workflow can publish (the first `wiki.yml` run creates
+      the `gh-pages` branch)
 - [ ] Publish the `v1.0.0-beta` GitHub Release (signed APK + desktop bundles + SHA256SUMS)
 - [ ] Installation, setup, and touch verification pass on a real tablet
 - [ ] Live match test; verify that a new user can keep up with a live game and scorekeep accurately

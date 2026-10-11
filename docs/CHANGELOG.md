@@ -10,18 +10,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Documentation site (wiki).** Concordance now has a full documentation wiki
-  built with Material for MkDocs from the tracked `docs/` folder and published
-  to GitHub Pages at <https://josiahl06.github.io/Concordance/>. `mkdocs.yml`
-  defines a Diátaxis-style structure — getting started, per-OS installation
-  (Fire HD 10 side-load, Android, Windows, Linux, macOS, checksum verification,
-  updating/uninstalling), user guide, rulesets, reference, explanations, and
-  troubleshooting/FAQ — and `requirements-docs.txt` pins the toolchain.
+  built from the tracked `docs/` folder and published to GitHub Pages at
+  <https://josiahl06.github.io/Concordance/>. It is built with **Zensical**
+  (MkDocs Material's successor — same creators, MIT, reads the same
+  `mkdocs.yml` with the Material look kept via `variant: classic`);
+  `mkdocs-material` remains pinned as a fallback builder until Zensical is
+  past 1.0. `mkdocs.yml` defines a Diátaxis-style structure — getting started,
+  per-OS installation (Fire HD 10 side-load, Android, Windows, Linux, macOS,
+  checksum verification, updating/uninstalling), user guide, rulesets,
+  reference, explanations, and troubleshooting/FAQ — and
+  `requirements-docs.txt` pins the toolchain.
   `.github/workflows/wiki.yml` builds and deploys on pushes to `main`
   (GitHub-only, like the other workflows), and `ci.yml` gained a `docs` job
-  running `mkdocs build --strict`, so a broken link or a page missing from the
-  nav fails the PR. The rendered site (`site/`) is gitignored. The pages are
-  currently outlines — structure, facts to verify, and screenshots to capture
-  are recorded inline — rather than finished prose.
+  running `zensical build --strict`, so a broken link or a page missing from
+  the nav fails the PR. The rendered site (`site/`) is gitignored. The pages
+  are currently outlines — structure, facts to verify, and screenshots to
+  capture are recorded inline — rather than finished prose.
+- **Versioned documentation.** The wiki is now published as **side-by-side
+  versions** using **mike** (the Zensical-compatible fork `squidfunk/mike`,
+  pinned to a commit SHA in `requirements-docs.txt`). `mkdocs.yml` enables the
+  version selector with `extra.version.provider: mike`. `wiki.yml` publishes a
+  `v*` tag as `<version>` plus the `latest` alias (making `latest` the default
+  so `/` redirects there), a `main` push as the moving `dev` version, and an
+  explicit `version` via manual dispatch. Deployment moved from the GitHub
+  Pages Actions to a **`gh-pages` branch** that mike commits and pushes (Pages
+  source must be "Deploy from a branch" → `gh-pages` → `/ (root)`); the fork is
+  a transitional shim until Zensical ships native versioning. mike builds
+  through `zensical`, so the `exclude: *.pdf` guard still keeps the rulebook
+  PDFs unpublished.
+- **The rulebook PDFs can no longer reach the published wiki.** Both MkDocs
+  (before this change) and Zensical copied the gitignored `docs/*.pdf` files —
+  the two rulebook PDFs, licensed for local church use only, plus the
+  CC-By `free-paper-scoresheet.pdf` — into `site/`, and `wiki.yml` deployed
+  `site/` wholesale, so they would have been publicly redistributed by the
+  Pages deploy. A `plugins: exclude:` entry with a `*.pdf` glob in `mkdocs.yml`
+  now keeps them out of the build output (Zensical does not honor `.gitignore`
+  the way MkDocs did, so the glob is load-bearing); `.gitignore` carries a
+  comment warning not to remove it.
 - **Autosave failures are now visible instead of silent.** A new persistent
   warning strip (`SaveErrorBar`, shared by both live views via `NoticeSlot`)
   appears while `RoundController.saveError` is set: `NOT SAVING - this round is

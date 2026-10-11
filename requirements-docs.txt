@@ -1,12 +1,52 @@
 # Documentation site toolchain (docs/ → GitHub Pages).
 #
-# Used by .github/workflows/ci.yml (strict build check on PRs) and
-# .github/workflows/wiki.yml (build + deploy). Material for MkDocs bundles
-# MkDocs, PyMdown Extensions and the theme itself, so one pin is enough.
+# PRIMARY: Zensical — the successor to MkDocs Material, written by the same
+# team (Martin Donath / squidfunk) and released under MIT. It is Rust+Python,
+# reads this repo's mkdocs.yml unchanged, and keeps the Material look via
+# `variant: classic` in that file. Link validation is on by default and
+# `--strict` aborts the build on any warning, so the CI gate is preserved.
+#
+#   zensical serve              # local preview, http://127.0.0.1:8000
+#   zensical build --strict     # the check CI runs
+#
+# VERSIONING: mike (squidfunk fork). Upstream mike only knows `mkdocs build`;
+# the fork calls `zensical build` instead, so it keeps the multi-version
+# gh-pages workflow working under Zensical. It is a TRANSITIONAL shim — the
+# Zensical maintainers intend native versioning later and will only backport
+# compatibility fixes (no new features) to the fork. Install it from GitHub:
+#
+#   mike deploy --push --update-aliases <version> latest --remote origin-github
+#   mike set-default --push latest --remote origin-github   # once: / → latest
+#
+# It is a git install (not on PyPI), so it is pinned to the release tag's
+# commit SHA for reproducible builds. `git` must be on PATH. NOTE: this makes
+# the *deploy* path Zensical-only; the mkdocs-material fallback below stays
+# available for a plain local/`mkdocs build`, but not for versioned deploys.
+#
+# One-time repo setting (owner): Settings → Pages → Source:
+# "Deploy from a branch" → `gh-pages` → `/ (root)`.
+#
+# SECONDARY: mkdocs-material — the previous builder, kept as a working
+# fallback while Zensical is pre-1.0 (upstream advises gradual, reversible
+# adoption). `mkdocs build --strict` still works, but note two differences:
+#   * mkdocs.yml's `plugins: - exclude:` is Zensical-only; MkDocs errors with
+#     'The "exclude" plugin is not installed'. For a MkDocs fallback build,
+#     comment out that plugin and rely on MkDocs' own .gitignore handling
+#     (which covers TODO.md and page-level PDFs, but NOT docs/ asset PDFs —
+#     see the comment in .gitignore).
+#   * MkDocs writes the search index to search/search_index.json; Zensical
+#     writes site/search.json. Neither is referenced by hand.
+# Drop mkdocs-material once Zensical hits 1.x and has proven out across a
+# release cycle or two (re-evaluate after the 0.1.0 community launch).
 #
 # Pinned for reproducible builds (see .clinerules/toolchain-and-commands.md).
 # Local preview on this machine:
-#   python -m venv ~/sdk/cache/mkdocs-venv
-#   ~/sdk/cache/mkdocs-venv/bin/pip install -r requirements-docs.txt
-#   ~/sdk/cache/mkdocs-venv/bin/mkdocs serve
+#   python -m venv ~/sdk/cache/docs-venv
+#   ~/sdk/cache/docs-venv/bin/pip install -r requirements-docs.txt
+#   ~/sdk/cache/docs-venv/bin/zensical serve
+zensical==0.0.69
 mkdocs-material==9.7.7
+# mike (Zensical-compatible fork) @ 2.2.0+zensical-0.1.0. Pinned to the release
+# tag's commit SHA (tags can be moved; SHAs cannot). See the VERSIONING note
+# above and .clinerules/toolchain-and-commands.md.
+mike @ git+https://github.com/squidfunk/mike.git@0f62791256ebeba60d20d2f1d8fe6ec3b7d1e2b3

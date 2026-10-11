@@ -1,7 +1,7 @@
 # Concordance
 
-**A clean, modern, offline scorekeeper for Bible Quiz matches** — built to be
-usable within seconds by a volunteer scorekeeper.
+**A clean, modern scorekeeping app for Bible Quiz matches**, built to be
+intuitive and usable within seconds of picking it up.
 
 <!-- OUTLINE (docs pass): this is the wiki home. Keep it short: what it is,
      who it's for, the disclaimer, and three obvious next clicks.

@@ -56,8 +56,8 @@ ruleset details, and troubleshooting — is published at:
 **<https://josiahl06.github.io/Concordance/>**
 
 Its source is the [`docs/`](docs/) folder in this repository (built with
-Material for MkDocs), so it is versioned and reviewed alongside the code.
-Preview it locally with `mkdocs serve`; see
+Zensical, MkDocs Material's successor), so it is versioned and reviewed
+alongside the code. Preview it locally with `zensical serve`; see
 [CONTRIBUTING.md](docs/CONTRIBUTING.md) for the toolchain.
 
 ## Screenshots

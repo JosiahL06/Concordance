@@ -18,6 +18,11 @@ docs/**/*.pdf
 docs/**/*-Rules.txt
 docs/**/rules-extracted*
 
+# NOTE: these gitignored docs/ assets are ALSO excluded from the published
+# wiki by the "exclude" plugin in mkdocs.yml (*.pdf). Gitignore only keeps
+# them out of the repo; the build would still copy them into site/ and the
+# GitHub Pages deploy would publish them. Never remove that plugin glob.
+
 # ── Project-specific: secrets & signing material ──────────────
 # Android release keystore — see https://flutter.dev/to/reference-keystore
 key.properties
