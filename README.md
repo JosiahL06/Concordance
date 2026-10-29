@@ -74,7 +74,7 @@ lose the game.
 ## Installation
 
 Step-by-step per-device instructions are in the
-project wiki: **<https://josiahl06.github.io/Concordance/installation/>**.
+project wiki: **https://josiahl06.github.io/Concordance/latest/installation/**.
 The short version:
 
 ### Android / Fire tablet (recommended)
