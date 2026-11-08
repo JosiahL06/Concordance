@@ -14,9 +14,8 @@ ThemeData buildTheme(Brightness brightness) {
   // by tablet noises, so the component themes below disable it app-wide;
   // the opt-in vibration in `haptics.dart` is the only sanctioned feedback.
   // Custom InkWells outside the button system get `enableFeedback: false`
-  // at their call sites. `SimpleDialogOption` and menu items have no switch
-  // (see `QuietDialogOption` / `QuietMenuItem`), and `ListTile` is covered
-  // via [ListTileThemeData] below.
+  // at their call sites. Custom option rows use `enableFeedback: false`
+  // explicitly, and `ListTile` is covered via [ListTileThemeData] below.
   const noSound = ButtonStyle(enableFeedback: false);
   return ThemeData(
     colorScheme: ColorScheme.fromSeed(seedColor: kSeed, brightness: brightness),

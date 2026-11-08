@@ -31,10 +31,21 @@ history, so there is nothing you can spoil by going back.
 
 ## Correcting an older question
 
-On the Classic screen you can move to a question other than the current one — tap
-its cell in the grid to go there, then score as usual. The ruling remembers which
-question it belongs to, so a correction lands on the right one. The question
-numbers and the value row help you confirm you are in the right place first.
+On the Classic screen, tap a cell that already holds an answer to edit it:
+**MARK CORRECT** / **MARK INCORRECT** changes the ruling in place, and **REMOVE
+RULING** clears it and puts you back on that question with the quizzer selected,
+ready to record the corrected ruling. Tapping an empty cell only moves you there.
+
+Tap a question's header number to edit the question itself: change its value,
+void an answered question, remove an interruption, or remove a void/substitute.
+The app keeps the correction in its original place in the round history, so
+later re-reads and substitutions still line up. If a correction would invalidate
+later actions, it lists exactly which ones before removing them.
+
+After any of these edits, an **UNDO EDIT** strip appears. It puts the round back
+the way it was before the edit, and it disappears once you record the next normal
+ruling. If you only need to step back one ruling, the regular **Undo** button
+still does that.
 
 ## When not to use Undo
 

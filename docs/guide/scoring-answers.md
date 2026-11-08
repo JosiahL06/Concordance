@@ -10,15 +10,17 @@ Every answer follows the same three steps, in this order:
 2. **Tap the quizzer** who answered.
 3. **Tap CORRECT** or **INCORRECT**.
 
-The console expects that order. Until a question has a value and a quizzer selected,
-the CORRECT and INCORRECT buttons stay switched off.
+The console expects that order. If you tap the quizzer before setting the value,
+the console replaces CORRECT/INCORRECT with **10 PTS**, **20 PTS**, and **30
+PTS** buttons. Pick the value and the ruling buttons come straight back.
 
 ## Setting the value
 
 The app does not guess what each question is worth — it asks you. Tap the value
-row under the question numbers, or the **SET VALUE** button at the top of the
-screen, and choose **10**, **20**, or **30**. The value row works the same way
-on both live screens.
+row under the question numbers, the **SET VALUE** button at the top of the
+screen, or the value buttons that appear in the console after selecting a
+quizzer, and choose **10**, **20**, or **30**. This works the same way on both
+live screens.
 
 Teen Bible Quiz questions are a mix of ten-point, twenty-point, and thirty-point
 questions; Junior Bible Quiz has its own mix. The ruleset decides how many of

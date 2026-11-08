@@ -5,6 +5,53 @@ import '../engine/notifications.dart';
 import '../engine/ruleset.dart';
 import '../engine/round_view.dart';
 
+/// One journal entry the scoresheet can edit, with its stable journal index.
+class RoundAction {
+  const RoundAction({required this.index, required this.event});
+
+  final int index;
+  final RoundEvent event;
+}
+
+/// Result of an attempted action edit.
+///
+/// [conflicts] is non-empty when the edit was not applied because later
+/// actions no longer replay. Callers may show those actions, then retry the
+/// same operation with `allowDependentRemoval: true`.
+class EditOutcome {
+  const EditOutcome.applied()
+    : applied = true,
+      conflicts = const <JournalIssue>[];
+
+  const EditOutcome.blocked(this.conflicts) : applied = false;
+
+  final bool applied;
+  final List<JournalIssue> conflicts;
+}
+
+/// An unanswered substitution opportunity: a seated quizzer has quizzed out and
+/// their team still has at least one eligible bench quizzer.
+class SubstitutionPrompt {
+  const SubstitutionPrompt({
+    required this.side,
+    required this.outIndex,
+    required this.outLabel,
+    required this.outSeat,
+    required this.bench,
+  });
+
+  final Side side;
+  final int outIndex;
+  final String outLabel;
+  final int outSeat;
+
+  /// Eligible bench quizzers only (not out for the match).
+  final List<QuizzerView> bench;
+
+  int get benchCount => bench.length;
+  QuizzerView? get onlyBench => bench.length == 1 ? bench.single : null;
+}
+
 /// Production owner of a live round: the engine [RoundView] plus the view
 /// state the engine deliberately doesn't track (D6: screen position,
 /// selection, alert dismissal).
@@ -44,6 +91,28 @@ class RoundController extends ChangeNotifier {
   /// after every journal change (apply/undo). Null in tests / presave.
   void Function(RoundController)? autosave;
 
+  /// Rewrite hook for direct action edits. The journal no longer only grows or
+  /// shrinks at the tail, so an edit needs an atomic whole-journal rewrite. When
+  /// null (tests, presave) the regular [autosave] hook is used instead.
+  void Function(RoundController)? rewriteAutosave;
+
+  /// Snapshot of the journal before the most recent action edit. Kept only
+  /// until the next normal scoring action, so the "UNDO EDIT" strip cannot
+  /// rewind actions the keeper has since recorded.
+  List<RoundEvent>? _lastEditJournal;
+  int? _lastEditQuestionIndex;
+  (Side, int)? _lastEditSelection;
+  bool? _lastEditFinished;
+  String? _lastEditLabel;
+
+  bool get canUndoLastEdit => _lastEditJournal != null;
+  String? get lastEditLabel => _lastEditLabel;
+
+  /// Quiz-outs the keeper has explicitly dismissed the substitution prompt for.
+  /// Keys are stable roster indices, so a new quiz-out (or an undo/re-out)
+  /// re-arms the prompt.
+  final Set<(Side, int)> _dismissedSubstitutionPrompts = <(Side, int)>{};
+
   /// 0-based screen position (D6: view state, never journaled).
   int questionIndex = 0;
 
@@ -65,8 +134,10 @@ class RoundController extends ChangeNotifier {
   int get questionNumber => questionIndex + 1;
   int get questionCount => view.questionValues.length;
 
-  /// Current point value of question [n], or null while unset (D11).
-  int? currentValue(int n) => view.questionValues[n - 1];
+  /// Current point value of question [n], or null while unset (D11). A voided
+  /// slot reports its substitute value, because that is what the next answer
+  /// actually scores.
+  int? currentValue(int n) => view.effectiveValue(n);
 
   /// The per-question point values the ruleset allows (the value-picker
   /// options).
@@ -86,6 +157,446 @@ class RoundController extends ChangeNotifier {
   String get challengeLabel => ruleset.challengeKind == ChallengeKind.contest
       ? 'Contest'
       : "Coach's Appeal";
+
+  // ── direct action editing ──
+
+  /// The answer currently recorded in one quizzer × question cell, if any.
+  ///
+  /// The journal is historical: a void leaves the earlier `AnswerEvent` in the
+  /// journal while retracting its effect from derived state. Walking forward and
+  /// clearing at each void keeps a retracted answer from looking editable in an
+  /// empty cell, while still finding the answer recorded on the substitute read.
+  /// The answer guardrails permit at most one current answer per cell; the list
+  /// shape is kept for the existing caller contract.
+  List<RoundAction> answerActionsAtCell(Side side, int quizzerIndex, int n) {
+    RoundAction? current;
+    for (var i = 0; i < view.journal.length; i++) {
+      final event = view.journal[i];
+      if (event is VoidQuestionEvent && event.questionNumber == n) {
+        current = null;
+      } else if (event is AnswerEvent &&
+          event.questionNumber == n &&
+          event.side == side &&
+          event.quizzerIndex == quizzerIndex) {
+        current = RoundAction(index: i, event: event);
+      }
+    }
+    return current == null ? const <RoundAction>[] : <RoundAction>[current];
+  }
+
+  /// The latest value assignment recorded for [n], if the keeper set one
+  /// explicitly (as opposed to a seeded/test value).
+  RoundAction? questionValueAction(int n) {
+    for (var i = view.journal.length - 1; i >= 0; i--) {
+      final event = view.journal[i];
+      if (event is QuestionValueEvent && event.questionNumber == n) {
+        return RoundAction(index: i, event: event);
+      }
+    }
+    return null;
+  }
+
+  List<RoundAction> interruptionActions(int n) => [
+    for (var i = 0; i < view.journal.length; i++)
+      if (view.journal[i] case final InterruptionEvent e
+          when e.questionNumber == n)
+        RoundAction(index: i, event: e),
+  ];
+
+  List<RoundAction> voidActions(int n) => [
+    for (var i = 0; i < view.journal.length; i++)
+      if (view.journal[i] case final VoidQuestionEvent e
+          when e.questionNumber == n)
+        RoundAction(index: i, event: e),
+  ];
+
+  /// Legacy separate substitute events (older journals). The current UI folds
+  /// the substitute value into the void event; this lookup is only needed when
+  /// removing a void so those old events go with it.
+  List<RoundAction> _substituteQuestionActions(int n) => [
+    for (var i = 0; i < view.journal.length; i++)
+      if (view.journal[i] case final SubstituteQuestionEvent e
+          when e.questionNumber == n)
+        RoundAction(index: i, event: e),
+  ];
+
+  /// Whether a question header should open the question editor instead of the
+  /// quick value picker: something other than a simple, still-editable value is
+  /// recorded (interruption, void, or an already-answered value).
+  bool questionNeedsEditor(int n) {
+    if (n < 1 || n > questionCount) return false;
+    if (n > ruleset.match.regulationQuestions) return false;
+    final marks = view.questionMarks[n - 1];
+    if (marks.interrupted || marks.voided) return true;
+    return !view.questionValueEditable(n);
+  }
+
+  /// Whether [n] already has a recorded answer. Used to expose the void action
+  /// in the question editor only where clearing a question is meaningful.
+  bool questionHasAnswers(int n) => view.journal.any(
+    (event) => event is AnswerEvent && event.questionNumber == n,
+  );
+
+  /// Whether the footer's single VOID QUESTION button can act on the current
+  /// slot: it must have a value (the substitute reads at that value), and the
+  /// match must still be in progress.
+  bool get canVoidCurrentQuestion =>
+      !matchComplete &&
+      questionNumber >= 1 &&
+      questionNumber <= questionCount &&
+      currentValue(questionNumber) != null;
+
+  /// Whether any team currently has both a seated quizzer and an eligible bench
+  /// quizzer, so the substitution board has something to do.
+  bool get hasSubstitutionOptions => Side.values.any((side) {
+    final team = view.teamOf(side);
+    return team.seated.isNotEmpty &&
+        team.bench.any((quizzer) => quizzer.status.isEmpty);
+  });
+
+  /// The most recent quiz-out that still has an eligible bench replacement,
+  /// or null when there is nothing to prompt about. Deriving this from state
+  /// makes it disappear on substitution/undo and survive transient alerts.
+  SubstitutionPrompt? get substitutionPrompt {
+    if (matchComplete) return null;
+    SubstitutionPrompt? best;
+    var bestRecency = -1;
+    for (final side in Side.values) {
+      final team = view.teamOf(side);
+      final bench = [
+        for (final quizzer in team.bench)
+          if (quizzer.status.isEmpty) quizzer,
+      ];
+      if (bench.isEmpty) continue;
+      for (final quizzer in team.seated) {
+        if (quizzer.status != 'QUIZ-OUT') continue;
+        if (_dismissedSubstitutionPrompts.contains((side, quizzer.index))) {
+          continue;
+        }
+        final recency = _lastCorrectAnswerIndex(side, quizzer.index);
+        if (recency > bestRecency) {
+          bestRecency = recency;
+          best = SubstitutionPrompt(
+            side: side,
+            outIndex: quizzer.index,
+            outLabel: quizzer.label,
+            outSeat: quizzer.seat,
+            bench: List<QuizzerView>.unmodifiable(bench),
+          );
+        }
+      }
+    }
+    return best;
+  }
+
+  /// Dismisses the current prompt until that quizzer's state changes (undo or
+  /// re-quiz-out), or a different quiz-out becomes the newest prompt.
+  void dismissSubstitutionPrompt() {
+    final prompt = substitutionPrompt;
+    if (prompt == null) return;
+    _dismissedSubstitutionPrompts.add((prompt.side, prompt.outIndex));
+    // The prompt is the quiz-out notification when a bench replacement exists;
+    // dismiss its matching transient alert too instead of letting it pop in
+    // afterwards.
+    final quizOutAlert =
+        '${prompt.side.name.toUpperCase()} ${prompt.outLabel} quizzed out';
+    if (lastAlert == quizOutAlert) lastAlert = null;
+    notifyListeners();
+  }
+
+  /// Replaces one answer in place, preserving its journal position so later
+  /// actions (a re-read, substitution, void) replay exactly as they did.
+  EditOutcome changeAnswer(
+    int journalIndex, {
+    required bool correct,
+    bool allowDependentRemoval = false,
+  }) {
+    if (journalIndex < 0 || journalIndex >= view.journal.length) {
+      return const EditOutcome.blocked(<JournalIssue>[]);
+    }
+    final event = view.journal[journalIndex];
+    if (event is! AnswerEvent) {
+      return const EditOutcome.blocked(<JournalIssue>[]);
+    }
+    final candidate = List<RoundEvent>.of(view.journal);
+    candidate[journalIndex] = AnswerEvent(
+      questionNumber: event.questionNumber,
+      side: event.side,
+      quizzerIndex: event.quizzerIndex,
+      correct: correct,
+    );
+    return _commitEdit(
+      candidate,
+      label:
+          'Q${event.questionNumber} ${_quizzerName(event.side, event.quizzerIndex)} '
+          '${correct ? 'marked correct' : 'marked incorrect'}',
+      jumpTo: event.questionNumber,
+      selectSide: event.side,
+      selectIndex: event.quizzerIndex,
+      allowDependentRemoval: allowDependentRemoval,
+    );
+  }
+
+  /// Removes one answer. The screen moves to the question and selects the
+  /// quizzer so the corrected ruling can be recorded immediately.
+  EditOutcome removeAnswer(
+    int journalIndex, {
+    bool allowDependentRemoval = false,
+  }) {
+    if (journalIndex < 0 || journalIndex >= view.journal.length) {
+      return const EditOutcome.blocked(<JournalIssue>[]);
+    }
+    final event = view.journal[journalIndex];
+    if (event is! AnswerEvent) {
+      return const EditOutcome.blocked(<JournalIssue>[]);
+    }
+    final candidate = List<RoundEvent>.of(view.journal)..removeAt(journalIndex);
+    return _commitEdit(
+      candidate,
+      label:
+          'Q${event.questionNumber} ${_quizzerName(event.side, event.quizzerIndex)} '
+          'ruling removed',
+      jumpTo: event.questionNumber,
+      selectSide: event.side,
+      selectIndex: event.quizzerIndex,
+      allowDependentRemoval: allowDependentRemoval,
+    );
+  }
+
+  /// Removes every interruption mark on [n] (the bottom-bar button only adds).
+  EditOutcome removeInterruption(int n, {bool allowDependentRemoval = false}) {
+    final actions = interruptionActions(n);
+    if (actions.isEmpty) return const EditOutcome.blocked(<JournalIssue>[]);
+    final indexes = {for (final a in actions) a.index};
+    final candidate = <RoundEvent>[
+      for (var i = 0; i < view.journal.length; i++)
+        if (!indexes.contains(i)) view.journal[i],
+    ];
+    return _commitEdit(
+      candidate,
+      label: 'Q$n interruption removed',
+      allowDependentRemoval: allowDependentRemoval,
+    );
+  }
+
+  /// Removes the void and any substitute question on [n], restoring the
+  /// original question. Later substitute answers are surfaced as dependencies.
+  EditOutcome removeVoid(int n, {bool allowDependentRemoval = false}) {
+    final indexes = {
+      for (final a in [...voidActions(n), ..._substituteQuestionActions(n)])
+        a.index,
+    };
+    if (indexes.isEmpty) return const EditOutcome.blocked(<JournalIssue>[]);
+    final candidate = <RoundEvent>[
+      for (var i = 0; i < view.journal.length; i++)
+        if (!indexes.contains(i)) view.journal[i],
+    ];
+    return _commitEdit(
+      candidate,
+      label: 'Q$n void removed',
+      allowDependentRemoval: allowDependentRemoval,
+    );
+  }
+
+  /// Changes a regulation question's value, including after it was answered.
+  /// The assignment event is replaced in place (or inserted before the first
+  /// answer when the value came from a seeded base list), so later answers
+  /// re-fold at the new value.
+  EditOutcome changeQuestionValue(
+    int n,
+    int value, {
+    bool allowDependentRemoval = false,
+  }) {
+    if (n < 1 || n > questionCount) {
+      return const EditOutcome.blocked(<JournalIssue>[]);
+    }
+    if (n > ruleset.match.regulationQuestions) {
+      lastAlert = 'Overtime questions have a fixed point value.';
+      notifyListeners();
+      return const EditOutcome.blocked(<JournalIssue>[]);
+    }
+    if (!ruleset.match.answerValues.contains(value)) {
+      lastAlert = 'That point value is not allowed by this ruleset.';
+      notifyListeners();
+      return const EditOutcome.blocked(<JournalIssue>[]);
+    }
+    if (view.questionMarks[n - 1].voided) {
+      lastAlert =
+          'This question is void — read a substitute question to set '
+          'its value.';
+      notifyListeners();
+      return const EditOutcome.blocked(<JournalIssue>[]);
+    }
+    final event = questionValueAction(n);
+    final candidate = List<RoundEvent>.of(view.journal);
+    if (event != null) {
+      candidate[event.index] = QuestionValueEvent(
+        questionNumber: n,
+        value: value,
+      );
+    } else {
+      // The value came from a seeded base list. Insert before the first answer
+      // on this slot so the answer still folds against it; otherwise append.
+      var insertAt = candidate.length;
+      for (var i = 0; i < candidate.length; i++) {
+        final e = candidate[i];
+        if (e is AnswerEvent && e.questionNumber == n) {
+          insertAt = i;
+          break;
+        }
+      }
+      candidate.insert(
+        insertAt,
+        QuestionValueEvent(questionNumber: n, value: value),
+      );
+    }
+    return _commitEdit(
+      candidate,
+      label: 'Q$n value set to $value',
+      allowDependentRemoval: allowDependentRemoval,
+    );
+  }
+
+  /// Applies a candidate journal, optionally dropping the later events it
+  /// invalidates. On the first attempt callers receive the conflicts and can
+  /// show them before retrying with [allowDependentRemoval].
+  EditOutcome _commitEdit(
+    List<RoundEvent> candidate, {
+    required String label,
+    bool allowDependentRemoval = false,
+    int? jumpTo,
+    Side? selectSide,
+    int? selectIndex,
+  }) {
+    final replay = view.replayCandidate(candidate);
+    if (replay.issues.isNotEmpty && !allowDependentRemoval) {
+      return EditOutcome.blocked(replay.issues);
+    }
+    // replayCandidate's state is the fold with the invalid events skipped, so
+    // filtering them out yields a journal that replays identically.
+    final dropped = {for (final issue in replay.issues) issue.index};
+    final cleaned = <RoundEvent>[
+      for (var i = 0; i < candidate.length; i++)
+        if (!dropped.contains(i)) candidate[i],
+    ];
+    final cleanReplay = view.replayCandidate(cleaned);
+    if (!cleanReplay.ok) {
+      return EditOutcome.blocked(cleanReplay.issues);
+    }
+
+    _rememberEditForUndo();
+    view.replaceJournal(cleaned);
+    _afterEdit(
+      label: label,
+      jumpTo: jumpTo,
+      selectSide: selectSide,
+      selectIndex: selectIndex,
+    );
+    return const EditOutcome.applied();
+  }
+
+  void _rememberEditForUndo() {
+    _lastEditJournal = List<RoundEvent>.of(view.journal);
+    _lastEditQuestionIndex = questionIndex;
+    _lastEditSelection = selected;
+    _lastEditFinished = _finished;
+  }
+
+  void _afterEdit({
+    required String label,
+    int? jumpTo,
+    Side? selectSide,
+    int? selectIndex,
+  }) {
+    _lastEditLabel = label;
+    _finished = false;
+    if (jumpTo != null) questionIndex = jumpTo - 1;
+    if (questionIndex > questionCount - 1) questionIndex = questionCount - 1;
+    if (selectSide != null && selectIndex != null) {
+      final quizzer = view.teamOf(selectSide).roster[selectIndex];
+      selected = quizzer.active ? (selectSide, selectIndex) : null;
+    } else if (selected != null) {
+      final quizzer = view.teamOf(selected!.$1).roster[selected!.$2];
+      if (!quizzer.active) selected = null;
+    }
+    final notices = _notices();
+    final completion = _syncCompletionAfterEdit();
+    lastAlert = _joinNotices(notices, completion);
+    _saved(rewrite: true);
+  }
+
+  /// Re-derives match completion after a journal edit. A tied, fully answered
+  /// round opens the next overtime question exactly as it would live.
+  String? _syncCompletionAfterEdit() {
+    if (questionCount == 0) return null;
+    for (var n = 1; n <= questionCount; n++) {
+      if (!questionAnswered(n)) return null;
+    }
+    final red = scoreOf(Side.red);
+    final green = scoreOf(Side.green);
+    if (red != green) {
+      _finished = true;
+      return null;
+    }
+    return _openOvertime(red, green);
+  }
+
+  /// Restores the journal from immediately before the last action edit.
+  bool undoLastEdit() {
+    final snapshot = _lastEditJournal;
+    if (snapshot == null) return false;
+    final replay = view.replaceJournal(snapshot);
+    if (!replay.ok) return false;
+    questionIndex = _lastEditQuestionIndex ?? questionIndex;
+    if (questionIndex > questionCount - 1) questionIndex = questionCount - 1;
+    selected = _lastEditSelection;
+    _finished = _lastEditFinished ?? false;
+    _clearLastEdit();
+    lastAlert = 'Edit undone.';
+    _reconcileAnnounced();
+    _saved(rewrite: true);
+    return true;
+  }
+
+  void clearLastEdit() {
+    _clearLastEdit();
+    notifyListeners();
+  }
+
+  void _clearLastEdit() {
+    _lastEditJournal = null;
+    _lastEditQuestionIndex = null;
+    _lastEditSelection = null;
+    _lastEditFinished = null;
+    _lastEditLabel = null;
+  }
+
+  /// Plain-language description of a journal event, used in dependency
+  /// confirmations and edit labels.
+  String describeEvent(RoundEvent event) => switch (event) {
+    AnswerEvent(
+      :final questionNumber,
+      :final side,
+      :final quizzerIndex,
+      :final correct,
+    ) =>
+      'Q$questionNumber ${_quizzerName(side, quizzerIndex)} '
+          '${correct ? 'correct' : 'incorrect'}',
+    FoulEvent(:final questionNumber, :final side, :final quizzerIndex) =>
+      'Q${questionNumber ?? '—'} '
+          '${quizzerIndex == null ? '${_sideName(side)} team foul' : '${_quizzerName(side, quizzerIndex)} foul'}',
+    TimeOutEvent(:final side) => '${_sideName(side)} time-out',
+    InterruptionEvent(:final questionNumber) => 'Q$questionNumber interruption',
+    ChallengeEvent(:final questionNumber, :final side, :final successful) =>
+      'Q$questionNumber ${_sideName(side)} ${successful ? 'successful' : 'unsuccessful'} contest',
+    VoidQuestionEvent(:final questionNumber) => 'Q$questionNumber void',
+    QuestionValueEvent(:final questionNumber, :final value) =>
+      'Q$questionNumber value $value',
+    SubstituteQuestionEvent(:final questionNumber, :final value) =>
+      'Q$questionNumber substitute ($value pts)',
+    SubstituteQuizzerEvent(:final side) => '${_sideName(side)} substitution',
+    OvertimeQuestionEvent(:final value) => 'overtime question ($value pts)',
+  };
 
   TeamView teamOf(Side side) => view.teamOf(side);
   int scoreOf(Side side) => view.scoreOf(side);
@@ -118,6 +629,21 @@ class RoundController extends ChangeNotifier {
     if (!q.active) return;
     final ref = (side, index);
     selected = selected == ref ? null : ref;
+    notifyListeners();
+  }
+
+  /// Selects [side]/[index] without toggling an existing selection off.
+  ///
+  /// Classic cell navigation uses this: moving from one question to another
+  /// while keeping the same quizzer armed must not deselect them. Tapping the
+  /// quizzer's label or Modern card still uses [select] and therefore still
+  /// toggles.
+  void selectIfNeeded(Side side, int index) {
+    final q = view.teamOf(side).roster[index];
+    if (!q.active) return;
+    final ref = (side, index);
+    if (selected == ref) return;
+    selected = ref;
     notifyListeners();
   }
 
@@ -299,30 +825,32 @@ class RoundController extends ChangeNotifier {
     };
   }
 
-  /// Voids the current question: answer points are retracted, fouls stand
-  /// (schema decision D3).
-  void voidQuestion() {
-    if (matchComplete) return;
-    view.apply(VoidQuestionEvent(questionNumber: questionNumber));
-    lastAlert = _notices();
-    _saved();
+  /// Clears question [n]: its answer points are retracted and it re-opens as a
+  /// substitute question at the same point value (D3/D4). One journal entry
+  /// carries both effects, so one Undo restores the original ruling.
+  EditOutcome voidQuestionAt(int n) {
+    if (n < 1 || n > questionCount) {
+      return const EditOutcome.blocked(<JournalIssue>[]);
+    }
+    final value = currentValue(n);
+    if (value == null) {
+      lastAlert = 'Set the point value for Q$n before voiding it.';
+      notifyListeners();
+      return const EditOutcome.blocked(<JournalIssue>[]);
+    }
+    final candidate = <RoundEvent>[
+      ...view.journal,
+      VoidQuestionEvent(questionNumber: n, substituteValue: value),
+    ];
+    return _commitEdit(
+      candidate,
+      label: 'Q$n voided \u2014 substitute reads at $value',
+      jumpTo: n,
+    );
   }
 
-  /// Reads a substitute question of [value] for the voided current question
-  /// (same slot, schema decision D4). Returns false when the engine rejects.
-  bool substituteQuestion(int value) {
-    final violation = view.apply(
-      SubstituteQuestionEvent(questionNumber: questionNumber, value: value),
-    );
-    if (violation != null) {
-      lastAlert = violation.message;
-      notifyListeners();
-      return false;
-    }
-    lastAlert = _notices();
-    _saved();
-    return true;
-  }
+  /// Clears the current question (footer button).
+  EditOutcome voidQuestion() => voidQuestionAt(questionNumber);
 
   /// Assigns the keeper-entered point [value] to question [n] (schema decision
   /// D11). Returns false (with a reason in [lastAlert]) when the engine rejects
@@ -396,21 +924,56 @@ class RoundController extends ChangeNotifier {
   }
 
   /// Notifies listeners and persists the journal through the installed
-  /// [autosave] hook (no-op when no store is attached, e.g. tests).
+  /// [autosave] hook (no-op when no store is attached, e.g. tests). A history
+  /// edit passes [rewrite] so the store replaces the journal atomically instead
+  /// of using the tail delta path.
   ///
   /// A save failure must never skip [notifyListeners]. The engine has already
   /// accepted the event by the time this runs, so an exception escaping here
   /// would leave the derived state changed but the screen unpainted: the keeper
   /// would see nothing happen, tap again, and score twice. Failures are caught,
   /// recorded in [saveError], and notified like any other change.
-  void _saved() {
+  void _saved({bool rewrite = false}) {
+    // A normal scoring action invalidates the one-level "undo edit" snapshot:
+    // restoring it later would silently discard that new action too.
+    if (!rewrite) _clearLastEdit();
+    _reconcileSubstitutionPrompts();
     try {
-      autosave?.call(this);
+      final hook = rewrite ? rewriteAutosave ?? autosave : autosave;
+      hook?.call(this);
       saveError = null;
     } catch (e) {
       saveError = '$e';
     }
     notifyListeners();
+  }
+
+  /// Journal index of the last correct answer by one quizzer, used only to put
+  /// the newest quiz-out prompt first when a team has more than one.
+  int _lastCorrectAnswerIndex(Side side, int quizzerIndex) {
+    for (var i = view.journal.length - 1; i >= 0; i--) {
+      final event = view.journal[i];
+      if (event is AnswerEvent &&
+          event.side == side &&
+          event.quizzerIndex == quizzerIndex &&
+          event.correct) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /// Re-arms a dismissed prompt when its quizzer is no longer seated/out or the
+  /// bench no longer has an eligible replacement.
+  void _reconcileSubstitutionPrompts() {
+    _dismissedSubstitutionPrompts.removeWhere((key) {
+      final (side, index) = key;
+      final team = view.teamOf(side);
+      if (index < 0 || index >= team.roster.length) return true;
+      final quizzer = team.roster[index];
+      if (quizzer.status != 'QUIZ-OUT' || quizzer.seat == 0) return true;
+      return team.bench.every((bench) => bench.status.isNotEmpty);
+    });
   }
 
   bool questionAnswered(int n) {
@@ -562,6 +1125,14 @@ class RoundController extends ChangeNotifier {
       if (!questionAnswered(n)) return false;
     }
     return scoreOf(Side.red) == scoreOf(Side.green);
+  }
+
+  String _sideName(Side side) => side == Side.red ? redName : greenName;
+
+  String _quizzerName(Side side, int index) {
+    final roster = view.teamOf(side).roster;
+    if (index < 0 || index >= roster.length) return 'quizzer $index';
+    return roster[index].label;
   }
 
   String _describe(RoundEvent event) => switch (event) {

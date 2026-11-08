@@ -72,8 +72,8 @@ never engine forks.
   `match.answerValues` (`question-value-not-allowed`). Overtime slots are
   **fixed by the rulebook** (`question-value-overtime-fixed`, never editable),
   and a voided slot takes its value from the substitute
-  (`question-value-voided`). The value row / header badge is the picker; it is
-  an anchored popup menu over the ruleset's allowed values.
+  (`question-value-voided`). The value row / header badge opens the shared value dialog over the
+  ruleset's allowed values.
 - **D12 — question-set value guardrails are advisory notices, never blocks.**
   The rulebooks fix the value distribution (both books) and, for JBQ, how the
   set may be *arranged*: ≥3 twenties and ≥1 thirty in each half, no 30 first or
@@ -164,8 +164,8 @@ quizmaster may override reality — the journal records what was recorded).
 | `interruption` | q | q in range (marks only) |
 | `challenge` | q, team, successful | per-question cap (TBQ) / allotment (JBQ) → violation, still recordable on override |
 | `questionValue` | q, value | q is a **regulation** slot (`question-value-overtime-fixed` beyond it); value ∈ `match.answerValues` (`question-value-not-allowed`); q not voided (`question-value-voided`); q not yet answered (`question-value-locked`). Sets the slot's value (D11) |
-| `voidQuestion` | q | q in range (retracts answer points per D3) |
-| `substituteQuestion` | q, value | q voided first (D4) |
+| `voidQuestion` | q, substituteValue? | q in range; an optional substitute value must be even. Retracts answer points per D3 and, when the value is present, immediately re-opens the slot at that value as the substitute (D4). The keeper-facing void action always sets it to the slot's current value, so one event carries both effects |
+| `substituteQuestion` | q, value | q voided first (D4); kept for journals written before the combined void action |
 | `substituteQuizzer` | team, outIndex, benchIndex | swaps a SEATED quizzer (`outIndex`) with a BENCH quizzer (`benchIndex`) — during or after a time-out, and **no one need be out**. The entrant takes the outgoing quizzer's **seat**, so the seated order (Red 1, Red 2, …) is preserved with the replacement in place. Both keep their points; the roster order is stable so every recorded answer stays attributed to its quizzer (D7). Rejected when `outIndex` is on the bench, `benchIndex` is seated, or the entrant is out. `benchIndex` is a roster index. |
 | `overtimeQuestion` | value | tie after regulation (append slot per D4) |
 

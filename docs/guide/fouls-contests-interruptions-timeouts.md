@@ -54,12 +54,24 @@ one extra.
 
 ## Voiding a question
 
-If a question is thrown out and read again, use the void action in the **More**
-menu. Voiding takes back the points from answers on that question and corrects
-the affected quizzers' correct and incorrect counts, and it works out again
-whether anyone's quiz-out or strike-out has changed as a result. It leaves the
-fouls on that question alone. The replacement question keeps the same question
-number and the same value.
+If a question is thrown out and read again, use **Void question** in the footer.
+The app treats the void and the substitute as one action: it takes back the
+points from answers on that question, corrects the affected quizzers' correct
+and incorrect counts, works out again whether anyone's quiz-out or strike-out
+has changed, and re-opens the same question number at the same value for the
+substitute read. It leaves the fouls on that question alone. One **Undo**
+reverses the whole action.
+
+You can also void a question from its editor: tap the question number in the
+Classic ledger header and choose **VOID QUESTION**. The footer button acts on
+the question the keeper is currently on. A question needs a point value before
+it can be voided, because the substitute reads at that value.
+
+If the substitute question is also thrown out, open the question's editor again
+and choose **VOID QUESTION AGAIN**. It clears any answers on the current
+substitute read and starts the same question number over at the same value.
+There is no separate substitute-removal action — the substitute value belongs
+to the void.
 
 ## The marks, in one table
 
@@ -70,7 +82,7 @@ number and the same value.
 | Team foul | Console → **FOUL** → team | No cell mark | Five points off the team total |
 | Contest / Appeal | Button beside the team name | A slash on the question | Records success or failure and counts toward the team's limit |
 | Time-out | Time-out button beside the team name | No mark | Adds one to that team's count; notifies at the limit |
-| Void | **More** menu | The question is struck through | Takes back the answer points and re-checks quiz-out and strike-out; keeps fouls |
+| Void | Footer **Void question** or the question editor | The question is struck through | Takes back the answer points, re-checks quiz-out and strike-out, and re-opens the slot at the same value as the substitute; keeps fouls |
 
 ## Related
 

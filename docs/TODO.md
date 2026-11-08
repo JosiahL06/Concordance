@@ -184,10 +184,10 @@
       no per-question order, so a regulation question now starts **unset** and
       the keeper sets its 10/20/30 value as the question is read. Entry points:
       the Modern navigator's value sub-row, the Classic column headers, and the
-      live header's `N PTS` / `SET VALUE` badge — all anchored popup menus over
-      the ruleset's `answerValues`. A question cannot be scored until its value
-      is set (console shows `BLOCKED — Set the point value for Qn first`); the
-      value locks once answered (`question-value-locked`); overtime slots keep
+      live header's `N PTS` / `SET VALUE` badge — all open the shared value
+      dialog over the ruleset's `answerValues`. Selecting a quizzer on an unset
+      question also replaces CORRECT/INCORRECT with value buttons. The value
+      locks once answered (`question-value-locked`); overtime slots keep
       their rule value and are read-only; a voided slot takes its value from the
       substitute. Presets drop the built-in sequence for `answerValues` +
       `valueCounts` and bump to schema v2; the change journals as
@@ -204,7 +204,7 @@
 - [x] Accessibility (Semantics) + haptics pass: opt-in haptics (off by
       default; `HapticsController`/`HapticsScope` + header toggle), audio
       silenced app-wide (Material `enableFeedback` off in `buildTheme`,
-      silent `QuietDialogOption`/`QuietMenuItem`, custom InkWells off),
+      silent custom option rows, custom InkWells off),
       semantic labels for console/quizzers/marks/scores, live-region alert
       banner, live-screen text scale capped at 1.3× (audited at 1.5/2.0)
 - [x] CI workflows (`.github/workflows/`): `ci.yml` (analyze + test on
@@ -274,10 +274,136 @@
 - [ ] Live match test; verify that a new user can keep up with a live game and scorekeep accurately
 - [ ] Public release of v1.0.0
 
+## Requested improvements — next pass
+- [x] **Direct action edit for answers and questions (Classic)**
+      - *Tap the mark, edit the mark*: tapping a marked Classic answer cell
+        opens a compact editor with `MARK CORRECT` / `MARK INCORRECT` and
+        `REMOVE RULING`. Removing jumps to that question and selects the
+        quizzer, so the corrected ruling is recorded immediately from the
+        console. Empty cells keep navigate/select.
+      - Answer replacements happen at the **original journal position**, so a
+        later interrupted re-read, substitution, or void still replays
+        correctly.
+      - Tapping an answered, interrupted, or voided question header opens a
+        question editor: change the value (including after an answer), void an
+        answered question (clear it and re-read the substitute at the same
+        value), void a voided question again, remove an interruption, or remove
+        a void (and its legacy substitute event). Normal unanswered headers keep
+        the quick value picker.
+      - Dependency handling refolds the candidate journal, lists the minimum set
+        of later actions that no longer apply (e.g. a re-read answer after an
+        interruption removal), and asks once before removing them. Unrelated
+        later actions are preserved.
+      - Engine: `RoundView.replayCandidate` / `replaceJournal` validate and
+        refold from the captured roster/value seeds; the controller exposes
+        cell/question lookups plus change/remove operations. A static,
+        dismissible `UNDO EDIT` strip restores the pre-edit journal and clears
+        on the next normal scoring action.
+      - Persistence: `RoundStore.replaceJournal` rewrites the journal in one
+        transaction; autosave distinguishes deltas from rewrites. No schema
+        migration.
+      - Also fixed while refolding: undo/refold now preserves the bench roster,
+        and a voided slot's substitute value displays consistently in the
+        ledger, navigator, console, and summary.
+- [ ] Revisit direct editing for timeouts, contests, team/quizzer fouls,
+      substitutions, and the Modern question navigator only if real use shows
+      the existing Undo path is not enough.
+- [x] **Combine void + substitute question into one "void question" action**
+      - Decision: by the rules a voided question is immediately re-read as a
+        substitute at the same point value, so there is no separate substitute
+        entry point.
+      - `VoidQuestionEvent` now optionally carries the substitute value; one
+        event retracts the answers, leaves fouls standing (D3), and reopens the
+        slot at the same value (D4). A legacy void-only event still replays.
+      - The footer button clears the current question when it has a value and
+        is enabled only when it can act. The answered-question editor also
+        exposes `VOID QUESTION`.
+      - A voided question's editor exposes `VOID QUESTION AGAIN`, which clears
+        any answers recorded on the current substitute read and re-reads at the
+        same value. Multiple voids on one question are supported.
+      - There is no separate "remove substitute question" action or UI; the
+        substitute value is carried by the void event itself. Legacy separate
+        substitute events are still removed with the void.
+      - One Undo reverses a void (one event), and the `UNDO EDIT` strip covers
+        it like any other direct edit.
+- [x] **Move footer actions out of the "More" menu**
+      - The More overflow is gone. Footer order: **Undo · Interruption · Void
+        question · Substitute quizzer · Summary**, with flexible widths so the
+        undo label shrinks instead of clipping.
+      - All actions are direct 48dp buttons; the separate "Read substitute
+        question" entry point was removed with the combined void action.
+      - Verified at 1280x800 and the 1024x700 minimum via widget tests, and the
+        live-screen 1.3x text cap remains in force.
+- [x] **Redesign quizzer substitution selection**
+      - One centered swap board replaces the two-dialog flow: Red/Green team
+        tabs, **At the table** and **Bench** columns, seat/badge/status/score
+        cards, a live out→in summary, and a single confirm button.
+      - Selecting an outgoing quizzer and an eligible bench entrant updates the
+        summary immediately; confirm stays disabled until both are valid.
+        Switching teams clears the selection. Ineligible bench quizzers stay
+        visible, dimmed with their status.
+      - Empty states cover no bench quizzers and no eligible bench quizzers;
+        the footer reports when neither team has a bench at all.
+      - The board is a shared widget used by both live views, capped at the
+        live 1.3× text scale, with 48dp+ targets and semantic labels.
+      - A seated quizzer who quizzes out while their team has an eligible bench
+        quizzer produces a persistent team-tinted substitution prompt in the
+        notice slot. `SUBSTITUTE` opens the board with the team locked and the
+        outgoing quizzer preselected; dismissing the prompt keeps it out of the
+        way until that quiz-out is undone or a newer one appears. While the
+        prompt is visible it replaces the duplicate quiz-out alert, and
+        dismissing it clears both.
+      - Tests: controller prompt lifecycle (create, dismiss, undo/re-arm,
+        substitute, newest-out), board selection/confirm/seat swap, preselected
+        quiz-out mode, empty state, and 1024×700 + 1.3× fit.
+- [x] **Cell navigation preserves the selected quizzer**
+      - Tapping another question's ledger cell for the already-selected quizzer
+        now keeps them armed instead of toggling them off. The Classic cell tap
+        uses a non-toggling selection path; tapping the quizzer label/card still
+        toggles as before.
+
+- [x] **Cohesive small decision menus**
+      - Contest outcome, foul assignment, and point-value selection now use one
+        shared compact dialog shell matching the substitution board/editor:
+        rounded surface, strong title and subtitle, icon-led option cards, 48dp
+        targets, and the live 1.3x text cap.
+      - The value picker uses large 10/20/30 cards with hover/press fill and
+        border feedback. The header `SET VALUE`, an empty Classic column header,
+        and the Modern navigator value row all open the same dialog; the Classic
+        question editor now uses the same value cards instead of pills.
+      - Console CORRECT / INCORRECT / FOUL labels use the same large, bold type
+        as the console value buttons.
+      - Removed the old `SimpleDialog` / anchored popup menu paths and their
+        unused quiet-option widgets.
+
+- [x] **Console value selection before scoring**
+      - Selecting a quizzer on a question whose point value is unset now replaces
+        CORRECT/INCORRECT with `10 PTS` / `20 PTS` / `30 PTS` buttons instead of
+        showing a blocked message. Choosing a value records it and restores the
+        ruling buttons with the new point delta. The header `SET VALUE` and
+        navigator value row remain alternate entry points.
+- [x] **Seat-title badges and bench cards**
+      - Seated quizzers show a small team-tinted `RED n` / `GREEN n` title pill
+        next to their name in Classic row labels, Modern cards, the substitution
+        board, and the summary individual table. The fill is the pale team tint
+        with a colored border/text, the text is 10–11px for readability, and the
+        name remains bolder so the title stays visually secondary.
+      - The badge travels with the position, not the quizzer: a substitution
+        hands the seat over and the badge updates immediately while the name
+        stays with the quizzer.
+      - Bench quizzers now appear as compact cards (bench `B` badge, bold name,
+        running score, out status when applicable) instead of a text line, in
+        both live views. Cards size to their content rather than stretching; a
+        long bench scrolls horizontally inside the bench row.
+      - Verified at 1024x700 and the live 1.3x text cap; bench cards were
+        compacted and the footer kept at 60dp so the prompt still fits.
+- [ ] Revisit blank-name fallback naming
+      - Auto-generated `<Team> n` names are now visually separated from the
+        colored seat badge, but the fallback can still read like a seat title.
+        Decide a stable neutral fallback (e.g. roster-position based) and update
+        setup copy/tests; the live badge already shows the current seat.
+
 ## Post-v1
-- [ ] Global edit/undo dialogue: selective journal edit (change/delete any
-      entry + refold) — needs new `RoundView` API + persistence + conflict
-      surface; single-step undo + `undoLabel` covers v1 mis-taps
 - [ ] Add settings page accessible from inside a live-game: change rule 
       set, change theme/color, etc
 
@@ -293,5 +419,5 @@
       Application cert + `ENABLE_HARDENED_RUNTIME = YES` (currently ad-hoc
       `CODE_SIGN_IDENTITY = "-"`), then `codesign` → `notarytool submit --wait`
       → `stapler staple` in CI (App Store Connect API key as secrets)
-- [ ] GitHub artifact attestations (free for public repos only)
+- [x] GitHub artifact attestations (free for public repos only)
 - [ ] Submit release binaries to AV vendors for false-positive whitelisting

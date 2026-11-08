@@ -29,11 +29,11 @@ Ruleset loadPreset(String id) => Ruleset.fromJson(
 List<Ruleset> presets() => [loadPreset('tbq-25-26'), loadPreset('jbq-2026')];
 
 /// D11: set the current question's point value via the header badge ("SET
-/// VALUE" while unset) and its anchored popup menu.
+/// VALUE" while unset) and the shared value dialog.
 Future<void> _setValue(WidgetTester tester, int points) async {
   await tester.tap(find.text('SET VALUE'));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('$points points'));
+  await tester.tap(find.byKey(ValueKey('value-picker-$points')));
   await tester.pumpAndSettle();
 }
 
@@ -126,7 +126,7 @@ void main() {
     final round = freshRound();
     await pump(tester, ModernScreen(controller: round));
 
-    const label = 'Red 1, 0 points, 0 correct, 0 incorrect, 0 fouls';
+    const label = 'Red 1, seat 1, 0 points, 0 correct, 0 incorrect, 0 fouls';
     final card = tester.getSemantics(find.bySemanticsLabel(label));
     expect(card.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
     expect(card.getSemanticsData().flagsCollection.isButton, isTrue);

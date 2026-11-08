@@ -81,10 +81,15 @@ FoldResult applyEvent(Ruleset ruleset, RoundState state, RoundEvent event) {
         event.side,
         event.successful,
       );
-    case VoidQuestionEvent():
-      final range = inRange(state, event.questionNumber);
+    case VoidQuestionEvent(:final questionNumber, :final substituteValue):
+      final range = inRange(state, questionNumber);
       if (!range.ok) return range;
-      final q = state.question(event.questionNumber);
+      if (substituteValue != null && substituteValue % 2 != 0) {
+        return const FoldResult.rejected(
+          RuleViolation('odd-value', 'point value must be even'),
+        );
+      }
+      final q = state.question(questionNumber);
       q.voided = true;
       // Retract the slot's answer points (D3): reverse each recorded answer,
       // then re-evaluate the affected quizzers' out flags so a voided crossing
@@ -117,6 +122,9 @@ FoldResult applyEvent(Ruleset ruleset, RoundState state, RoundEvent event) {
         }
       }
       q.answers.clear();
+      // The combined void action re-opens the slot as a substitute at the same
+      // value; a legacy void-only event leaves any existing substitute intact.
+      if (substituteValue != null) q.substituteValue = substituteValue;
       return FoldResult.ok(state);
     case QuestionValueEvent():
       return questionValueFold(

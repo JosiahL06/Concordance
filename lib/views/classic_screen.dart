@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../app/haptics.dart';
 import '../app/round_controller.dart';
 import '../engine/events.dart';
+import '../engine/round_view.dart';
+import 'common/choice_dialog.dart';
 import 'common/live_chrome.dart';
 import 'common/haptics_toggle.dart';
-import 'common/quiet_controls.dart';
 import 'common/theme_toggle.dart';
 
 /// Classic live-scoring view: paper-style scoresheet ledger over
@@ -169,16 +170,20 @@ class _ClassicScreenState extends State<ClassicScreen> {
   }
 
   /// One question column header: the number with an interruption ring (paper
-  /// circle) and the question's point value underneath (D11). Tapping an
-  /// editable header opens the value picker (anchored menu); overtime and
-  /// answered slots read out only.
+  /// circle) and the question's point value underneath (D11). A normal slot
+  /// opens the quick value picker. A slot with something to edit (interruption,
+  /// void/substitute, or an answered value) opens the question editor instead,
+  /// so a late question-level mistake can be corrected directly.
   Widget _headerCell(BuildContext context, int n) {
     final scheme = Theme.of(context).colorScheme;
     final marks = round.view.questionMarks;
-    final interrupted = n <= marks.length && marks[n - 1].interrupted;
+    final mark = n <= marks.length ? marks[n - 1] : null;
+    final interrupted = mark?.interrupted ?? false;
+    final voided = mark?.voided ?? false;
     final current = n == round.questionNumber;
-    final value = round.view.questionValues[n - 1];
+    final value = round.currentValue(n);
     final editable = round.questionValueEditable(n);
+    final needsEditor = round.questionNeedsEditor(n);
 
     Widget cell = Container(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -195,16 +200,21 @@ class _ClassicScreenState extends State<ClassicScreen> {
               fontSize: 13,
               fontWeight: FontWeight.w800,
               color: current ? scheme.onPrimary : scheme.onSurface,
+              decoration: voided ? TextDecoration.lineThrough : null,
             ),
           ),
           Text(
-            value == null ? 'set' : '$value',
+            voided
+                ? 'void'
+                : value == null
+                ? 'set'
+                : '$value',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
               color: current
                   ? scheme.onPrimary
-                  : value == null
+                  : voided || value == null
                   ? scheme.error
                   : scheme.onSurfaceVariant,
             ),
@@ -225,6 +235,29 @@ class _ClassicScreenState extends State<ClassicScreen> {
       );
     }
 
+    final spoken = <String>['Question $n'];
+    if (current) spoken.add('current');
+    if (interrupted) spoken.add('interrupted');
+    if (voided) spoken.add('voided');
+    if (value != null && !voided) spoken.add('$value points');
+
+    if (needsEditor) {
+      return Semantics(
+        button: true,
+        label: spoken.join(', '),
+        hint: 'Tap to edit this question',
+        excludeSemantics: true,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(9),
+          onTap: () {
+            hapticTick(context);
+            _showQuestionEditor(n);
+          },
+          child: cell,
+        ),
+      );
+    }
+
     if (!editable) {
       return Semantics(
         label: 'Question $n value ${value == null ? 'unset' : '$value'}',
@@ -232,16 +265,25 @@ class _ClassicScreenState extends State<ClassicScreen> {
         child: cell,
       );
     }
-    return PopupMenuButton<int>(
-      tooltip: 'Set question $n point value',
+    return InkWell(
       enableFeedback: false,
-      padding: EdgeInsets.zero,
-      onSelected: (v) => round.setQuestionValue(n, v),
-      itemBuilder: (context) => [
-        for (final v in round.valueOptions)
-          QuietMenuItem<int>(value: v, child: Text('$v points')),
-      ],
-      child: cell,
+      borderRadius: BorderRadius.circular(9),
+      onTap: () async {
+        final picked = await showValuePicker(
+          context,
+          questionNumber: n,
+          options: round.valueOptions,
+          current: value,
+        );
+        if (picked != null) round.setQuestionValue(n, picked);
+      },
+      child: Semantics(
+        button: true,
+        label: 'Question $n point value ${value == null ? 'unset' : '$value'}',
+        hint: 'Tap to set the point value',
+        excludeSemantics: true,
+        child: cell,
+      ),
     );
   }
 
@@ -273,13 +315,13 @@ class _ClassicScreenState extends State<ClassicScreen> {
     );
   }
 
-  /// One-line bench strip inside the team block: each quizzer's name with
-  /// their running total. Substitution is reached through the More menu.
+  /// Bench strip inside the team block: compact cards, one per benched
+  /// quizzer, so the bench reads as a distinct group rather than a text line.
   Widget _benchLine(BuildContext context, Side side) {
     final scheme = Theme.of(context).colorScheme;
     final bench = round.teamOf(side).bench;
     return Padding(
-      padding: const EdgeInsets.only(top: 3),
+      padding: const EdgeInsets.only(top: 2),
       child: Row(
         children: [
           SizedBox(
@@ -294,13 +336,16 @@ class _ClassicScreenState extends State<ClassicScreen> {
             ),
           ),
           Expanded(
-            child: Text(
-              [for (final q in bench) '${q.label} ${q.score}'].join('   ·   '),
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: sideInkFor(scheme),
-                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var i = 0; i < bench.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 6),
+                    BenchCard(side: side, quizzer: bench[i], compact: true),
+                  ],
+                ],
               ),
             ),
           ),
@@ -351,6 +396,7 @@ class _ClassicScreenState extends State<ClassicScreen> {
     // One merged utterance: name + status with selection state. The score
     // lives in the TOTAL column and gets its own label below.
     final spoken = <String>[quizzer.label];
+    if (quizzer.seat != 0) spoken.add('seat ${quizzer.seat}');
     if (quizzer.status.isNotEmpty) spoken.add(quizzer.status.toLowerCase());
     final label = Material(
       color: Colors.transparent,
@@ -383,12 +429,22 @@ class _ClassicScreenState extends State<ClassicScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  quizzer.label,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
+                Row(
+                  children: [
+                    SeatBadge(side: side, seat: quizzer.seat, compact: true),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        quizzer.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 if (quizzer.status.isNotEmpty)
                   Text(
@@ -535,22 +591,376 @@ class _ClassicScreenState extends State<ClassicScreen> {
     if (interrupted) spoken.add('interrupted');
     if (contested) spoken.add('contested');
     if (n == round.questionNumber) spoken.add('current question');
+    // A marked answer is directly editable even when the quizzer is out: the
+    // ruling still needs correcting. Empty cells keep navigate-and-select.
+    final answerActions = round.answerActionsAtCell(side, index, n);
+    final canEdit = answerActions.isNotEmpty;
+    final canTap = canEdit || quizzer.active;
     return InkWell(
       enableFeedback: false,
-      onTap: quizzer.active
+      onTap: canTap
           ? () {
               hapticTick(context);
-              round.jumpToQuestion(n);
-              round.select(side, index);
+              if (canEdit) {
+                _editAnswerCell(side, index, n);
+              } else {
+                round.jumpToQuestion(n);
+                round.selectIfNeeded(side, index);
+              }
             }
           : null,
       child: Semantics(
-        button: quizzer.active,
-        enabled: quizzer.active,
+        button: canTap,
+        enabled: canTap,
         selected: isTarget,
         label: spoken.join(', '),
+        hint: canEdit ? 'Tap to edit this answer' : null,
         excludeSemantics: true,
         child: cell,
+      ),
+    );
+  }
+
+  /// Compact editor for a recorded answer cell. Change replaces the answer in
+  /// place; remove leaves the screen on this question with the quizzer selected
+  /// so the corrected ruling can be recorded immediately.
+  Future<void> _editAnswerCell(Side side, int index, int n) async {
+    final actions = round.answerActionsAtCell(side, index, n);
+    if (actions.isEmpty) return;
+    final action = actions.last;
+    final event = action.event as AnswerEvent;
+    final quizzer = round.teamOf(side).roster[index];
+    final value = round.currentValue(n) ?? 0;
+    final ruling = event.correct
+        ? 'CORRECT  +$value'
+        : 'INCORRECT  \u2212${value ~/ 2}';
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => _editorDialog(
+        dialogContext,
+        title: 'Q$n \u00b7 ${sideName(round, side).toUpperCase()}',
+        subtitle: quizzer.label,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: (event.correct ? correctColor : incorrectColor).withValues(
+                alpha: 0.12,
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              ruling,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: event.correct ? correctColor : incorrectColor,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 48,
+            child: FilledButton(
+              onPressed: () => _applyEdit(
+                dialogContext,
+                (allowDependentRemoval) => round.changeAnswer(
+                  action.index,
+                  correct: !event.correct,
+                  allowDependentRemoval: allowDependentRemoval,
+                ),
+              ),
+              child: Text(event.correct ? 'MARK INCORRECT' : 'MARK CORRECT'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 48,
+            child: OutlinedButton(
+              onPressed: () => _applyEdit(
+                dialogContext,
+                (allowDependentRemoval) => round.removeAnswer(
+                  action.index,
+                  allowDependentRemoval: allowDependentRemoval,
+                ),
+              ),
+              child: const Text('REMOVE RULING'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Question-level editor: value changes (including after an answer),
+  /// interruption removal, repeated voids, and void removal.
+  Future<void> _showQuestionEditor(int n) async {
+    final marks = round.view.questionMarks[n - 1];
+    final value = round.currentValue(n);
+    final editable = round.questionValueEditable(n);
+    final isVoid = marks.voided;
+    final interruptions = round.interruptionActions(n);
+    final hasAnswers = round.questionHasAnswers(n);
+    final isOvertime = n > round.ruleset.match.regulationQuestions;
+    final scheme = Theme.of(context).colorScheme;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => _editorDialog(
+        dialogContext,
+        title: 'Question $n',
+        subtitle: isOvertime ? 'Overtime value ${value ?? '\u2014'} pts' : null,
+        children: [
+          if (isVoid) ...[
+            Text(
+              value == null
+                  ? 'This question is void.'
+                  : 'This question is void; the substitute reads at $value pts. '
+                        'Voiding again clears any answers on the substitute read.',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            if (value != null) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 48,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: scheme.error,
+                    side: BorderSide(color: scheme.error),
+                  ),
+                  onPressed: () =>
+                      _applyEdit(dialogContext, (_) => round.voidQuestionAt(n)),
+                  child: const Text('VOID QUESTION AGAIN'),
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 48,
+              child: OutlinedButton(
+                onPressed: () => _applyEdit(
+                  dialogContext,
+                  (allowDependentRemoval) => round.removeVoid(
+                    n,
+                    allowDependentRemoval: allowDependentRemoval,
+                  ),
+                ),
+                child: const Text('REMOVE VOID'),
+              ),
+            ),
+          ] else if (!isOvertime) ...[
+            const Text(
+              'Point value',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final v in round.valueOptions)
+                  PointValueCard(
+                    key: ValueKey('editor-value-$v'),
+                    value: v,
+                    selected: v == value,
+                    onTap: () => _applyEdit(
+                      dialogContext,
+                      (allowDependentRemoval) => round.changeQuestionValue(
+                        n,
+                        v,
+                        allowDependentRemoval: allowDependentRemoval,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            if (!editable)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text(
+                  'This question is already answered; changing the value '
+                  'recalculates that answer.',
+                ),
+              ),
+          ],
+          if (!isVoid && hasAnswers) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'Voiding clears the answers; a substitute at the same point '
+              'value is read.',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 48,
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Theme.of(dialogContext).colorScheme.error,
+                  side: BorderSide(
+                    color: Theme.of(dialogContext).colorScheme.error,
+                  ),
+                ),
+                onPressed: () =>
+                    _applyEdit(dialogContext, (_) => round.voidQuestionAt(n)),
+                child: const Text('VOID QUESTION'),
+              ),
+            ),
+          ],
+          if (interruptions.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 48,
+              child: OutlinedButton(
+                onPressed: () => _applyEdit(
+                  dialogContext,
+                  (allowDependentRemoval) => round.removeInterruption(
+                    n,
+                    allowDependentRemoval: allowDependentRemoval,
+                  ),
+                ),
+                child: const Text('REMOVE INTERRUPTION'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Applies an edit; if later actions no longer replay, shows exactly which
+  /// ones would be removed and retries only after confirmation.
+  Future<void> _applyEdit(
+    BuildContext dialogContext,
+    EditOutcome Function(bool allowDependentRemoval) run,
+  ) async {
+    var outcome = run(false);
+    if (!outcome.applied && outcome.conflicts.isNotEmpty) {
+      if (!dialogContext.mounted) return;
+      final confirmed = await _confirmDependents(
+        dialogContext,
+        outcome.conflicts,
+      );
+      if (confirmed != true) return;
+      outcome = run(true);
+    }
+    if (outcome.applied && dialogContext.mounted) {
+      Navigator.pop(dialogContext);
+    }
+  }
+
+  Future<bool?> _confirmDependents(
+    BuildContext context,
+    List<JournalIssue> conflicts,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => _cappedDialog(
+        context,
+        AlertDialog(
+          title: const Text('This also removes later actions'),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 320),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'These recorded actions no longer apply after the edit:',
+                  ),
+                  const SizedBox(height: 8),
+                  for (final issue in conflicts)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text('\u2022 ${round.describeEvent(issue.event)}'),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('CANCEL'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: scheme.error,
+                foregroundColor: scheme.onError,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('REMOVE THESE TOO'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Keeps an editor dialog within the live screens' text-scale cap. Dialogs
+  /// are pushed above the screen's own MediaQuery, so without this they would
+  /// scale past the no-scroll contract.
+  Widget _cappedDialog(BuildContext context, Widget child) {
+    final mq = MediaQuery.of(context);
+    return MediaQuery(
+      data: mq.copyWith(textScaler: mq.textScaler.clamp(maxScaleFactor: 1.3)),
+      child: child,
+    );
+  }
+
+  /// Shared compact dialog shell for the direct editors.
+  Widget _editorDialog(
+    BuildContext context, {
+    required String title,
+    String? subtitle,
+    required List<Widget> children,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return _cappedDialog(
+      context,
+      Dialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                if (subtitle != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.outline,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 16),
+                ...children,
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 48,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('CANCEL'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

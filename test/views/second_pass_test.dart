@@ -14,6 +14,7 @@ import 'package:concordance/app/theme.dart';
 import 'package:concordance/engine/events.dart';
 import 'package:concordance/engine/ruleset.dart';
 import 'package:concordance/views/classic_screen.dart';
+import 'package:concordance/views/common/live_chrome.dart';
 import 'package:concordance/views/modern_screen.dart';
 import 'package:concordance/views/setup_screen.dart';
 import 'package:concordance/views/summary_screen.dart';
@@ -39,6 +40,17 @@ RoundController freshRound() => RoundController(
   greenSeats: const ['Green 1', 'Green 2'],
   redBench: const ['Red 3'],
   greenBench: const ['Green 3'],
+  questionValues: kValues,
+);
+
+RoundController namedRound() => RoundController(
+  ruleset: loadPreset('tbq-25-26'),
+  redName: 'Red',
+  greenName: 'Green',
+  redSeats: const ['Alice', 'Bob'],
+  greenSeats: const ['Cara', 'Dana'],
+  redBench: const ['Eve'],
+  greenBench: const ['Fay'],
   questionValues: kValues,
 );
 
@@ -90,6 +102,12 @@ void main() {
   ) async {
     await pump(tester, ClassicScreen(controller: freshRound()));
     expect(find.text('BENCH'), findsNWidgets(2));
+    expect(find.byType(BenchCard), findsNWidgets(2));
+    expect(
+      tester.getSize(find.byType(BenchCard).first).width,
+      lessThan(400),
+      reason: 'bench cards should size to their content, not stretch',
+    );
     expect(find.textContaining('Red 3'), findsOneWidget);
     expect(find.textContaining('Green 3'), findsOneWidget);
   });
@@ -99,6 +117,66 @@ void main() {
   ) async {
     await pump(tester, ModernScreen(controller: freshRound()));
     expect(find.text('BENCH'), findsNWidgets(2));
+    expect(find.byType(BenchCard), findsNWidgets(2));
+    expect(
+      tester.getSize(find.byType(BenchCard).first).width,
+      lessThan(300),
+      reason: 'bench cards should size to their content, not stretch',
+    );
+  });
+
+  testWidgets('Classic seat titles are softer and quieter than names', (
+    WidgetTester tester,
+  ) async {
+    await pump(tester, ClassicScreen(controller: namedRound()));
+
+    expect(find.text('RED 1'), findsOneWidget);
+    expect(find.text('GREEN 1'), findsOneWidget);
+    expect(find.text('RED 2'), findsOneWidget);
+    expect(find.text('Alice'), findsOneWidget);
+    final name = tester.widget<Text>(find.text('Alice'));
+    final badge = tester.widget<Text>(find.text('RED 1'));
+    expect(
+      name.style!.fontWeight!.value,
+      greaterThan(badge.style!.fontWeight!.value),
+    );
+    expect(badge.style!.fontSize, 10);
+    expect(badge.style!.color, redColor);
+    final badgeBox = tester.widget<Container>(
+      find
+          .descendant(
+            of: find.byType(SeatBadge).first,
+            matching: find.byType(Container),
+          )
+          .first,
+    );
+    expect((badgeBox.decoration! as BoxDecoration).color, redTint);
+  });
+
+  testWidgets('Modern seat titles are softer and quieter than names', (
+    WidgetTester tester,
+  ) async {
+    await pump(tester, ModernScreen(controller: namedRound()));
+
+    expect(find.text('RED 1'), findsOneWidget);
+    expect(find.text('GREEN 1'), findsOneWidget);
+    final name = tester.widget<Text>(find.text('Alice'));
+    final badge = tester.widget<Text>(find.text('RED 1'));
+    expect(
+      name.style!.fontWeight!.value,
+      greaterThan(badge.style!.fontWeight!.value),
+    );
+    expect(badge.style!.fontSize, 11);
+    expect(badge.style!.color, redColor);
+    final badgeBox = tester.widget<Container>(
+      find
+          .descendant(
+            of: find.byType(SeatBadge).first,
+            matching: find.byType(Container),
+          )
+          .first,
+    );
+    expect((badgeBox.decoration! as BoxDecoration).color, redTint);
   });
 
   testWidgets('bench strip tracks the points of a rotated-out quizzer', (
@@ -112,8 +190,16 @@ void main() {
     c.substituteQuizzer(side: Side.red, outIndex: 0, benchIndex: 2);
 
     await pump(tester, ClassicScreen(controller: c));
-    // Red 1 is on the bench with their 10 points shown beside the name.
-    expect(find.textContaining('Red 1 10'), findsOneWidget);
+    // Red 1 is on the bench in a card, with their 10 points beside the name.
+    final benchCard = find.ancestor(
+      of: find.text('Red 1'),
+      matching: find.byType(BenchCard),
+    );
+    expect(benchCard, findsOneWidget);
+    expect(
+      find.descendant(of: benchCard, matching: find.text('10')),
+      findsOneWidget,
+    );
     // Red 3 took the table (shown as a seated row, not the bench).
     expect(find.text('Red 3'), findsOneWidget);
   });

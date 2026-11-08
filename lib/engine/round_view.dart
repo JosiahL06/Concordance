@@ -107,6 +107,32 @@ class QuestionView {
   final bool voided;
 }
 
+/// One event that no longer applies to a candidate journal.
+class JournalIssue {
+  const JournalIssue({
+    required this.index,
+    required this.event,
+    required this.violation,
+  });
+
+  /// Index in the candidate journal (not the committed journal).
+  final int index;
+  final RoundEvent event;
+  final RuleViolation violation;
+}
+
+/// Result of replaying a candidate journal. [state] is the fold produced by
+/// applying every event that still applies — invalid events are reported in
+/// [issues] and skipped, which is exactly the state after removing them.
+class JournalReplay {
+  const JournalReplay({required this.state, required this.issues});
+
+  final RoundState state;
+  final List<JournalIssue> issues;
+
+  bool get ok => issues.isEmpty;
+}
+
 /// The engine facade owned by the live-scoring screens.
 class RoundView {
   RoundView({
@@ -126,27 +152,14 @@ class RoundView {
        _baseValues = List<int?>.of(
          questionValues ??
              List<int?>.filled(ruleset.match.regulationQuestions, null),
-       ),
-       state = RoundState(
-         values: List<int?>.of(
-           questionValues ??
-               List<int?>.filled(ruleset.match.regulationQuestions, null),
-         ),
        ) {
-    state.teams[Side.red] = TeamState(
-      Side.red,
-      _redLabels,
-      benchLabels: _redBench,
-    );
-    state.teams[Side.green] = TeamState(
-      Side.green,
-      _greenLabels,
-      benchLabels: _greenBench,
-    );
+    state = _freshState();
   }
 
   final Ruleset ruleset;
-  final RoundState state;
+
+  /// Derived state. Replaced wholesale when a journal edit is committed.
+  late RoundState state;
   final List<RoundEvent> journal = <RoundEvent>[];
 
   /// Roster labels + base question sequence captured at construction: undo
@@ -167,6 +180,38 @@ class RoundView {
     return null;
   }
 
+  /// Replays [candidate] against a fresh state without touching the committed
+  /// journal. Events that no longer apply are reported in [JournalReplay.issues]
+  /// and skipped, so the returned state is the fold after removing exactly those
+  /// events. This is what lets the UI preview and confirm a history edit.
+  JournalReplay replayCandidate(List<RoundEvent> candidate) {
+    final fresh = _freshState();
+    final issues = <JournalIssue>[];
+    for (var i = 0; i < candidate.length; i++) {
+      final event = candidate[i];
+      final result = applyEvent(ruleset, fresh, event);
+      if (!result.ok) {
+        issues.add(
+          JournalIssue(index: i, event: event, violation: result.violation!),
+        );
+      }
+    }
+    return JournalReplay(state: fresh, issues: issues);
+  }
+
+  /// Commits [candidate] when every event applies, replacing derived state with
+  /// the fresh fold. Returns the replay report; on an invalid candidate the
+  /// committed journal/state are left untouched.
+  JournalReplay replaceJournal(List<RoundEvent> candidate) {
+    final replay = replayCandidate(candidate);
+    if (!replay.ok) return replay;
+    journal
+      ..clear()
+      ..addAll(candidate);
+    state = replay.state;
+    return replay;
+  }
+
   /// Pops the last event and re-folds from scratch (rounds are tiny).
   bool undo() {
     if (journal.isEmpty) return false;
@@ -179,15 +224,27 @@ class RoundView {
     // Full reconstruction: rebuild rosters from the captured labels and
     // replay the journal, so roster changes (substitutes) and appended
     // overtime questions re-fold exactly as they originally applied.
-    state.values
-      ..clear()
-      ..addAll(_baseValues);
-    state.questions.clear();
-    state.teams[Side.red] = TeamState(Side.red, _redLabels);
-    state.teams[Side.green] = TeamState(Side.green, _greenLabels);
+    state = _freshState();
     for (final event in List.of(journal)) {
       applyEvent(ruleset, state, event);
     }
+  }
+
+  /// A fresh state seeded with the captured roster (seated + bench) and base
+  /// question values. Every replay starts here.
+  RoundState _freshState() {
+    final fresh = RoundState(values: List<int?>.of(_baseValues));
+    fresh.teams[Side.red] = TeamState(
+      Side.red,
+      _redLabels,
+      benchLabels: _redBench,
+    );
+    fresh.teams[Side.green] = TeamState(
+      Side.green,
+      _greenLabels,
+      benchLabels: _greenBench,
+    );
+    return fresh;
   }
 
   // ── roster seeds (persistence) ──
@@ -200,6 +257,23 @@ class RoundView {
   // ── shared reads ──
 
   List<int?> get questionValues => List.unmodifiable(state.values);
+
+  /// The value an answer on [n] actually scores at: a voided slot's substitute
+  /// value wins, otherwise the slot's assigned value. The console and ledger
+  /// must read this, not [questionValues], or a substitute read displays the
+  /// original question's value.
+  int? effectiveValue(int n) {
+    if (n < 1 || n > state.values.length) return null;
+    return state.questions[n]?.substituteValue ?? state.valueOf(n);
+  }
+
+  /// The explicit substitute value recorded for [n], or null when no substitute
+  /// question has been read (a void-only slot still has a slot value, so this is
+  /// deliberately distinct from [effectiveValue]).
+  int? substituteValue(int n) {
+    if (n < 1 || n > state.values.length) return null;
+    return state.questions[n]?.substituteValue;
+  }
 
   int scoreOf(Side side) => state.teams[side]!.score;
 

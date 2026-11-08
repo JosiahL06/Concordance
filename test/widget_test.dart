@@ -273,10 +273,10 @@ Future<void> _startClassic(WidgetTester tester) =>
     _start(tester, classic: true);
 
 /// D11: set the current question's point value through the header badge
-/// ("SET VALUE" while unset) and its anchored popup menu.
+/// ("SET VALUE" while unset) and the shared value dialog.
 Future<void> _setValue(WidgetTester tester, int points) async {
   await tester.tap(find.text('SET VALUE'));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('$points points'));
+  await tester.tap(find.byKey(ValueKey('value-picker-$points')));
   await tester.pumpAndSettle();
 }

@@ -30,7 +30,11 @@ RoundController unset(String id) => RoundController(
   greenSeats: const ['Green 1', 'Green 2'],
 );
 
-Future<void> pump(WidgetTester tester, Widget screen) async {
+Future<void> pump(
+  WidgetTester tester,
+  Widget screen, {
+  double textScale = 1.0,
+}) async {
   tester.view.physicalSize = const Size(1280, 800);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
@@ -41,35 +45,47 @@ Future<void> pump(WidgetTester tester, Widget screen) async {
   await tester.pumpWidget(
     ThemeScope(
       notifier: theme,
-      child: MaterialApp(home: screen),
+      child: MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
+        home: screen,
+      ),
     ),
   );
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('Modern: an unset question blocks scoring until a value is set', (
+  testWidgets('Modern: an unset question offers value buttons in the console', (
     WidgetTester tester,
   ) async {
     final round = unset('tbq-25-26');
     await pump(tester, ModernScreen(controller: round));
 
-    // Header prompts for the value; a selected quizzer is guarded on it.
+    // Header prompts for the value. Selecting a quizzer turns the console's
+    // answer buttons into the value picker rather than just saying BLOCKED.
     expect(find.text('SET VALUE'), findsOneWidget);
     await tester.tap(find.text('Red 1'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Set the point value for Q1'), findsOneWidget);
-    expect(round.markCorrect(), isFalse); // engine-side guard
+    expect(find.text('10 PTS'), findsOneWidget);
+    expect(find.text('20 PTS'), findsOneWidget);
+    expect(find.text('30 PTS'), findsOneWidget);
+    expect(find.textContaining('Set the point value for Q1'), findsNothing);
+    expect(find.text('CORRECT'), findsNothing);
+    expect(round.markCorrect(), isFalse); // engine-side guard still holds
 
-    // Set Q1 to 30 from the navigator's value sub-row (the first "set" cell).
-    await tester.tap(find.text('set').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('30 points'));
+    // Set Q1 to 30 from the console value buttons.
+    await tester.tap(find.text('30 PTS'));
     await tester.pumpAndSettle();
 
     expect(round.currentValue(1), 30);
-    expect(find.text('30 PTS'), findsOneWidget);
+    expect(find.text('30 PTS'), findsOneWidget); // header read-out
     expect(find.text('SET VALUE'), findsNothing);
+    expect(find.text('CORRECT  +30'), findsOneWidget);
+    expect(find.text('INCORRECT  \u221215'), findsOneWidget);
   });
 
   testWidgets('Classic: a column header sets the question value', (
@@ -83,11 +99,52 @@ void main() {
     // Set Q1 to 20 from its column header (the first "set" caption).
     await tester.tap(find.text('set').first);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('20 points'));
+    await tester.tap(find.byKey(const ValueKey('value-picker-20')));
     await tester.pumpAndSettle();
 
     expect(round.currentValue(1), 20);
     expect(find.text('20 PTS'), findsOneWidget);
+  });
+
+  testWidgets('Classic: selecting a cell on an unset question offers values', (
+    WidgetTester tester,
+  ) async {
+    final round = unset('tbq-25-26');
+    await pump(tester, ClassicScreen(controller: round));
+
+    final semantics = tester.ensureSemantics();
+    await tester.tap(
+      find.bySemanticsLabel('Question 1, Red 1, current question'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('10 PTS'), findsOneWidget);
+    expect(find.text('20 PTS'), findsOneWidget);
+    expect(find.text('30 PTS'), findsOneWidget);
+    expect(find.textContaining('CHOOSE THE POINT VALUE'), findsOneWidget);
+
+    await tester.tap(find.text('20 PTS'));
+    await tester.pumpAndSettle();
+    expect(round.currentValue(1), 20);
+    expect(find.text('CORRECT  +20'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('the console value buttons fit at the live text-scale cap', (
+    WidgetTester tester,
+  ) async {
+    final round = unset('tbq-25-26');
+    await pump(tester, ClassicScreen(controller: round), textScale: 1.3);
+
+    final semantics = tester.ensureSemantics();
+    await tester.tap(
+      find.bySemanticsLabel('Question 1, Red 1, current question'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('10 PTS'), findsOneWidget);
+    semantics.dispose();
   });
 
   testWidgets('a broken value stipulation shows in the alert banner (D12)', (

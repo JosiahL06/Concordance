@@ -7,6 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.3] - 2026-11-07
+
+### Added
+
+- **Direct action editing on the Classic ledger.** Tap a marked answer cell to
+  change it between correct and incorrect, or remove the ruling. Tap an
+  answered, interrupted, or voided question header to edit its value, void it,
+  remove an interruption, or remove a void. Edits refold the journal, preserve
+  later actions when they still apply, list dependent actions before removing
+  them, and leave a one-level `UNDO EDIT` strip. Backed by
+  `RoundView.replayCandidate` / `replaceJournal` and an atomic
+  `RoundStore.replaceJournal`; no schema migration.
+- **Redesigned quizzer substitution.** The two-dialog flow is replaced by one
+  swap board with team tabs, **At the table** and **Bench** columns,
+  seat/status/score cards, a live out-to-in summary, a single confirm action,
+  clear empty states, and a locked preselected mode.
+- **Quiz-out substitution prompt.** A seated quizzer who quizzes out while their
+  team has an eligible bench quizzer raises a persistent, team-tinted prompt
+  with a `SUBSTITUTE` action. It opens the swap board with the outgoing quizzer
+  preselected and clears when the substitution is made, the prompt is
+  dismissed, or the quiz-out is undone.
+- **Value buttons in the scoring console.** Selecting a quizzer on a question
+  whose point value is unset replaces CORRECT/INCORRECT with large
+  `10 PTS` / `20 PTS` / `30 PTS` buttons. Choosing one records the value and
+  immediately restores the ruling buttons.
+- **Cohesive small menus.** Contest outcome, foul assignment, and point-value
+  selection now share the rounded dialog shell, icon-led choice cards, and
+  live 1.3x text cap. Point-value selection uses large cards with hover and
+  press feedback; the Classic question editor uses the same cards instead of
+  pills.
+- **Seat-title badges.** Seated quizzers show a small team-tinted `RED n` /
+  `GREEN n` title pill beside their name across Classic, Modern, the
+  substitution board, and the summary table. The name remains the bolder
+  identity.
+- **Bench cards.** Benched quizzers appear as compact, content-sized cards with
+  a bench badge, bold name, running score, and out status instead of a text
+  line, in both live views.
+
+### Changed
+
+- **Void and substitute question are now one action.** The footer's
+  `VOID QUESTION` and the question editor retract the slot's answers and reopen
+  it at the same point value in one journaled action. `VOID QUESTION AGAIN`
+  clears a substitute read and starts it over; one Undo reverses a void.
+- **Footer actions moved out of More.** The bottom bar is now
+  Undo · Interruption · Void question · Substitute quizzer · Summary. The old
+  More menu and separate substitute-question entry point are gone.
+- **Console type is larger.** CORRECT, INCORRECT, and FOUL now use the same
+  20px/900-weight type as the console value buttons.
+- **Cell navigation preserves the selected quizzer.** Tapping another
+  question's cell for the already-armed quizzer keeps them selected; the
+  quizzer label or Modern card still toggles.
+- Documentation updated across scoring, corrections, voids, substitution,
+  menus, and the interaction contract.
+
+### Fixed
+
+- **A voided question's previous answers no longer look editable.** The cell
+  lookup follows the latest void and returns only the currently effective
+  answer, so retracted cells behave like empty cells.
+- **Refolding preserves the bench roster.** Undo and journal-edit replays now
+  rebuild the bench as well as the seated roster.
+- **Substitute question values display consistently** across the Classic
+  ledger, Modern navigator, console, and summary.
+- **Journal edits persist atomically.** Direct edits rewrite the journal in one
+  SQLite transaction; a failed write rolls back and keeps the existing
+  `NOT SAVING` warning path.
+
 ## [1.0.0-beta.1] - 2026-10-11
 
 ### Added

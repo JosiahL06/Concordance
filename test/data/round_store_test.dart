@@ -64,7 +64,7 @@ void main() {
         side: Side.red,
         successful: false,
       ),
-      const VoidQuestionEvent(questionNumber: 4),
+      const VoidQuestionEvent(questionNumber: 4, substituteValue: 20),
       const SubstituteQuestionEvent(questionNumber: 4, value: 20),
       const AnswerEvent(
         questionNumber: 4,
@@ -96,6 +96,7 @@ void main() {
     expect(view.teamOf(Side.red).timeOuts, 1);
     expect(view.questionMarks[0].interrupted, isTrue);
     expect(view.questionMarks[3].voided, isTrue);
+    expect(view.substituteValue(4), 20); // combined-void payload round-tripped
     expect(view.questionValues[6], 30); // QuestionValueEvent round-tripped
     expect(view.questionValues.length, 21); // 20 regulation + overtime
   });
@@ -236,6 +237,61 @@ void main() {
     expect(remaining, hasLength(2));
     expect(remaining[0], isA<AnswerEvent>());
     expect(remaining[1], isA<TimeOutEvent>());
+  });
+
+  test('replaceJournal rewrites the middle atomically and resumes cleanly', () {
+    final store = RoundStore.inMemory();
+    final id = newRound(store);
+    final journal = <RoundEvent>[
+      const QuestionValueEvent(questionNumber: 1, value: 10),
+      const AnswerEvent(
+        questionNumber: 1,
+        side: Side.red,
+        quizzerIndex: 0,
+        correct: true,
+      ),
+      const InterruptionEvent(questionNumber: 2),
+    ];
+    expect(store.saveJournal(id, journal, 0), 3);
+
+    // Replace the answer in place; the journal length is unchanged, so a
+    // count-based delta save would miss it entirely.
+    journal[1] = const AnswerEvent(
+      questionNumber: 1,
+      side: Side.red,
+      quizzerIndex: 0,
+      correct: false,
+    );
+    expect(store.replaceJournal(id, journal), 3);
+
+    final loaded = store.loadJournal(id);
+    expect(loaded, hasLength(3));
+    expect((loaded[1] as AnswerEvent).correct, isFalse);
+    expect(loaded[0], isA<QuestionValueEvent>());
+    expect(loaded[2], isA<InterruptionEvent>());
+
+    final view = freshView();
+    for (final event in loaded) {
+      expect(view.apply(event), isNull);
+    }
+    expect(view.scoreOf(Side.red), -5);
+  });
+
+  test('replaceJournal can clear the journal', () {
+    final store = RoundStore.inMemory();
+    final id = newRound(store);
+    store.appendEvent(
+      id,
+      const AnswerEvent(
+        questionNumber: 1,
+        side: Side.red,
+        quizzerIndex: 0,
+        correct: true,
+      ),
+    );
+    expect(store.loadJournal(id), hasLength(1));
+    expect(store.replaceJournal(id, const <RoundEvent>[]), 0);
+    expect(store.loadJournal(id), isEmpty);
   });
 
   test('saveJournal and appendEvent agree on seq after an undo', () {

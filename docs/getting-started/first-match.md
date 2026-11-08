@@ -50,8 +50,9 @@ everything you do is saved the moment you do it.
 ## 6. Score a few questions
 
 Before a question can be scored, Concordance needs to know what it is worth.
-Tap the value row for the current question, or the **SET VALUE** button at the
-top of the screen, and choose **10**, **20**, or **30**.
+Tap the value row for the current question, the **SET VALUE** button at the top
+of the screen, or the value buttons that appear in the console after selecting
+a quizzer, and choose **10**, **20**, or **30**.
 
 Then tap the quizzer who answered, and tap **CORRECT** or **INCORRECT**. The
 team's total and that quizzer's own score change straight away. A correct answer

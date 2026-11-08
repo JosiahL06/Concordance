@@ -260,16 +260,22 @@ class _HomeScreenState extends State<HomeScreen> {
     _installAutosave(controller, id, 0);
   }
 
-  /// Installs the delta autosave hook: each change writes only what changed —
-  /// one appended row per scoring tap, one deleted row per undo — inside a
-  /// single transaction. A kill mid-save therefore leaves the round intact
-  /// rather than half-written. [persisted] is how many of the journal's events
-  /// are already on disk: 0 for a fresh round, the journalled length on resume.
+  /// Installs the autosave hooks: normal scoring appends one row per tap and
+  /// undo deletes the tail, inside a single transaction. Direct action edits
+  /// can change the middle of the journal, so they use the atomic whole-journal
+  /// rewrite instead. A kill mid-save leaves the round intact rather than
+  /// half-written. [persisted] is how many of the journal's events are already
+  /// on disk: 0 for a fresh round, the journalled length on resume.
   void _installAutosave(RoundController controller, int id, int persisted) {
     final store = _store!;
     var onDisk = persisted;
     controller.autosave = (c) {
       onDisk = store.saveJournal(id, c.view.journal, onDisk);
+    };
+    // Direct action edits can replace an event in the middle of the journal,
+    // so they rewrite it atomically instead of using the tail delta path.
+    controller.rewriteAutosave = (c) {
+      onDisk = store.replaceJournal(id, c.view.journal);
     };
   }
 

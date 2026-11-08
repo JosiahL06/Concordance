@@ -373,6 +373,22 @@ class RoundStore {
     return journal.length;
   }
 
+  /// Replaces the whole journal for [roundId] in one transaction.
+  ///
+  /// Direct action editing can remove or replace an event in the middle of the
+  /// journal, which the append/truncate delta save cannot express. Rounds are
+  /// small (tens of events), and edits are rare, so a whole-journal rewrite is
+  /// cheaper in complexity than diffing arbitrary prefixes. Atomicity is the
+  /// same guarantee as [saveJournal]: a kill mid-write leaves the previous
+  /// journal intact.
+  int replaceJournal(int roundId, List<RoundEvent> journal) {
+    transaction(() {
+      _db.execute('DELETE FROM events WHERE round_id = ?', [roundId]);
+      _appendRange(roundId, journal, 0);
+    });
+    return journal.length;
+  }
+
   /// Inserts `journal[startSeq..]` with explicit `seq` values through one
   /// prepared statement — no per-row `MAX(seq)` scan.
   void _appendRange(int roundId, List<RoundEvent> journal, int startSeq) {
@@ -504,7 +520,10 @@ class RoundStore {
       'side': s.name,
       'successful': ok,
     },
-    VoidQuestionEvent(questionNumber: var q) => {'q': q},
+    VoidQuestionEvent(questionNumber: var q, substituteValue: var sub) => {
+      'q': q,
+      'sub': sub,
+    },
     QuestionValueEvent(questionNumber: var q, value: var v) => {
       'q': q,
       'value': v,
@@ -542,7 +561,10 @@ class RoundStore {
         side: side(m['side']),
         successful: m['successful'] as bool,
       ),
-      'VoidQuestionEvent' => VoidQuestionEvent(questionNumber: m['q'] as int),
+      'VoidQuestionEvent' => VoidQuestionEvent(
+        questionNumber: m['q'] as int,
+        substituteValue: m['sub'] as int?,
+      ),
       'QuestionValueEvent' => QuestionValueEvent(
         questionNumber: m['q'] as int,
         value: m['value'] as int,

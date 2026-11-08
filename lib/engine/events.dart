@@ -73,10 +73,17 @@ class ChallengeEvent extends RoundEvent {
 
 /// Question [questionNumber] was voided: answer points are retracted, fouls
 /// stand (schema decision D3).
+///
+/// When [substituteValue] is set, the slot immediately re-opens as the
+/// substitute question at that value. The keeper-facing "void question" action
+/// uses the current value, so one event both clears the question and makes it
+/// scoreable again at the same point value (D4). Older journals without a
+/// substitute value still replay exactly as before.
 class VoidQuestionEvent extends RoundEvent {
-  const VoidQuestionEvent({required this.questionNumber});
+  const VoidQuestionEvent({required this.questionNumber, this.substituteValue});
 
   final int questionNumber;
+  final int? substituteValue;
 }
 
 /// The keeper assigned [value] to regulation question [questionNumber]

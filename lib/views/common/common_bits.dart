@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../app/haptics.dart';
 import '../../app/round_controller.dart';
-import 'quiet_controls.dart';
+import 'choice_dialog.dart';
 
 /// The paper scoresheet's marks, rendered as a compact navigator: a row of
 /// question numbers (current highlighted, interruption = ring, contest = "C",
 /// void = strike-through) with a **point-value row** directly beneath it (D11).
-/// Each value cell is an anchored popup menu — tap it to set the question's
-/// 10/20/30-point value (overtime and already-answered slots are read-only).
+/// Each value cell opens the shared value dialog — tap it to set the
+/// question's 10/20/30-point value (overtime and already-answered slots are
+/// read-only).
 class QuestionNavigator extends StatelessWidget {
   const QuestionNavigator({super.key, required this.round, this.height = 100});
 
@@ -121,11 +122,11 @@ class QuestionNavigator extends StatelessWidget {
     );
   }
 
-  /// One point-value cell (D11). Editable regulation slots open an anchored
-  /// popup menu; overtime / already-answered / voided slots read out only.
+  /// One point-value cell (D11). Editable regulation slots open the shared
+  /// value dialog; overtime / already-answered / voided slots read out only.
   Widget _valueCell(BuildContext context, int n) {
     final scheme = Theme.of(context).colorScheme;
-    final value = round.view.questionValues[n - 1];
+    final value = round.currentValue(n);
     final current = n - 1 == round.questionIndex;
     final editable = round.questionValueEditable(n);
     final unset = value == null;
@@ -164,17 +165,25 @@ class QuestionNavigator extends StatelessWidget {
         child: cell,
       );
     }
-    // Anchored floating menu (Option 2): the ruleset's allowed values.
-    return PopupMenuButton<int>(
-      tooltip: 'Set question $n point value',
+    return InkWell(
       enableFeedback: false,
-      padding: EdgeInsets.zero,
-      onSelected: (v) => round.setQuestionValue(n, v),
-      itemBuilder: (context) => [
-        for (final v in round.valueOptions)
-          QuietMenuItem<int>(value: v, child: Text('$v points')),
-      ],
-      child: cell,
+      borderRadius: BorderRadius.circular(8),
+      onTap: () async {
+        final picked = await showValuePicker(
+          context,
+          questionNumber: n,
+          options: round.valueOptions,
+          current: value,
+        );
+        if (picked != null) round.setQuestionValue(n, picked);
+      },
+      child: Semantics(
+        button: true,
+        label: 'Question $n value ${unset ? 'unset' : '$value'}',
+        hint: 'Tap to set the point value',
+        excludeSemantics: true,
+        child: cell,
+      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../app/round_controller.dart';
 import '../data/export.dart';
 import '../engine/events.dart';
+import '../engine/round_view.dart';
 import 'common/live_chrome.dart';
 import 'common/haptics_toggle.dart';
 import 'common/theme_toggle.dart';
@@ -340,29 +341,42 @@ class SummaryScreen extends StatelessWidget {
             const Divider(),
             for (final side in Side.values)
               for (final q in controller.teamOf(side).roster)
-                _tableRow(context, q),
+                _tableRow(context, side, q),
           ],
         ),
       ),
     );
   }
 
-  Widget _tableRow(BuildContext context, quizzer) {
+  Widget _tableRow(BuildContext context, Side side, QuizzerView quizzer) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              quizzer.label as String,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+            child: Row(
+              children: [
+                SeatBadge(
+                  side: side,
+                  seat: quizzer.seat,
+                  bench: quizzer.onBench,
+                  compact: true,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    quizzer.label,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
             ),
           ),
           _cell(context, '${quizzer.score}', w: 70, bold: true),
           _cell(context, '${quizzer.correct}', w: 80),
           _cell(context, '${quizzer.incorrect}', w: 70),
           _cell(context, '${quizzer.fouls}', w: 60),
-          _cell(context, quizzer.status as String, w: 110),
+          _cell(context, quizzer.status, w: 110),
         ],
       ),
     );

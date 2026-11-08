@@ -200,43 +200,37 @@ class _ModernScreenState extends State<ModernScreen> {
     );
   }
 
-  /// Compact bench strip: each quizzer's name with their running total, so a
-  /// rotated quizzer's points stay visible while they sit behind the table.
-  /// Substitution happens through the More menu.
+  /// Compact bench row: one card per benched quizzer so the bench reads as a
+  /// distinct group of people, not a text line.
   Widget _benchRow(BuildContext context, Side side) {
     final scheme = Theme.of(context).colorScheme;
     final bench = round.teamOf(side).bench;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          Text(
-            'BENCH',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: scheme.outline,
+    return Row(
+      children: [
+        Text(
+          'BENCH',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: scheme.outline,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < bench.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 6),
+                  BenchCard(side: side, quizzer: bench[i], compact: true),
+                ],
+              ],
             ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              [for (final q in bench) '${q.label} ${q.score}'].join('   ·   '),
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: scheme.onSurface,
-                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -247,6 +241,7 @@ class _ModernScreenState extends State<ModernScreen> {
     // One merged utterance for screen readers: name, status, tallies, score
     // — instead of TalkBack hopping between six fragment nodes.
     final spoken = <String>[q.label];
+    if (q.seat != 0) spoken.add('seat ${q.seat}');
     if (q.status.isNotEmpty) spoken.add(q.status.toLowerCase());
     spoken.add('${q.score} points');
     spoken.add('${q.correct} correct');
@@ -286,12 +281,22 @@ class _ModernScreenState extends State<ModernScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        q.label,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      Row(
+                        children: [
+                          SeatBadge(side: side, seat: q.seat),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              q.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       if (q.status.isNotEmpty)
                         Container(

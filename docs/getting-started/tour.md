@@ -40,13 +40,13 @@ There is more on both in [Modern vs Classic](../explanation/modern-vs-classic.md
 ## The bottom console
 
 The console is the strip of large buttons along the bottom of the live screen,
-and it is the only place where scoring happens. **CORRECT**, **INCORRECT**,
-**FOUL**, **Undo**, and **Interruption** all live here, along with the **More**
-menu and the **Summary** button.
+and it is the only place where scoring happens. **CORRECT**, **INCORRECT**, and
+**FOUL** record a ruling. The footer below them holds **Undo**, **Interruption**,
+**Void question**, **Substitute quizzer**, and **Summary**.
 
-One thing is worth repeating: on the Classic screen, tapping a cell in the grid
-moves you to that question, but it does not score it. Scoring always happens in
-the console.
+One thing is worth repeating: on the Classic screen, tapping an empty cell in
+the grid moves you to that question and selects or keeps the quizzer; tapping a
+cell that already holds an answer opens that answer for editing. Scoring always happens in the console.
 
 ## The question navigator
 
