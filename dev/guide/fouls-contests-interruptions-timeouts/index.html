@@ -2320,12 +2320,22 @@ call, not the app.</p>
 be taken. In Junior Bible Quiz, any time-outs a team has left carry over, plus
 one extra.</p>
 <h2 id="voiding-a-question">Voiding a question<a class="headerlink" href="#voiding-a-question" title="Permanent link">&para;</a></h2>
-<p>If a question is thrown out and read again, use the void action in the <strong>More</strong>
-menu. Voiding takes back the points from answers on that question and corrects
-the affected quizzers' correct and incorrect counts, and it works out again
-whether anyone's quiz-out or strike-out has changed as a result. It leaves the
-fouls on that question alone. The replacement question keeps the same question
-number and the same value.</p>
+<p>If a question is thrown out and read again, use <strong>Void question</strong> in the footer.
+The app treats the void and the substitute as one action: it takes back the
+points from answers on that question, corrects the affected quizzers' correct
+and incorrect counts, works out again whether anyone's quiz-out or strike-out
+has changed, and re-opens the same question number at the same value for the
+substitute read. It leaves the fouls on that question alone. One <strong>Undo</strong>
+reverses the whole action.</p>
+<p>You can also void a question from its editor: tap the question number in the
+Classic ledger header and choose <strong>VOID QUESTION</strong>. The footer button acts on
+the question the keeper is currently on. A question needs a point value before
+it can be voided, because the substitute reads at that value.</p>
+<p>If the substitute question is also thrown out, open the question's editor again
+and choose <strong>VOID QUESTION AGAIN</strong>. It clears any answers on the current
+substitute read and starts the same question number over at the same value.
+There is no separate substitute-removal action — the substitute value belongs
+to the void.</p>
 <h2 id="the-marks-in-one-table">The marks, in one table<a class="headerlink" href="#the-marks-in-one-table" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2369,9 +2379,9 @@ number and the same value.</p>
 </tr>
 <tr>
 <td>Void</td>
-<td><strong>More</strong> menu</td>
+<td>Footer <strong>Void question</strong> or the question editor</td>
 <td>The question is struck through</td>
-<td>Takes back the answer points and re-checks quiz-out and strike-out; keeps fouls</td>
+<td>Takes back the answer points, re-checks quiz-out and strike-out, and re-opens the slot at the same value as the substitute; keeps fouls</td>
 </tr>
 </tbody>
 </table>

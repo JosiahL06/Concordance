@@ -2284,8 +2284,8 @@ never engine forks.</p>
   <code>match.answerValues</code> (<code>question-value-not-allowed</code>). Overtime slots are
   <strong>fixed by the rulebook</strong> (<code>question-value-overtime-fixed</code>, never editable),
   and a voided slot takes its value from the substitute
-  (<code>question-value-voided</code>). The value row / header badge is the picker; it is
-  an anchored popup menu over the ruleset's allowed values.</li>
+  (<code>question-value-voided</code>). The value row / header badge opens the shared value dialog over the
+  ruleset's allowed values.</li>
 <li><strong>D12 — question-set value guardrails are advisory notices, never blocks.</strong>
   The rulebooks fix the value distribution (both books) and, for JBQ, how the
   set may be <em>arranged</em>: ≥3 twenties and ≥1 thirty in each half, no 30 first or
@@ -2409,13 +2409,13 @@ quizmaster may override reality — the journal records what was recorded).</p>
 </tr>
 <tr>
 <td><code>voidQuestion</code></td>
-<td>q</td>
-<td>q in range (retracts answer points per D3)</td>
+<td>q, substituteValue?</td>
+<td>q in range; an optional substitute value must be even. Retracts answer points per D3 and, when the value is present, immediately re-opens the slot at that value as the substitute (D4). The keeper-facing void action always sets it to the slot's current value, so one event carries both effects</td>
 </tr>
 <tr>
 <td><code>substituteQuestion</code></td>
 <td>q, value</td>
-<td>q voided first (D4)</td>
+<td>q voided first (D4); kept for journals written before the combined void action</td>
 </tr>
 <tr>
 <td><code>substituteQuizzer</code></td>

@@ -2321,8 +2321,9 @@ screen does; the live views are thin layouts over the shared engine view-model
 </ul>
 <h2 id="2-global-principles-locked">2. Global principles (locked)<a class="headerlink" href="#2-global-principles-locked" title="Permanent link">&para;</a></h2>
 <p>≥48dp touch targets; one-tap scoring; the bottom console is the ONLY
-scoring entry point; Classic ledger cells navigate, never score;
-undo rewinds the screen position; static banners only (no animation);
+scoring entry point; an empty Classic ledger cell navigates/selects, while a
+cell holding a recorded answer opens that answer's editor; undo rewinds the
+screen position; static banners only (no animation);
 red/green light tints (<code>#FCE8E6</code> / <code>#E6F4EA</code>); tabular figures for scores.
 Silent by default: the app never plays audio (all Material
 <code>enableFeedback</code> paths are disabled) and haptics are opt-in/off-by-default,
@@ -2397,6 +2398,12 @@ OS text scaling at 1.3× to protect the no-scroll layout.</p>
 <td>toggles ring on current Q (marks only)</td>
 </tr>
 <tr>
+<td>VOID QUESTION</td>
+<td>bottom bar (enabled when the current question has a value) or the question editor</td>
+<td><code>voidQuestion</code> → <code>VoidQuestionEvent(q, substituteValue)</code></td>
+<td>retracts the slot's answers, leaves fouls standing (D3), and immediately reopens it as a substitute question at the same value (D4). One Undo restores the original ruling because one event carries both effects. On an already-voided question the editor offers VOID QUESTION AGAIN, which clears the current substitute answers at the same value</td>
+</tr>
+<tr>
 <td>gavel (Contest / Appeal)</td>
 <td>per-team header button beside the team name → outcome dialog</td>
 <td><code>recordChallenge</code> → <code>ChallengeEvent(q, side, successful)</code></td>
@@ -2411,8 +2418,8 @@ OS text scaling at 1.3× to protect the no-scroll layout.</p>
 <tr>
 <td>Ledger cell (Classic)</td>
 <td>grid tap</td>
-<td><code>jumpToQuestion</code> (view state, D6/D1)</td>
-<td>moves screen position and selects the quizzer; the intersect of selection × current question highlights; scoring there targets that Q explicitly</td>
+<td><code>jumpToQuestion</code> + <code>selectIfNeeded</code> (view state, D6/D1) for an empty cell; <code>changeAnswer</code> / <code>removeAnswer</code> for a marked cell</td>
+<td>empty: moves screen position and selects/keeps the quizzer without toggling (the intersect of selection × current question highlights); marked: opens the answer editor. A change replaces the answer in its original journal slot; a removal returns to that Q with the quizzer selected so the corrected ruling can be recorded</td>
 </tr>
 <tr>
 <td>Summary</td>
@@ -2422,6 +2429,24 @@ OS text scaling at 1.3× to protect the no-scroll layout.</p>
 </tr>
 </tbody>
 </table>
+<p><strong>Direct correction (Classic).</strong> A marked answer cell opens a compact editor
+with <code>MARK CORRECT</code> / <code>MARK INCORRECT</code> and <code>REMOVE RULING</code>; the edit replaces
+or removes the <code>AnswerEvent</code> at its original journal position, then refolds.
+An answered, interrupted, or voided question header opens the question editor
+(value change — including after an answer — voiding an answered question,
+voiding a voided question again, or removing an interruption or void). A normal
+unanswered header keeps the quick value picker. When a correction invalidates
+later actions (for example, removing an interruption that enabled a re-read),
+the editor lists exactly those actions and asks once before removing them. A
+static <code>UNDO EDIT</code> strip restores the journal from before the edit until the
+next normal scoring action. Time-outs, contests, fouls, and substitutions still
+use Undo rather than direct editing. There is no separate "remove substitute
+question" action: the substitute value belongs to the void, and voiding again
+clears any answers on the current substitute read.</p>
+<p>The bottom bar is the direct-action row: <strong>Undo · Interruption · Void question ·
+Substitute quizzer · Summary</strong>. There is no More overflow; the old separate
+"Read substitute question" entry point is gone because a void always re-reads at
+the same value.</p>
 <p>Console hint line states the contract: "TAP A QUIZZER, THEN CORRECT /
 INCORRECT / FOUL — TEAM FOUL NEEDS NO SELECTION. CORRECT / INCORRECT
 ADVANCE; FOUL STAYS.".</p>
@@ -2431,23 +2456,39 @@ disabled and the status line reads <code>BLOCKED — &lt;reason&gt;</code> (FOUL
 a foul is not an answer). This includes a miss on a non-interrupted
 question, which is not reread and therefore closes the question to the
 opposing team; only an interrupted miss reopens it.</p>
-<p>The same blocked path covers D11: until the current question's point value is
-set, CORRECT/INCORRECT are disabled and the status line reads <code>BLOCKED — Set
-the point value for Qn first</code>.</p>
+<p>D11 is a required next step rather than an error: when a quizzer is selected on
+a question whose value is still unset, the console replaces CORRECT/INCORRECT
+with three large value buttons (<code>10 PTS</code> / <code>20 PTS</code> / <code>30 PTS</code>). Choosing one
+sets the value and immediately restores the ruling buttons with the new point
+delta. The status line reads <code>... ON Qn — CHOOSE THE POINT VALUE</code>; the header
+<code>SET VALUE</code> button and navigator value row remain available as alternate entry
+points.</p>
 <h2 id="5-modern-specifics-libviewsmodern_screendart">5. Modern specifics (<code>lib/views/modern_screen.dart</code>)<a class="headerlink" href="#5-modern-specifics-libviewsmodern_screendart" title="Permanent link">&para;</a></h2>
 <p>Split field: red left / green right, team band (live total) + quizzer
 cards (score, C/I/F counts, status chip) + TAP TO SCORE affordance on the
 selected card. <code>QuestionNavigator</code> strip below the console is position
 display with paper marks (interruption ring, contest "C", void strike), with
-a <strong>point-value sub-row</strong> beneath the numbers (D11): each value cell is an
-anchored popup menu — tap it to set that question's 10/20/30 value. A
+a <strong>point-value sub-row</strong> beneath the numbers (D11): each value cell opens
+the shared value dialog — tap it to set that question's 10/20/30 value. A
 regulation question starts unset ("set") and cannot be scored until a value is
 assigned; the value locks once the question is answered, and overtime/voided
 slots read out only. The live header's <code>CurrentValueButton</code> (<code>N PTS</code> / a
-prominent <code>SET VALUE</code> while unset) opens the same picker for the current
-question.
+prominent <code>SET VALUE</code> while unset) opens the same value dialog for the current
+question. Bench quizzers appear as compact cards along the team's bench row.
 <code>matchComplete</code> swaps the console for: result text + "Add overtime
 question" (tie only) + "View summary".</p>
+<p><strong>Small menus.</strong> Contest outcome, foul assignment, and point-value selection
+all use the same compact rounded dialog shell as the substitution board:
+strong title, icon-led option cards, 48dp targets, and the live 1.3x text cap.
+Point-value cards show large numeric values with hover and press feedback, and
+the Classic question editor uses those same cards instead of pill buttons. The
+console's CORRECT / INCORRECT / FOUL labels use the same large bold type as the
+console value buttons.</p>
+<p><strong>Quizzer identity.</strong> Every seated row/card carries a small team-tinted
+<code>RED n</code> / <code>GREEN n</code> title pill beside the quizzer's name. The badge uses the
+pale team tint with team-colored text and border; the name is bolder and is the
+identity. A substitution transfers the title badge to the entrant while both
+names stay with their quizzers.</p>
 <h2 id="6-classic-specifics-libviewsclassic_screendart">6. Classic specifics (<code>lib/views/classic_screen.dart</code>)<a class="headerlink" href="#6-classic-specifics-libviewsclassic_screendart" title="Permanent link">&para;</a></h2>
 <p>Ledger grid geometry: 20×48 + 140 label + 64 total = 1164dp, fits 1280
 (shrinks only for overtime columns). Title row per team: name, <code>TEAM FOUL n</code>
@@ -2457,14 +2498,18 @@ showing <code>+value</code> / <code>−half</code> (personal fouls add an <code>
 never replacing it; foul-only cells show a bare <code>F</code>) with contest/interruption rings;
 interrupted questions also ring the column header; selected quizzer × current
 question intersect highlights. Each <strong>column header</strong> carries the question's
-point value under its number (D11) and is itself an anchored popup menu, so a
-question's value is set from the sheet's own header row (overtime/voided/
-answered slots read out only). A one-line <strong>BENCH</strong> strip lists a team's
-bench quizzers below its rows, each with their running total. Vertical TIME
+point value under its number (D11). A normal unanswered slot opens the quick
+value picker; an answered, interrupted, or voided slot opens the question
+editor (value change, void or void-again, interruption removal, or void
+removal).
+A <strong>BENCH</strong> row lists a team's bench quizzers below its rows as compact
+content-sized cards (bench <code>B</code> badge, bold name, running total, out status when
+applicable), scrolling horizontally only when the bench is long. Vertical TIME
 OUT 1/2/3 rail per team. The
 ledger sizes its rows to the screen (no scrolling mid-game). Same console +
-bottom bar as Modern (Summary gated until the match completes; More menu
-guards void/substitute state).</p>
+bottom bar as Modern (Summary gated until the match completes; the footer's
+VOID QUESTION button acts on the current question and the answered-question
+editor exposes the same action).</p>
 <h2 id="7-alerts-limits-overtime">7. Alerts, limits, overtime<a class="headerlink" href="#7-alerts-limits-overtime" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>AlertBanner</code> shows <code>lastAlert</code> until dismissed (dismiss is view state,
@@ -2477,20 +2522,29 @@ guards void/substitute state).</p>
 <li>After Q20: leader → match complete; tie → overtime question is appended
   automatically (TBQ: 10-pt sudden death; JBQ: 10/20/30 then 20s) with a
   notice and scoring re-opens.</li>
-<li>All notices (the transient <code>AlertBanner</code> and the persistent end-of-round
-  strip) render in one slot directly above the scoring console, so a notice
-  always appears in the same prominent place.</li>
-<li>Substitution is fully wired: the More menu's "Substitute quizzer" picks any
-  SEATED quizzer, then a bench quizzer, and the engine swaps them (during or
-  after a time-out; no one needs to have quizzed out). The entrant takes the
+<li>All notices (save failures, last-edit undo, the transient <code>AlertBanner</code>, the
+  persistent substitution prompt, and the end-of-round strip) render in one slot
+  directly above the scoring console, so a notice always appears in the same
+  prominent place.</li>
+<li>Substitution is one <strong>swap board</strong>, not two dialogs. The footer's
+  "Substitute quizzer" button opens a centered surface with Red/Green team tabs,
+  an <strong>At the table</strong> column and a <strong>Bench</strong> column. Tap the outgoing seated
+  quizzer, then an eligible bench quizzer; a live summary reads
+  <code>Alice (seat 1) → bench · Carol → seat 1</code>, and a single confirm button applies
+  the swap. Ineligible bench quizzers stay visible but dimmed with their status,
+  and empty states cover no bench / no eligible bench. The entrant takes the
   outgoing quizzer's <strong>seat</strong>, so the seated order is unchanged apart from the
-  swap (Red 1, Red 2, Red 3, Red 4 subbing Red 2 → Red 5 reads Red 1, Red 5,
-  Red 3, Red 4). The rotated-out quizzer sits on the bench — their running
-  total stays shown beside their name — and the entrant takes the table
-  (<code>SubstituteQuizzerEvent</code> carries <code>outIndex</code> + <code>benchIndex</code>, both stable
-  roster indices). The PDF/CSV export lists every roster quizzer with a
-  Position column (<code>seat N</code> / <code>bench</code>), so a rotated-out quizzer's points stay
-  on the sheet.</li>
+  swap (<code>SubstituteQuizzerEvent</code> carries stable <code>outIndex</code> + <code>benchIndex</code>). The
+  rotated-out quizzer sits on the bench with their running total, and the export
+  lists a Position column.</li>
+<li>A seated quizzer who quizzes out while their team has an eligible bench
+  quizzer raises a <strong>persistent substitution prompt</strong> in the notice slot:
+  <code>Red bench ready: Carol (30 pts) can replace Red 2. [SUBSTITUTE] [×]</code>.
+  It survives later transient alerts until the keeper substitutes, dismisses it,
+  or undoes the quiz-out. While it is visible it replaces the duplicate quiz-out
+  alert for that quizzer; dismissing it clears both. <code>SUBSTITUTE</code> opens the swap board with the team locked
+  and the outgoing quizzer preselected; the keeper only picks the entrant and
+  confirms. If no eligible bench exists, no prompt is shown.</li>
 </ul>
 <h2 id="8-summary-libviewssummary_screendart">8. Summary (<code>lib/views/summary_screen.dart</code>)<a class="headerlink" href="#8-summary-libviewssummary_screendart" title="Permanent link">&para;</a></h2>
 <p>Result banner (WINNER/TIE + tabular score + ruleset tag), team cards
