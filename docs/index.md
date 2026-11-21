@@ -3,6 +3,9 @@
 **A clean, modern scorekeeping app for Bible Quiz matches**, built to be
 intuitive and usable within seconds of picking it up.
 
+[Download Concordance](download.md){ .md-button .md-button--primary }
+[See how it works](getting-started/first-match.md){ .md-button }
+
 !!! warning "Not for official use"
     Concordance is an independent community project, **not affiliated with or
     endorsed by Bible Quiz** or its organizing bodies, and it is **not the
