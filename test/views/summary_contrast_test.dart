@@ -94,7 +94,7 @@ void main() {
     expect(fouls.style!.color!.computeLuminance(), greaterThan(0.4));
   });
 
-  testWidgets('theme toggle cycles modes and persists the choice', (
+  testWidgets('theme toggle switches light/dark and persists the choice', (
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
@@ -109,13 +109,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(theme.mode, ThemeMode.system);
-    await tester.tap(find.byType(ThemeToggleButton));
-    await tester.pumpAndSettle();
     expect(theme.mode, ThemeMode.light);
     await tester.tap(find.byType(ThemeToggleButton));
     await tester.pumpAndSettle();
     expect(theme.mode, ThemeMode.dark);
     expect(prefs.themeMode, ThemeMode.dark);
+    await tester.tap(find.byType(ThemeToggleButton));
+    await tester.pumpAndSettle();
+    expect(theme.mode, ThemeMode.light);
+    expect(prefs.themeMode, ThemeMode.light);
   });
 }

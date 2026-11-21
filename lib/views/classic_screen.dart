@@ -13,9 +13,16 @@ import 'common/theme_toggle.dart';
 /// [RoundController]. Thin layout only — cells navigate, the shared console
 /// scores. Layout only; no sheet text or imagery is reproduced.
 class ClassicScreen extends StatefulWidget {
-  const ClassicScreen({super.key, required this.controller});
+  const ClassicScreen({
+    super.key,
+    required this.controller,
+    this.returnRouteName,
+  });
 
   final RoundController controller;
+
+  /// Tournament mode: back/summary return to this named route.
+  final String? returnRouteName;
 
   @override
   State<ClassicScreen> createState() => _ClassicScreenState();
@@ -49,7 +56,10 @@ class _ClassicScreenState extends State<ClassicScreen> {
                   Expanded(child: _ledger(context)),
                   NoticeSlot(round: round),
                   ScoringConsole(round: round),
-                  LiveBottomBar(round: round),
+                  LiveBottomBar(
+                    round: round,
+                    returnRouteName: widget.returnRouteName,
+                  ),
                 ],
               );
             },
@@ -67,7 +77,7 @@ class _ClassicScreenState extends State<ClassicScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          const LiveBackButton(),
+          LiveBackButton(returnRouteName: widget.returnRouteName),
           const SizedBox(width: 4),
           Expanded(
             child: Column(

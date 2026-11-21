@@ -397,6 +397,38 @@
         long bench scrolls horizontally inside the bench row.
       - Verified at 1024x700 and the live 1.3x text cap; bench cards were
         compacted and the footer kept at 60dp so the prompt still fits.
+- [x] **Tournament mode (schema v4)**
+      - A tournament saves one tracked team (name, members, default seating),
+        a fixed match count, and a ruleset. The home screen lists saved
+        tournaments and starts new ones; tournament rounds stay out of the
+        standalone resume list.
+      - Each match picks Red or Green for the tracked team, prefills the saved
+        lineup, asks for the opponent, and creates a normal round plus an
+        atomic tournament-match link. Back/summary from the live screen return
+        to the tournament dashboard.
+      - Stable member IDs are mapped to each round's roster indices, so
+        substitutions and seat changes do not break aggregate stats. The
+        dashboard derives team record/points/quiz-outs and individual totals
+        from completed round journals; in-progress matches are excluded.
+      - Schema v4 adds `tournaments`, `tournament_members`,
+        `tournament_matches`, and `tournament_round_members` with an
+        idempotent migration from v3. Reset-match and delete-tournament paths
+        clean up rounds and journals.
+      - The dashboard exports a PDF score sheet and CSV through the platform
+        share sheet, with match results, team totals, and individual totals.
+        Linux and older Windows use a native Save-as dialog via `file_selector`;
+        match and tournament export failures show snackbars.
+        Home tournament rows have a confirmed delete action. The completed
+        match view shows one result strip with **View summary**; the duplicate
+        controller completion alert is suppressed.
+      - Tests: store creation/start/complete/reset/delete, migration 4,
+        aggregate stats with wins/losses/quiz-outs, home→setup→dashboard,
+        match setup, completed-match dashboard, export builders, live
+        back-to-dashboard, and the single end-of-round notice.
+      - Follow-ups: saving a per-match lineup back as the team default, saved
+        opponent profiles/schedules, multi-team standings/brackets, and
+        editing/archiving team members mid-tournament.
+
 - [ ] Revisit blank-name fallback naming
       - Auto-generated `<Team> n` names are now visually separated from the
         colored seat badge, but the fallback can still read like a seat title.

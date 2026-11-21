@@ -10,10 +10,9 @@ remembers from your last round. Everything is saved on the device itself.
 
 Three small buttons sit in the top corner of the home screen:
 
-- A **light/dark switch**. Tapping it moves between a light view, a dark view,
-  and following whatever the tablet is set to. By default the app follows the
-  tablet. The red and green team colors stay clear and easy to tell apart in
-  both light and dark.
+- A **light/dark switch**. Tapping it toggles between a light view and a dark
+  view. The app starts in light mode and remembers your choice. The red and
+  green team colors stay clear and easy to tell apart in both themes.
 - A **vibration switch**. This turns the small tap vibration on or off. It is
   **off by default**, so a fresh tablet cannot buzz or distract anyone during a
   match. Turn it on if you would like the confirmation when you score.
@@ -52,7 +51,7 @@ defaults.
 
 | Setting | Choices | Default | Applies to |
 | --- | --- | --- | --- |
-| Light or dark | Light · Dark · Follow the tablet | Follow the tablet | This device |
+| Light or dark | Light · Dark | Light | This device |
 | Tap vibration | On · Off | Off | This device |
 | Live view | Modern · Classic | Modern | This device, remembered from your last round |
 

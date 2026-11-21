@@ -1,16 +1,14 @@
-import 'dart:io';
+import 'dart:convert';
 
 import 'package:csv/csv.dart';
-import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:share_plus/share_plus.dart';
 
 import '../app/round_controller.dart';
 import '../engine/events.dart';
+import 'export_share.dart';
 
-Future<void> exportPdf(RoundController c, BuildContext context) async {
+Future<ExportOutcome> exportPdf(RoundController c) async {
   final doc = pw.Document();
   final red = c.scoreOf(Side.red);
   final green = c.scoreOf(Side.green);
@@ -79,15 +77,17 @@ Future<void> exportPdf(RoundController c, BuildContext context) async {
       ),
     ),
   );
-  final dir = await getTemporaryDirectory();
-  final file = File('${dir.path}/concordance-round.pdf');
-  await file.writeAsBytes(await doc.save());
-  await Share.shareXFiles([
-    XFile(file.path),
-  ], text: 'Concordance round score sheet');
+  return shareOrSaveFile(
+    bytes: await doc.save(),
+    fileName: 'concordance-round.pdf',
+    mimeType: 'application/pdf',
+    shareText: 'Concordance round score sheet',
+    typeLabel: 'PDF',
+    extension: 'pdf',
+  );
 }
 
-Future<void> exportCsv(RoundController c, BuildContext context) async {
+Future<ExportOutcome> exportCsv(RoundController c) async {
   final rows = <List<Object>>[
     const [
       'quizzer',
@@ -116,12 +116,14 @@ Future<void> exportCsv(RoundController c, BuildContext context) async {
     for (var n = 1; n <= c.questionCount; n++)
       [n, c.currentValue(n) ?? '-', _notes(c, n)],
   ];
-  final dir = await getTemporaryDirectory();
-  final file = File('${dir.path}/concordance-round.csv');
-  await file.writeAsString(const ListToCsvConverter().convert(rows));
-  await Share.shareXFiles([
-    XFile(file.path),
-  ], text: 'Concordance round results');
+  return shareOrSaveFile(
+    bytes: utf8.encode(const ListToCsvConverter().convert(rows)),
+    fileName: 'concordance-round.csv',
+    mimeType: 'text/csv',
+    shareText: 'Concordance round results',
+    typeLabel: 'CSV',
+    extension: 'csv',
+  );
 }
 
 String _notes(RoundController c, int n) {

@@ -116,6 +116,7 @@ nav:
       - Updating & uninstalling: installation/updating-and-uninstalling.md
   - User guide:
       - Set up a match: guide/set-up-a-match.md
+      - Tournaments: guide/tournaments.md
       - Score answers: guide/scoring-answers.md
       - Undo & corrections: guide/undo-and-corrections.md
       - Fouls, contests, interruptions & time-outs: guide/fouls-contests-interruptions-timeouts.md

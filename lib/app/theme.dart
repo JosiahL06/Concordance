@@ -33,8 +33,7 @@ ThemeData buildTheme(Brightness brightness) {
   );
 }
 
-/// User-chosen theme mode: follow the system, or force light/dark.
-/// Persisted, so it survives a restart.
+/// User-chosen light/dark theme mode. Persisted so it survives a restart.
 class ThemeController extends ChangeNotifier {
   ThemeController(this._prefs) : _mode = _prefs.themeMode;
 
@@ -44,18 +43,16 @@ class ThemeController extends ChangeNotifier {
   ThemeMode get mode => _mode;
 
   Future<void> setMode(ThemeMode mode) async {
-    if (mode == _mode) return;
-    _mode = mode;
+    final next = mode == ThemeMode.dark ? ThemeMode.dark : ThemeMode.light;
+    if (next == _mode) return;
+    _mode = next;
     notifyListeners();
-    await _prefs.setThemeMode(mode);
+    await _prefs.setThemeMode(next);
   }
 
-  /// Cycles system -> light -> dark -> system.
-  Future<void> cycle() => setMode(switch (_mode) {
-    ThemeMode.system => ThemeMode.light,
-    ThemeMode.light => ThemeMode.dark,
-    ThemeMode.dark => ThemeMode.system,
-  });
+  /// Toggles light <-> dark.
+  Future<void> cycle() =>
+      setMode(_mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
 }
 
 /// Makes a [ThemeController] reachable from anywhere in the tree. The live

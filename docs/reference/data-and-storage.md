@@ -4,11 +4,14 @@
 
 ## What is kept
 
-Two things:
+Three things:
 
 - **Your rounds.** Each round, with every ruling you recorded in it, is kept so
   it can be opened again later. The scores are worked out from those rulings
   rather than stored on their own.
+- **Your tournaments.** A tournament keeps the saved team, the match slate, and
+  links to the rounds it created. Tournament statistics are calculated from the
+  linked rounds, not stored as a second set of scores.
 - **Your settings.** The light/dark choice, the tap-vibration choice, and the
   last live view you used.
 
@@ -62,7 +65,8 @@ There are three levels, each with a different effect:
 | What you do | What is removed |
 | --- | --- |
 | Delete one round from the home screen | That round only. You are asked to confirm first. |
-| Uninstall the app | All rounds **and** your settings |
+| Delete a tournament from its dashboard | The tournament and every round it created. You are asked to confirm first. |
+| Uninstall the app | All rounds, tournaments, **and** your settings |
 | Clear the app's storage (Android/Fire) | All rounds **and** your settings |
 
 Uninstalling removes your rounds for good, so save anything you care about

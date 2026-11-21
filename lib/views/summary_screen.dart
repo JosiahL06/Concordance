@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app/round_controller.dart';
 import '../data/export.dart';
+import 'common/export_feedback.dart';
 import '../engine/events.dart';
 import '../engine/round_view.dart';
 import 'common/live_chrome.dart';
@@ -9,12 +10,20 @@ import 'common/haptics_toggle.dart';
 import 'common/theme_toggle.dart';
 
 /// Round summary: final result, team/individual tallies, question-by-question
-/// review, and working PDF/CSV export via the platform share sheet.
+/// review, and working PDF/CSV export via the platform share sheet or a
+/// Save-as dialog where file sharing is unavailable.
 /// Mode-agnostic single implementation; Done pops back to home.
 class SummaryScreen extends StatelessWidget {
-  const SummaryScreen({super.key, required this.controller});
+  const SummaryScreen({
+    super.key,
+    required this.controller,
+    this.returnRouteName,
+  });
 
   final RoundController controller;
+
+  /// Tournament mode returns to this named route instead of Home.
+  final String? returnRouteName;
 
   @override
   Widget build(BuildContext context) {
@@ -108,9 +117,9 @@ class SummaryScreen extends StatelessWidget {
                       child: SizedBox(
                         height: 56,
                         child: FilledButton.icon(
-                          onPressed: () => exportPdf(controller, context),
+                          onPressed: () => _exportPdf(context),
                           icon: const Icon(Icons.picture_as_pdf_outlined),
-                          label: const Text('Share PDF score sheet'),
+                          label: const Text('Export PDF score sheet'),
                         ),
                       ),
                     ),
@@ -119,9 +128,9 @@ class SummaryScreen extends StatelessWidget {
                       child: SizedBox(
                         height: 56,
                         child: OutlinedButton.icon(
-                          onPressed: () => exportCsv(controller, context),
+                          onPressed: () => _exportCsv(context),
                           icon: const Icon(Icons.table_chart_outlined),
-                          label: const Text('Share CSV results'),
+                          label: const Text('Export CSV results'),
                         ),
                       ),
                     ),
@@ -131,9 +140,18 @@ class SummaryScreen extends StatelessWidget {
                 SizedBox(
                   height: 56,
                   child: FilledButton.tonal(
-                    onPressed: () =>
+                    onPressed: () {
+                      if (returnRouteName == null) {
                         Navigator.of(context)
-                            .popUntil((route) => route.isFirst),
+                            .popUntil((route) => route.isFirst);
+                      } else {
+                        Navigator.of(context).popUntil(
+                          (route) =>
+                              route.isFirst ||
+                              route.settings.name == returnRouteName,
+                        );
+                      }
+                    },
                     child: const Text('Done'),
                   ),
                 ),
@@ -143,6 +161,30 @@ class SummaryScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _exportPdf(BuildContext context) async {
+    try {
+      final outcome = await exportPdf(controller);
+      if (!context.mounted) return;
+      showExportOutcome(context, outcome, 'PDF');
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not export PDF: $e')));
+    }
+  }
+
+  Future<void> _exportCsv(BuildContext context) async {
+    try {
+      final outcome = await exportCsv(controller);
+      if (!context.mounted) return;
+      showExportOutcome(context, outcome, 'CSV');
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not export CSV: $e')));
+    }
   }
 
   /// The results as the scorekeeper would announce them: 1st and 2nd place

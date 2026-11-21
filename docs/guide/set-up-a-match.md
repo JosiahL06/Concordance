@@ -5,7 +5,9 @@ rules and the right people in the right seats.
 
 ## Start a new round
 
-On the home screen, tap **START A NEW ROUND**. The **Resume round** list just
+On the home screen, tap **START A NEW ROUND**. To track one team across several
+matches, use **START A TOURNAMENT** instead; see
+[Tournaments](tournaments.md). The **Resume round** list just
 below it is for rounds you have already begun and not finished — tapping one of
 those rows takes you straight back into that round. This page is about starting
 a fresh one.

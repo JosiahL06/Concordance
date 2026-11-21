@@ -21,18 +21,20 @@ of the round. Tapping **Done** on the summary returns you to the home screen.
 
 ## Saving a copy
 
-Two buttons save the round as a file:
+Two buttons export the round as a file:
 
-- **PDF** — a tidy, printable score sheet. It has the team totals, a table of
-  each team's quizzers, and a question-by-question list, and it is laid out to be
-  easy to read on paper.
-- **Spreadsheet** — a plain file with one row per quizzer and one row per
+- **Export PDF score sheet** — a tidy, printable score sheet. It has the team
+  totals, a table of each team's quizzers, and a question-by-question list, and
+  it is laid out to be easy to read on paper.
+- **Export CSV results** — a plain file with one row per quizzer and one row per
   question, for anyone keeping records in a spreadsheet program.
 
-Either button opens your device's usual sharing window, so you choose where the
-file goes: email it, save it to a folder, send it to a printer, or share it with
-another app. Nothing is uploaded anywhere — the file only goes where you send
-it.
+On Android, iOS, macOS, and Windows 10 or newer, the button opens your device's
+usual sharing window, so you choose where the file goes: email it, save it to a
+folder, send it to a printer, or share it with another app. On Linux — and on
+older Windows versions where file sharing is unavailable — it opens a **Save
+as** dialog instead. Nothing is uploaded anywhere; the file only goes where you
+send it.
 
 On a tablet the sharing window may offer fewer places to send the file than on a
 computer. If you are not sure where a saved file ended up, share it to an app

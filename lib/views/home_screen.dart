@@ -4,14 +4,17 @@ import 'package:flutter/material.dart';
 
 import '../app/presets.dart';
 import '../app/round_controller.dart';
+import '../app/round_session.dart';
 import '../app/settings.dart';
 import '../app/timestamps.dart';
 import '../data/round_store.dart';
-import '../engine/events.dart';
 import '../engine/ruleset.dart';
+import '../tournament/tournament_models.dart';
 import 'classic_screen.dart';
 import 'modern_screen.dart';
 import 'setup_screen.dart';
+import 'tournament_screen.dart';
+import 'tournament_setup_screen.dart';
 import 'common/about_button.dart';
 import 'common/haptics_toggle.dart';
 import 'common/theme_toggle.dart';
@@ -46,6 +49,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   RoundStore? _store;
   List<Map<String, Object?>> _rounds = const [];
+  List<Tournament> _tournaments = const [];
   String? _storeError;
   ScoreboardView _view = ScoreboardView.modern;
 
@@ -56,7 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final injected = widget.store;
     if (injected != null) {
       _store = injected;
-      _rounds = injected.listRounds();
+      _rounds = injected.listRounds(excludeTournament: true);
+      _tournaments = injected.listTournaments();
     } else {
       _openStore();
     }
@@ -74,7 +79,8 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _store = store;
         _storeError = null;
-        _rounds = store.listRounds();
+        _rounds = store.listRounds(excludeTournament: true);
+        _tournaments = store.listTournaments();
       });
     } catch (e) {
       if (!mounted) return;
@@ -182,6 +188,51 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: const Text('START A NEW ROUND'),
                 ),
               ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 60,
+                child: FilledButton.tonal(
+                  style: FilledButton.styleFrom(
+                    textStyle: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  onPressed: _store == null
+                      ? null
+                      : () => _newTournament(context),
+                  child: const Text('START A TOURNAMENT'),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Tournaments',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              if (_tournaments.isEmpty) const Text('No tournaments yet.'),
+              for (final t in _tournaments)
+                Card(
+                  child: ListTile(
+                    title: Text(t.name),
+                    subtitle: Text(
+                      '${t.teamName} \u00b7 '
+                      '${_tournamentProgress(t.id)} matches',
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Delete tournament',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => _confirmDeleteTournament(context, t),
+                        ),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
+                    onTap: () => _openTournament(context, t.id),
+                  ),
+                ),
               const SizedBox(height: 16),
               Text(
                 'Resume round',
@@ -222,6 +273,60 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  int _tournamentCompleted(int id) =>
+      _store!.loadTournamentMatches(id).where((m) => m.isCompleted).length;
+
+  String _tournamentProgress(int id) {
+    final tournament = _tournaments.firstWhere((t) => t.id == id);
+    return '${_tournamentCompleted(id)}/${tournament.matchCount}';
+  }
+
+  Future<void> _newTournament(BuildContext context) async {
+    final draft = await Navigator.of(context).push<TournamentDraft>(
+      MaterialPageRoute(
+        builder: (_) => TournamentSetupScreen(presets: widget.presets),
+      ),
+    );
+    if (draft == null || !context.mounted) return;
+    try {
+      final id = _store!.createTournament(
+        name: draft.name,
+        rulesetId: draft.ruleset.id,
+        matchCount: draft.matchCount,
+        teamName: draft.teamName,
+        members: draft.members,
+      );
+      if (!context.mounted) return;
+      await _openTournament(context, id);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not create tournament: $e')),
+      );
+    }
+  }
+
+  Future<void> _openTournament(BuildContext context, int id) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: RouteSettings(name: TournamentScreen.routeName(id)),
+        builder: (_) => TournamentScreen(
+          store: _store!,
+          tournamentId: id,
+          view: _view,
+          prefs: widget.prefs,
+          presets: widget.presets,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    setState(() {
+      _view = widget.prefs.view;
+      _rounds = _store!.listRounds(excludeTournament: true);
+      _tournaments = _store!.listTournaments();
+    });
+  }
+
   Future<void> _newRound(BuildContext context) async {
     final result = await Navigator.of(context).push<SetupResult>(
       MaterialPageRoute(
@@ -237,46 +342,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!context.mounted) return;
     _attachAutosave(result.controller);
     _openLive(context, result.controller);
-    setState(() => _rounds = _store!.listRounds());
+    setState(() => _rounds = _store!.listRounds(excludeTournament: true));
   }
 
-  /// Creates the round row and installs the autosave hook. The row is a single
-  /// insert (already atomic); the journal starts empty and the first event
-  /// writes it.
+  /// Creates the round row and installs the shared autosave hooks.
   void _attachAutosave(RoundController controller) {
-    final store = _store!;
-    final id = store.createRound(
-      rulesetId: controller.ruleset.id,
-      redName: controller.redName,
-      greenName: controller.greenName,
-      redSeats: [for (final q in controller.teamOf(Side.red).seated) q.label],
-      greenSeats: [
-        for (final q in controller.teamOf(Side.green).seated) q.label,
-      ],
-      redBench: controller.view.redBenchSeed,
-      greenBench: controller.view.greenBenchSeed,
-    );
-    controller.roundId = id;
-    _installAutosave(controller, id, 0);
-  }
-
-  /// Installs the autosave hooks: normal scoring appends one row per tap and
-  /// undo deletes the tail, inside a single transaction. Direct action edits
-  /// can change the middle of the journal, so they use the atomic whole-journal
-  /// rewrite instead. A kill mid-save leaves the round intact rather than
-  /// half-written. [persisted] is how many of the journal's events are already
-  /// on disk: 0 for a fresh round, the journalled length on resume.
-  void _installAutosave(RoundController controller, int id, int persisted) {
-    final store = _store!;
-    var onDisk = persisted;
-    controller.autosave = (c) {
-      onDisk = store.saveJournal(id, c.view.journal, onDisk);
-    };
-    // Direct action edits can replace an event in the middle of the journal,
-    // so they rewrite it atomically instead of using the tail delta path.
-    controller.rewriteAutosave = (c) {
-      onDisk = store.replaceJournal(id, c.view.journal);
-    };
+    RoundSession.create(_store!, controller);
   }
 
   Future<void> _resume(BuildContext context, int id) async {
@@ -320,12 +391,56 @@ class _HomeScreenState extends State<HomeScreen> {
     controller.roundId = id;
     // The journal just replayed is exactly what is on disk; only later changes
     // need writing.
-    _installAutosave(controller, id, controller.view.journal.length);
+    RoundSession.attach(
+      _store!,
+      controller,
+      id,
+      controller.view.journal.length,
+    );
     _openLive(context, controller);
   }
 
   /// Confirms, then permanently deletes an autosaved round. The confirmation
   /// guards against an accidental tap on the delete affordance.
+  Future<void> _confirmDeleteTournament(
+    BuildContext context,
+    Tournament tournament,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete this tournament?'),
+        content: Text(
+          'Delete "${tournament.name}" and every round it created? This cannot '
+          'be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    _store!.deleteTournament(tournament.id);
+    setState(() {
+      _tournaments = _store!.listTournaments();
+      _rounds = _store!.listRounds(excludeTournament: true);
+    });
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Tournament deleted.')));
+  }
+
   Future<void> _confirmDelete(
     BuildContext context,
     int id,
@@ -354,7 +469,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (confirmed != true || !mounted) return;
     _store!.deleteRound(id);
-    setState(() => _rounds = _store!.listRounds());
+    setState(() => _rounds = _store!.listRounds(excludeTournament: true));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Round deleted.')));

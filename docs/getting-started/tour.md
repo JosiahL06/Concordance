@@ -1,12 +1,13 @@
 # Tour of the screens
 
-Concordance has four screens. The rest of this guide refers back to them by
+Concordance has five screens. The rest of this guide refers back to them by
 name, so it is worth a minute to learn what each one is for.
 
 | Screen | What it is for | Main areas |
 | --- | --- | --- |
-| **Home** | Start a new round, reopen one you have not finished, change the theme or haptics | **START A NEW ROUND**, the **Resume round** list, the buttons along the top |
-| **Setup** | Choose the rules, the teams, the quizzers, and how the scores look | The ruleset tabs, the team and quizzer fields, the Modern/Classic cards |
+| **Home** | Start a new round or tournament, reopen either, change the theme or haptics | **START A NEW ROUND**, **START A TOURNAMENT**, the **Tournaments** and **Resume round** lists, the buttons along the top |
+| **Setup** | Choose the rules, the teams, the quizzers, and how the scores look; tournament setup saves one team and a match count | The ruleset tabs, the team and quizzer fields, the Modern/Classic cards |
+| **Tournament dashboard** | Follow a saved team across its match slate and aggregate totals | Match list, record, team totals, individual totals |
 | **Live scoring** | Where you keep score during the round | The team scoreboards, the question navigator, the bottom console |
 | **Summary** | The final result, the announcements, and the export | Team totals, per-quizzer totals, the export buttons |
 
@@ -22,7 +23,9 @@ A round always moves forward in one direction:
 
 You can go back at any point, and going back is always safe: every ruling you
 have made is already saved by the time the screen changes. The **Done** button
-on the summary returns you to the home screen.
+on the summary returns you to the home screen. A round started from a
+tournament returns to the tournament dashboard instead; see
+[Tournaments](../guide/tournaments.md).
 
 ## The two live scoring screens
 

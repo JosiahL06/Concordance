@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
 
-/// Light / dark / follow-system toggle. Present on every screen so the theme
-/// can be changed mid-round without leaving the match.
+/// Light/dark toggle. Present on every screen so the theme can be changed
+/// mid-round without leaving the match.
 class ThemeToggleButton extends StatelessWidget {
   const ThemeToggleButton({super.key});
 
@@ -11,12 +11,8 @@ class ThemeToggleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = ThemeScope.of(context);
     final (icon, tooltip) = switch (controller.mode) {
-      ThemeMode.system => (
-        Icons.brightness_auto,
-        'Theme: follow system - tap for light',
-      ),
-      ThemeMode.light => (Icons.light_mode, 'Theme: light - tap for dark'),
-      ThemeMode.dark => (Icons.dark_mode, 'Theme: dark - tap to follow system'),
+      ThemeMode.dark => (Icons.dark_mode, 'Theme: dark - tap for light'),
+      _ => (Icons.light_mode, 'Theme: light - tap for dark'),
     };
     return IconButton(
       tooltip: tooltip,

@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-20
+
+### Added
+
+- **Tournament mode.** Start a tournament for one tracked team, choose a
+  ruleset and a fixed match count, and save the team name, members, and default
+  seating. The home screen lists saved tournaments and resumes them after a
+  restart. Each match asks for Red/Green and the opponent, prefills the saved
+  lineup (adjustable for that match), and creates a normal round linked to the
+  tournament. The dashboard shows match progress, win/loss/tie record, team
+  totals, and individual totals (points, correct/incorrect, fouls, quiz-outs,
+  matches); in-progress matches are excluded until they have a result. Stable
+  member IDs survive substitutions and seat changes, and completed rounds
+  edited later recompute the tournament totals. Tournament rounds are kept out
+  of the standalone resume list.
+- **Tournament results export.** The tournament dashboard now has an export
+  section that shares a PDF score sheet or a CSV file, using the same platform
+  share sheet as the match summary. The export includes the match slate, team
+  totals, and individual totals; it enables once at least one match is
+  complete.
+- **Theme toggle is light/dark only.** The follow-system option was removed;
+  the switch now toggles directly between light and dark, and a missing or
+  legacy system preference opens in light mode.
+- **Tournament match setup matches the normal setup screen.** The Red/Green
+  chooser is followed by two team columns: the selected side holds the
+  tournament lineup, the other holds the opponent. The header now exposes the
+  theme and haptics toggles, and a Modern/Classic picker chooses the live view
+  for that match and the app's remembered default. The side cards show only
+  Red/Green, and redundant "Team name" / "Applies to this match only" subtexts
+  were removed from the team columns. The two columns now stretch to the same
+  height while keeping their flexible quizzer counts.
+- **Save-as fallback for Linux exports.** `share_plus` does not implement file
+  sharing on Linux. Match and tournament exports now open a native **Save as**
+  dialog there (and on older Windows fallback) instead of throwing; Android,
+  iOS, macOS, and modern Windows keep the share sheet. Export failures show a
+  snackbar on both the match summary and the tournament dashboard.
+- **Database schema v4.** Adds `tournaments`, `tournament_members`,
+  `tournament_matches`, and `tournament_round_members` with an idempotent
+  migration from v3. Match creation is atomic; resetting a match removes its
+  round and journal; deleting a tournament removes every round it created.
+
+### Changed
+
+- Team/individual stats are derived from the linked round journals rather than
+  duplicated in a tournament table, so direct edits, undo, and voiding remain
+  the single source of truth.
+- Live-screen Back and Summary Done return to the tournament dashboard when a
+  round was started from a tournament, while standalone rounds still return
+  Home.
+- Tournaments can be deleted directly from the home screen with the same
+  confirmation/cleanup as the dashboard delete action.
+
+### Fixed
+
+- **The completed-match screen showed two end-of-match notices.** The
+  controller's completion alert duplicated the result strip. The strip — with
+  the result and **View summary** — is now the only end-of-match notice.
+
 ## [1.0.0-beta.3] - 2026-11-07
 
 ### Added

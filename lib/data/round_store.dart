@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import '../engine/events.dart';
+import '../tournament/tournament_models.dart';
 
 /// SQLite autosave: rounds + journal rows (event JSON). Save on every event;
 /// resume re-folds the journal. sqlite3 direct (no codegen) — the journal is
@@ -28,7 +29,7 @@ class RoundStore {
   final Database _db;
 
   /// The schema version this build expects. Bump together with [_migrations].
-  static const int schemaVersion = 3;
+  static const int schemaVersion = 4;
 
   static Future<RoundStore> open() async {
     final dir = await getApplicationSupportDirectory();
@@ -211,6 +212,7 @@ class RoundStore {
         PRIMARY KEY (round_id, seq)
       ) WITHOUT ROWID;
     ''');
+    _createTournamentTables(db);
   }
 
   /// Applies every migration newer than [storedSchemaVersion], one transaction
@@ -248,7 +250,75 @@ class RoundStore {
         _addBenchColumns,
         _rebuildEventsWithoutRowid,
         _normalizeCreatedAtToUtc,
+        _createTournamentTables,
       ];
+
+  /// v3 → v4: tournament headers, stable members, scheduled matches, and the
+  /// member-to-round links that keep aggregate stats correct across
+  /// substitutions and lineup changes. Existing rounds are untouched.
+  static void _createTournamentTables(Database db) {
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS tournaments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        ruleset_id TEXT NOT NULL,
+        match_count INTEGER NOT NULL,
+        team_name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        completed_at TEXT
+      );
+    ''');
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS tournament_members (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tournament_id INTEGER NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        roster_index INTEGER NOT NULL,
+        default_seat INTEGER NOT NULL,
+        archived_at TEXT,
+        UNIQUE(tournament_id, roster_index)
+      );
+    ''');
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS tournament_matches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tournament_id INTEGER NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+        match_number INTEGER NOT NULL,
+        round_id INTEGER REFERENCES rounds(id) ON DELETE SET NULL,
+        tracked_side TEXT,
+        opponent_name TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TEXT,
+        completed_at TEXT,
+        UNIQUE(tournament_id, match_number)
+      );
+    ''');
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS tournament_round_members (
+        round_id INTEGER NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,
+        side TEXT NOT NULL,
+        roster_index INTEGER NOT NULL,
+        member_id INTEGER NOT NULL REFERENCES tournament_members(id) ON DELETE CASCADE,
+        PRIMARY KEY (round_id, side, roster_index)
+      );
+    ''');
+    db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_tournament_members_tournament '
+      'ON tournament_members(tournament_id)',
+    );
+    db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_tournament_matches_tournament '
+      'ON tournament_matches(tournament_id)',
+    );
+    db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_tournament_matches_round '
+      'ON tournament_matches(round_id)',
+    );
+    db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_tournament_round_members_member '
+      'ON tournament_round_members(member_id)',
+    );
+  }
 
   /// v0 → v1: the bench roster columns, so a round saved by an older build still
   /// opens.
@@ -437,6 +507,279 @@ class RoundStore {
     return _db.lastInsertRowId;
   }
 
+  // ── tournaments ──
+
+  static String _nowUtc() => DateTime.now().toUtc().toIso8601String();
+
+  static Side _sideFrom(String raw) => switch (raw) {
+    'red' => Side.red,
+    'green' => Side.green,
+    _ => throw StateError('unknown side $raw'),
+  };
+
+  Tournament _tournamentFromRow(Map<String, Object?> row) => Tournament(
+    id: row['id'] as int,
+    name: row['name'] as String,
+    rulesetId: row['ruleset_id'] as String,
+    matchCount: row['match_count'] as int,
+    teamName: row['team_name'] as String,
+    createdAt: DateTime.parse(row['created_at'] as String),
+    completedAt: row['completed_at'] == null
+        ? null
+        : DateTime.parse(row['completed_at'] as String),
+  );
+
+  TournamentMember _memberFromRow(Map<String, Object?> row) => TournamentMember(
+    id: row['id'] as int,
+    tournamentId: row['tournament_id'] as int,
+    name: row['name'] as String,
+    rosterIndex: row['roster_index'] as int,
+    defaultSeat: row['default_seat'] as int,
+    archivedAt: row['archived_at'] == null
+        ? null
+        : DateTime.parse(row['archived_at'] as String),
+  );
+
+  TournamentMatch _matchFromRow(Map<String, Object?> row) => TournamentMatch(
+    id: row['id'] as int,
+    tournamentId: row['tournament_id'] as int,
+    matchNumber: row['match_number'] as int,
+    status: row['status'] as String,
+    roundId: row['round_id'] as int?,
+    trackedSide: row['tracked_side'] == null
+        ? null
+        : _sideFrom(row['tracked_side'] as String),
+    opponentName: row['opponent_name'] as String?,
+    createdAt: row['created_at'] == null
+        ? null
+        : DateTime.parse(row['created_at'] as String),
+    completedAt: row['completed_at'] == null
+        ? null
+        : DateTime.parse(row['completed_at'] as String),
+  );
+
+  /// Creates a tournament, its stable member list, and its pending match slots
+  /// in one transaction.
+  int createTournament({
+    required String name,
+    required String rulesetId,
+    required int matchCount,
+    required String teamName,
+    required List<TournamentMemberInput> members,
+  }) {
+    if (matchCount < 1) {
+      throw ArgumentError.value(matchCount, 'matchCount', 'must be >= 1');
+    }
+    return transaction(() {
+      _db.execute(
+        'INSERT INTO tournaments (name, ruleset_id, match_count, team_name, created_at) VALUES (?, ?, ?, ?, ?)',
+        [name, rulesetId, matchCount, teamName, _nowUtc()],
+      );
+      final tournamentId = _db.lastInsertRowId;
+      final memberStmt = _db.prepare(
+        'INSERT INTO tournament_members (tournament_id, name, roster_index, default_seat) VALUES (?, ?, ?, ?)',
+      );
+      try {
+        for (final member in members) {
+          memberStmt.execute([
+            tournamentId,
+            member.name,
+            member.rosterIndex,
+            member.defaultSeat,
+          ]);
+        }
+      } finally {
+        memberStmt.dispose();
+      }
+      for (var n = 1; n <= matchCount; n++) {
+        _db.execute(
+          'INSERT INTO tournament_matches (tournament_id, match_number, status) VALUES (?, ?, ?)',
+          [tournamentId, n, TournamentMatchStatus.pending],
+        );
+      }
+      return tournamentId;
+    });
+  }
+
+  List<Tournament> listTournaments() => _db
+      .select('SELECT * FROM tournaments ORDER BY id DESC')
+      .map(_tournamentFromRow)
+      .toList();
+
+  Tournament? loadTournament(int id) {
+    final rows = _db.select('SELECT * FROM tournaments WHERE id = ?', [id]);
+    return rows.isEmpty ? null : _tournamentFromRow(rows.first);
+  }
+
+  List<TournamentMember> loadTournamentMembers(int tournamentId) => _db
+      .select(
+        'SELECT * FROM tournament_members WHERE tournament_id = ? '
+        'ORDER BY roster_index',
+        [tournamentId],
+      )
+      .map(_memberFromRow)
+      .toList();
+
+  List<TournamentMatch> loadTournamentMatches(int tournamentId) => _db
+      .select(
+        'SELECT * FROM tournament_matches WHERE tournament_id = ? '
+        'ORDER BY match_number',
+        [tournamentId],
+      )
+      .map(_matchFromRow)
+      .toList();
+
+  List<TournamentMemberLink> loadTournamentRoundMembers(int roundId) => _db
+      .select('SELECT * FROM tournament_round_members WHERE round_id = ?', [
+        roundId,
+      ])
+      .map(
+        (row) => TournamentMemberLink(
+          roundId: row['round_id'] as int,
+          side: _sideFrom(row['side'] as String),
+          rosterIndex: row['roster_index'] as int,
+          memberId: row['member_id'] as int,
+        ),
+      )
+      .toList();
+
+  /// Creates the round, marks [matchId] in progress, and records the stable
+  /// member links in one transaction. Returns the new round id.
+  int startTournamentMatch({
+    required int matchId,
+    required String rulesetId,
+    required TournamentMatchStart start,
+  }) {
+    return transaction(() {
+      final rows = _db.select('SELECT * FROM tournament_matches WHERE id = ?', [
+        matchId,
+      ]);
+      if (rows.isEmpty) {
+        throw StateError('tournament match $matchId not found');
+      }
+      if (rows.first['round_id'] != null) {
+        throw StateError('tournament match $matchId already started');
+      }
+      final roundId = createRound(
+        rulesetId: rulesetId,
+        redName: start.redName,
+        greenName: start.greenName,
+        redSeats: start.redSeats,
+        greenSeats: start.greenSeats,
+        redBench: start.redBench,
+        greenBench: start.greenBench,
+      );
+      _db.execute(
+        'UPDATE tournament_matches SET round_id = ?, tracked_side = ?, '
+        'opponent_name = ?, status = ?, created_at = ?, completed_at = NULL '
+        'WHERE id = ?',
+        [
+          roundId,
+          start.trackedSide.name,
+          start.opponentName,
+          TournamentMatchStatus.inProgress,
+          _nowUtc(),
+          matchId,
+        ],
+      );
+      final linkStmt = _db.prepare(
+        'INSERT INTO tournament_round_members '
+        '(round_id, side, roster_index, member_id) VALUES (?, ?, ?, ?)',
+      );
+      try {
+        for (final link in start.links) {
+          linkStmt.execute([
+            roundId,
+            link.side.name,
+            link.rosterIndex,
+            link.memberId,
+          ]);
+        }
+      } finally {
+        linkStmt.dispose();
+      }
+      return roundId;
+    });
+  }
+
+  /// Marks a started match complete and finalises the tournament when every
+  /// slot is complete.
+  void completeTournamentMatch(int matchId) {
+    transaction(() {
+      final rows = _db.select(
+        'SELECT tournament_id FROM tournament_matches WHERE id = ?',
+        [matchId],
+      );
+      if (rows.isEmpty) {
+        throw StateError('tournament match $matchId not found');
+      }
+      final tournamentId = rows.first['tournament_id'] as int;
+      final now = _nowUtc();
+      _db.execute(
+        'UPDATE tournament_matches SET status = ?, completed_at = ? '
+        'WHERE id = ?',
+        [TournamentMatchStatus.completed, now, matchId],
+      );
+      final remaining =
+          _db.select(
+                'SELECT COUNT(*) AS c FROM tournament_matches '
+                'WHERE tournament_id = ? AND status != ?',
+                [tournamentId, TournamentMatchStatus.completed],
+              ).first['c']
+              as int;
+      _db.execute('UPDATE tournaments SET completed_at = ? WHERE id = ?', [
+        remaining == 0 ? now : null,
+        tournamentId,
+      ]);
+    });
+  }
+
+  /// Deletes the match's round (if any) and returns the slot to pending.
+  void resetTournamentMatch(int matchId) {
+    transaction(() {
+      final rows = _db.select(
+        'SELECT tournament_id, round_id FROM tournament_matches WHERE id = ?',
+        [matchId],
+      );
+      if (rows.isEmpty) {
+        throw StateError('tournament match $matchId not found');
+      }
+      final tournamentId = rows.first['tournament_id'] as int;
+      final roundId = rows.first['round_id'] as int?;
+      if (roundId != null) {
+        _db.execute('DELETE FROM rounds WHERE id = ?', [roundId]);
+      }
+      _db.execute(
+        'UPDATE tournament_matches SET round_id = NULL, tracked_side = NULL, '
+        'opponent_name = NULL, status = ?, created_at = NULL, '
+        'completed_at = NULL WHERE id = ?',
+        [TournamentMatchStatus.pending, matchId],
+      );
+      _db.execute('UPDATE tournaments SET completed_at = NULL WHERE id = ?', [
+        tournamentId,
+      ]);
+    });
+  }
+
+  /// Deletes a tournament, its scheduled matches/members, and the rounds those
+  /// matches created. The confirmation belongs in the UI.
+  void deleteTournament(int id) {
+    transaction(() {
+      final roundIds = _db
+          .select(
+            'SELECT round_id FROM tournament_matches '
+            'WHERE tournament_id = ? AND round_id IS NOT NULL',
+            [id],
+          )
+          .map((row) => row['round_id'] as int)
+          .toList();
+      _db.execute('DELETE FROM tournaments WHERE id = ?', [id]);
+      for (final roundId in roundIds) {
+        _db.execute('DELETE FROM rounds WHERE id = ?', [roundId]);
+      }
+    });
+  }
+
   void appendEvent(int roundId, RoundEvent event) {
     final seq =
         _db.select(
@@ -457,8 +800,20 @@ class RoundStore {
     ]);
   }
 
-  List<Map<String, Object?>> listRounds() {
-    return _db.select('SELECT * FROM rounds ORDER BY id DESC').toList();
+  /// Rounds for the standalone resume list. Tournament rounds are surfaced
+  /// through their tournament dashboard instead, so they are excluded by
+  /// default there.
+  List<Map<String, Object?>> listRounds({bool excludeTournament = false}) {
+    if (!excludeTournament) {
+      return _db.select('SELECT * FROM rounds ORDER BY id DESC').toList();
+    }
+    return _db.select('''
+      SELECT * FROM rounds
+      WHERE NOT EXISTS (
+        SELECT 1 FROM tournament_matches tm WHERE tm.round_id = rounds.id
+      )
+      ORDER BY id DESC
+    ''').toList();
   }
 
   Map<String, Object?>? loadRound(int id) {

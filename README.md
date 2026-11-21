@@ -68,8 +68,8 @@ lose the game.
 - **PDF/CSV export** — a readable round summary you can save or share.
 - **Offline & silent** — no network, no accounts, no telemetry; the app plays no
   audio (haptics are opt-in and off by default), so it never distracts a match.
-- **Light and dark mode** — follows the system theme; light red/green tints keep 
-   the two teams distinguishable at a glance regardless.
+- **Light and dark mode** — choose light or dark; light red/green tints keep the
+   two teams distinguishable at a glance regardless.
 
 ## Installation
 

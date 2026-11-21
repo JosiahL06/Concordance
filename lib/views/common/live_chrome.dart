@@ -234,14 +234,26 @@ class BenchCard extends StatelessWidget {
 /// Home. Mirrors the Summary screen's back affordance, and pops to the first
 /// route rather than just one step so it works from the resume path too.
 class LiveBackButton extends StatelessWidget {
-  const LiveBackButton({super.key});
+  const LiveBackButton({super.key, this.returnRouteName});
+
+  /// When set (tournament mode), back returns to this named route if it is
+  /// still on the stack; otherwise it falls back to Home.
+  final String? returnRouteName;
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      tooltip: 'Back to start',
+      tooltip: returnRouteName == null ? 'Back to start' : 'Back to tournament',
       icon: const Icon(Icons.arrow_back),
-      onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+      onPressed: () {
+        if (returnRouteName == null) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else {
+          Navigator.of(context).popUntil(
+            (route) => route.isFirst || route.settings.name == returnRouteName,
+          );
+        }
+      },
     );
   }
 }
@@ -488,9 +500,10 @@ class ScoringConsole extends StatelessWidget {
 /// Team time-outs live beside the team names (Classic rail + Modern header),
 /// not here — the bottom-right duplicates were removed in the polish pass.
 class LiveBottomBar extends StatelessWidget {
-  const LiveBottomBar({super.key, required this.round});
+  const LiveBottomBar({super.key, required this.round, this.returnRouteName});
 
   final RoundController round;
+  final String? returnRouteName;
 
   @override
   Widget build(BuildContext context) {
@@ -597,7 +610,10 @@ class LiveBottomBar extends StatelessWidget {
 
   void _openSummary(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => SummaryScreen(controller: round)),
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            SummaryScreen(controller: round, returnRouteName: returnRouteName),
+      ),
     );
   }
 
@@ -1435,6 +1451,11 @@ class NoticeSlot extends StatelessWidget {
         : '${prompt.side.name.toUpperCase()} ${prompt.outLabel} quizzed out';
     final hideQuizOutAlert =
         prompt != null && (round.lastAlert ?? '').startsWith(quizOutAlert!);
+    // The end-of-round bar already announces the result and offers the summary;
+    // the controller's completion alert would be a second copy of that notice.
+    final hideCompletionAlert =
+        round.matchComplete &&
+        (round.lastAlert ?? '').endsWith('match complete.');
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1442,7 +1463,8 @@ class NoticeSlot extends StatelessWidget {
           EndOfRoundBar(round: round),
         SaveErrorBar(round: round),
         LastEditBar(round: round),
-        if (!hideQuizOutAlert) AlertBanner(round: round),
+        if (!hideQuizOutAlert && !hideCompletionAlert)
+          AlertBanner(round: round),
         SubstitutionPromptBar(round: round),
       ],
     );

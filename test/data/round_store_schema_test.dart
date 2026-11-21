@@ -9,6 +9,7 @@ import 'package:sqlite3/sqlite3.dart';
 import 'package:concordance/app/timestamps.dart';
 import 'package:concordance/data/round_store.dart';
 import 'package:concordance/engine/events.dart';
+import 'package:concordance/tournament/tournament_models.dart';
 
 /// Reads a single-value PRAGMA over a separate connection, so a test can observe
 /// what is actually on disk rather than what the store believes.
@@ -299,6 +300,33 @@ void main() {
 
     // The table really was rebuilt, not merely re-versioned.
     expect(tableDdl(path, 'events'), contains('WITHOUT ROWID'));
+    store.close();
+  });
+
+  test('migration 4 adds tournament tables to an existing database', () {
+    writeVersionOneDatabase(path);
+    final store = RoundStore.openAt(path);
+    expect(store.storedSchemaVersion, 4);
+    for (final table in const [
+      'tournaments',
+      'tournament_members',
+      'tournament_matches',
+      'tournament_round_members',
+    ]) {
+      expect(tableDdl(path, table), isNotNull, reason: table);
+    }
+
+    // The new tables are usable immediately, not merely present.
+    final id = store.createTournament(
+      name: 'T',
+      rulesetId: 'tbq-25-26',
+      matchCount: 1,
+      teamName: 'Team',
+      members: const [
+        TournamentMemberInput(name: 'A', rosterIndex: 0, defaultSeat: 1),
+      ],
+    );
+    expect(store.loadTournament(id)!.name, 'T');
     store.close();
   });
 

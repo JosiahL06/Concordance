@@ -31,15 +31,13 @@ class ViewPreference {
 
   Future<void> setView(ScoreboardView view) => _prefs.setString(key, view.name);
 
-  /// Persisted light/dark/system choice; defaults to following the system.
-  ThemeMode get themeMode => switch (_prefs.getString(themeKey)) {
-    'light' => ThemeMode.light,
-    'dark' => ThemeMode.dark,
-    _ => ThemeMode.system,
-  };
+  /// Persisted light/dark choice. A missing or legacy `system` value opens in
+  /// light mode; the app no longer follows the system theme.
+  ThemeMode get themeMode =>
+      _prefs.getString(themeKey) == 'dark' ? ThemeMode.dark : ThemeMode.light;
 
   Future<void> setThemeMode(ThemeMode mode) =>
-      _prefs.setString(themeKey, mode.name);
+      _prefs.setString(themeKey, mode == ThemeMode.dark ? 'dark' : 'light');
 
   /// Opt-in haptic tick for scoring taps; OFF on a fresh install so an
   /// official match is never buzzed at by default.

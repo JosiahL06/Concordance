@@ -12,9 +12,16 @@ import 'common/theme_toggle.dart';
 /// Thin layout only — all scoring goes through [RoundController] + shared
 /// [ScoringConsole] / [LiveBottomBar].
 class ModernScreen extends StatefulWidget {
-  const ModernScreen({super.key, required this.controller});
+  const ModernScreen({
+    super.key,
+    required this.controller,
+    this.returnRouteName,
+  });
 
   final RoundController controller;
+
+  /// Tournament mode: back/summary return to this named route.
+  final String? returnRouteName;
 
   @override
   State<ModernScreen> createState() => _ModernScreenState();
@@ -51,7 +58,10 @@ class _ModernScreenState extends State<ModernScreen> {
                   NoticeSlot(round: round),
                   ScoringConsole(round: round),
                   QuestionNavigator(round: round),
-                  LiveBottomBar(round: round),
+                  LiveBottomBar(
+                    round: round,
+                    returnRouteName: widget.returnRouteName,
+                  ),
                 ],
               );
             },
@@ -69,7 +79,7 @@ class _ModernScreenState extends State<ModernScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          const LiveBackButton(),
+          LiveBackButton(returnRouteName: widget.returnRouteName),
           const SizedBox(width: 4),
           Expanded(
             child: Column(
